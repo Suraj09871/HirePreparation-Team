@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browse Jobs - HireSmart</title>
+    <link rel="stylesheet" href="../../css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body style="background: #f8fafc;">
+    <nav class="navbar">
+        <div class="logo"><span class="logo-icon"></span> HireSmart</div>
+        <div class="nav-links">
+            <a href="../../index.html">Home</a>
+            <a href="#" class="active">Jobs</a>
+            <a href="practice.html">Practice</a>
+            <a href="preparation.html">Preparation</a>
+            <a href="student-dashboard.html">Dashboard</a>
+            <a href="resume-builder.html">Resume Builder</a>
+        </div>
+        <div class="nav-actions">
+            <span style="font-size:1.25rem;color:var(--text-muted);cursor:pointer;margin-right:0.5rem;">☼</span>
+            <button class="btn btn-outline" onclick="window.location.href='student-auth.html'">Sign In</button>
+            <button class="btn btn-dark" onclick="window.location.href='student-auth.html'">Get Started</button>
+        </div>
+    </nav>
+
+    <div class="bg-gradient-hero" style="padding:4rem 0;text-align:center;">
+        <div class="container">
+            <h1 class="text-white" style="font-size:2.5rem;">Find Your <span class="highlight">Dream Job</span></h1>
+            <p class="text-white-70" style="margin-top:1rem;max-width:32rem;margin-left:auto;margin-right:auto;">Browse opportunities from top companies. See your match score before you apply.</p>
+        </div>
+    </div>
+
+    <main class="container py-12">
+        <div style="display:flex;gap:1rem;margin-bottom:2rem;">
+            <div style="position:relative;flex:1;">
+                <span style="position:absolute;left:1rem;top:50%;transform:translateY(-50%);color:var(--text-muted);">🔍</span>
+                <input type="text" id="jobSearch" placeholder="Search by title, company, or skill..." style="width:100%;padding:0.75rem 1rem 0.75rem 2.5rem;border:1px solid var(--border-color);border-radius:8px;font-size:1rem;background:white;">
+            </div>
+        </div>
+
+        <div id="jobsGrid" class="features-grid" style="grid-template-columns:repeat(auto-fill,minmax(340px,1fr));">
+            <div style="text-align:center;padding:3rem;color:var(--text-muted);grid-column:1/-1;">
+                <div style="font-size:2rem;margin-bottom:1rem;">⏳</div>
+                Loading jobs...
+            </div>
+        </div>
+    </main>
+
+    <script src="../../js/api.js"></script>
+    <script src="../../js/nav-auth.js"></script>
+    <script src="../../js/jobs.js"></script>
+</body>
+</html>

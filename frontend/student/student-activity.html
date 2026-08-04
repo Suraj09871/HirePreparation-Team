@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Activity - HireSmart</title>
+    <link rel="stylesheet" href="../../css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="../../js/theme.js"></script>
+    <style>
+        .sidebar {
+            width: 250px;
+            background: var(--card-bg);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+        .sidebar-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .sidebar-avatar {
+            width: 48px; height: 48px;
+            border-radius: 50%;
+            background: #f97316;
+            color: white;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem; font-weight: bold;
+        }
+        .sidebar-nav {
+            padding: 1rem 0;
+            display: flex;
+            flex-direction: column;
+        }
+        .sidebar-link {
+            padding: 0.75rem 1.5rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            display: flex; align-items: center; gap: 0.75rem;
+            font-weight: 500; font-size: 0.875rem;
+            transition: all 0.2s;
+        }
+        .sidebar-link:hover {
+            background: var(--bg-muted);
+            color: var(--text-main);
+        }
+        .sidebar-link.active {
+            color: var(--primary);
+            background: rgba(249, 115, 22, 0.05);
+            border-left: 4px solid var(--primary);
+        }
+        
+        .profile-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+        .profile-field {
+            display: flex; align-items: center; gap: 0.5rem;
+            font-size: 0.875rem; color: var(--text-muted);
+        }
+        
+        .stats-box {
+            background: var(--bg-muted);
+            border-radius: 8px;
+            padding: 1.5rem;
+            text-align: center;
+            border: 1px solid var(--border-color);
+        }
+        .stats-val { font-size: 1.5rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.25rem;}
+        .stats-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; }
+    </style>
+</head>
+<body style="background: var(--bg-muted);">
+    
+    <nav class="navbar">
+        <div class="logo">
+            <span class="logo-icon"></span>
+            HireSmart
+        </div>
+        <div class="nav-links">
+            <a href="../../index.html">Home</a>
+            <a href="#">Jobs</a>
+            <a href="practice.html">Practice</a>
+            <a href="preparation.html">Preparation</a>
+            <a href="student-dashboard.html">Dashboard</a>
+            <a href="resume-builder.html">Resume Builder</a>
+
+        </div>
+        <div class="nav-actions">
+            <button id="theme-toggle" style="background:none; border:none; font-size:1.25rem; color:var(--text-muted); cursor:pointer;">☼</button>
+            <span style="color: var(--text-muted);">🔔</span>
+            <span style="display: flex; align-items: center; gap: 0.5rem; font-weight: 500; font-size: 0.875rem;">
+                ⚙ Suraj
+            </span>
+            <button class="btn btn-outline" onclick="window.location.href='../../index.html';"><span style="margin-right: 0.25rem;">↪</span> Sign Out</button>
+        </div>
+    </nav>
+
+    <main class="container py-12" style="display: flex; gap: 2rem;">
+        
+        <!-- Left Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-avatar">S</div>
+                <div>
+                    <div style="font-weight: 600; font-size: 1rem; color: var(--text-main);">Suraj Kumar</div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">surajkr09871@gmail.com</div>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#" class="sidebar-link"><span>🎓</span> Internships</a>
+                <a href="#" class="sidebar-link"><span>💼</span> Jobs</a>
+                <a href="#" class="sidebar-link"><span>🗺</span> Roadmap</a>
+                <a href="preparation.html" class="sidebar-link"><span>🏢</span> Company Prep</a>
+                <a href="#" class="sidebar-link"><span>⚙</span> Settings</a>
+                <a href="student-activity.html" class="sidebar-link active"><span>📈</span> Your Activity</a>
+            </nav>
+            <div style="margin-top: auto; padding: 1rem; border-top: 1px solid var(--border-color);">
+                <a href="#" class="sidebar-link" style="color: #ef4444;"><span>↪</span> Sign Out</a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <div style="flex: 1;">
+            <a href="student-dashboard.html" style="color: var(--text-muted); text-decoration: none; font-size: 0.875rem; display: inline-flex; align-items: center; gap: 0.5rem; margin-bottom: 1.5rem;">← Go Back</a>
+            
+            <h1 style="font-size: 1.5rem; margin-bottom: 0.25rem;">Your Activity</h1>
+            <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 2rem;">Recent account activity & profile details</p>
+
+            <div style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                <h3 style="font-size: 1rem; font-weight: 600; color: var(--text-main); margin-bottom: 1.5rem;">Student Profile</h3>
+                
+                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem;">
+                    <div style="width: 64px; height: 64px; border-radius: 50%; background: #f97316; color: white; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: bold;">S</div>
+                    <div>
+                        <h2 style="font-size: 1.25rem; margin: 0; color: var(--text-main);">Suraj Kumar</h2>
+                        <div style="color: var(--text-muted); font-size: 0.875rem;">No title set</div>
+                    </div>
+                </div>
+
+                <div class="profile-grid">
+                    <div class="profile-field"><span>✉</span> Email: <span style="color: var(--text-main);">surajkr09871@gmail.com</span></div>
+                    <div class="profile-field"><span>📞</span> Phone: <span style="color: var(--text-main);">Not set</span></div>
+                    <div class="profile-field"><span>📅</span> DOB: <span style="color: var(--text-main);">Not set</span></div>
+                    <div class="profile-field"><span>📍</span> Address: <span style="color: var(--text-main);">Not set</span></div>
+                    <div class="profile-field"><span>🎓</span> Course: <span style="color: var(--text-main);">Not set</span></div>
+                    <div class="profile-field"><span>#</span> Enrollment: <span style="color: var(--text-main);">Not set</span></div>
+                    <div class="profile-field"><span>🛡</span> Role: <span style="background: var(--bg-muted); border: 1px solid var(--border-color); padding: 0.1rem 0.5rem; border-radius: 999px; font-size: 0.75rem;">student</span></div>
+                    <div class="profile-field"><span>📈</span> Joined: <span style="color: var(--text-main);">3/3/2026</span></div>
+                </div>
+            </div>
+
+            <div style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                <h3 style="font-size: 1rem; font-weight: 600; color: var(--text-main); margin-bottom: 1.5rem;">Stats</h3>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                    <div class="stats-box">
+                        <div class="stats-val">0</div>
+                        <div class="stats-label">Applications</div>
+                    </div>
+                    <div class="stats-box">
+                        <div class="stats-val">0</div>
+                        <div class="stats-label">Skills</div>
+                    </div>
+                    <div class="stats-box">
+                        <div class="stats-val">0%</div>
+                        <div class="stats-label">Resume Score</div>
+                    </div>
+                    <div class="stats-box">
+                        <div class="stats-val">0 topics</div>
+                        <div class="stats-label">Prep Progress</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Simple Footer -->
+    <footer style="background: var(--card-bg); border-top: 1px solid var(--border-color); padding: 3rem 0; margin-top: 4rem;">
+        <div class="container footer-grid">
+            <div class="footer-brand">
+                <div class="logo" style="margin-bottom: 1rem;"><span class="logo-icon"></span> HireSmart</div>
+                <p style="font-size: 0.875rem;">From preparation to hiring — your complete career platform.</p>
+            </div>
+            <div>
+                <h4 class="footer-heading">For Students</h4>
+                <ul class="footer-links space-y-2">
+                    <li><a href="preparation.html">Company Prep</a></li>
+                    <li><a href="student-dashboard.html">Dashboard</a></li>
+                    <li><a href="resume-builder.html">Resume Builder</a></li>
+                    <li><a href="#">Job Search</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="footer-heading">For Recruiters</h4>
+                <ul class="footer-links space-y-2">
+                    <li><a href="../admin/admin-dashboard.html">Dashboard</a></li>
+                    <li><a href="../recruiter/job-posting.html">Post Jobs</a></li>
+                    <li><a href="../recruiter/applicant-list.html">Candidate Ranking</a></li>
+                    <li><a href="#">Analytics</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="footer-heading">Platform</h4>
+                <ul class="footer-links space-y-2">
+                    <li><a href="#">About Us</a></li>
+                    <li><a href="#">Contact</a></li>
+                    <li><a href="#">Privacy Policy</a></li>
+                    <li><a href="#">Terms of Service</a></li>
+                </ul>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

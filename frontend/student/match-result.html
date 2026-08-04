@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Match Result - HireSmart</title>
+    <link rel="stylesheet" href="../../css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body style="background: #f8fafc;">
+    <nav class="navbar">
+        <div class="logo"><span class="logo-icon"></span> HireSmart</div>
+        <div class="nav-links">
+            <a href="../../index.html">Home</a>
+            <a href="jobs.html">Jobs</a>
+            <a href="practice.html">Practice</a>
+            <a href="preparation.html">Preparation</a>
+            <a href="student-dashboard.html">Dashboard</a>
+        </div>
+        <div class="nav-actions"></div>
+    </nav>
+
+    <main class="container py-12" style="max-width: 700px;">
+        <div style="margin-bottom: 2rem;">
+            <a href="jobs.html" style="color: var(--text-muted); text-decoration: none; font-size: 0.875rem;">← Back to Jobs</a>
+        </div>
+
+        <div style="background: white; border: 1px solid var(--border-color); border-radius: 16px; padding: 3rem; box-shadow: 0 10px 25px rgba(0,0,0,0.05);">
+            <h1 style="font-size: 2rem; text-align: center; margin-bottom: 0.5rem;">Your Match Result</h1>
+            <p id="matchJobTitle" style="text-align: center; color: var(--text-muted); margin-bottom: 2.5rem;">Job Position</p>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2.5rem;">
+                <div style="text-align: center; background: #f8fafc; padding: 2rem; border-radius: 12px; border: 1px solid var(--border-color);">
+                    <div style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 0.5rem;">Skill Match</div>
+                    <div id="skillMatch" style="font-size: 3rem; font-weight: 700; color: var(--primary);">0%</div>
+                </div>
+                <div style="text-align: center; background: #f8fafc; padding: 2rem; border-radius: 12px; border: 1px solid var(--border-color);">
+                    <div style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 0.5rem;">Hiring Probability</div>
+                    <div id="hiringProb" style="font-size: 3rem; font-weight: 700; color: #10b981;">—</div>
+                </div>
+            </div>
+
+            <div id="warningMessages" style="display: flex; flex-direction: column; gap: 1rem; margin-bottom: 2.5rem;">
+                <!-- Populated by JS -->
+            </div>
+
+            <div style="display: flex; gap: 1rem; justify-content: center; border-top: 1px solid var(--border-color); padding-top: 2rem;">
+                <button id="cancelBtn" class="btn btn-outline" style="padding: 0.75rem 2rem;">Go Back</button>
+                <button id="submitApplicationBtn" class="btn btn-primary" style="padding: 0.75rem 2rem;">Submit Application</button>
+            </div>
+        </div>
+    </main>
+
+    <script src="../../js/api.js"></script>
+    <script src="../../js/nav-auth.js"></script>
+    <script src="../../js/match-result.js"></script>
+</body>
+</html>

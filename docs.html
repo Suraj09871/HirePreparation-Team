@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Architecture & Docs - HireSmart</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .docs-tab {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            background: transparent;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .docs-tab.active {
+            color: var(--primary);
+            border-bottom: 2px solid var(--primary);
+            background: rgba(249, 115, 22, 0.05);
+            border-radius: 8px 8px 0 0;
+        }
+        .tech-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+        .tech-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--bg-muted);
+            border: 1px solid var(--border-color);
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            color: var(--text-main);
+            font-weight: 500;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+    </style>
+</head>
+<body style="background: var(--bg-muted);">
+
+    <nav class="navbar">
+        <div class="logo">
+            <span class="logo-icon"></span>
+            HireSmart
+        </div>
+        <div class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="frontend/student/jobs.html">Jobs</a>
+            <a href="frontend/student/practice.html">Practice</a>
+            <a href="frontend/student/preparation.html">Preparation</a>
+            <a href="frontend/student/student-dashboard.html">Dashboard</a>
+            <a href="frontend/student/resume-builder.html">Resume Builder</a>
+            <a href="team.html">Team</a>
+            <a href="#" class="active">Docs</a>
+        </div>
+        <div class="nav-actions">
+            <span style="font-size: 1.25rem; color: var(--text-muted); cursor: pointer; margin-right: 0.5rem;">☼</span>
+            <button class="btn btn-outline" onclick="window.location.href='frontend/auth.html'">Sign In</button>
+        </div>
+    </nav>
+
+    <!-- Header Banner -->
+    <div style="background: #2e4c6a; padding: 2.5rem 0; color: white;">
+        <div class="container text-center">
+            <h1 style="color: white; margin-bottom: 0;">System Documentation</h1>
+        </div>
+    </div>
+
+    <main class="container py-12">
+        <!-- Tabs -->
+        <div style="display: flex; border-bottom: 1px solid var(--border-color); margin-bottom: 2.5rem; overflow-x: auto;">
+            <button class="docs-tab active" data-target="tab-architecture">Architecture</button>
+            <button class="docs-tab" data-target="tab-schema">Database Schema</button>
+            <button class="docs-tab" data-target="tab-functions">Edge Functions</button>
+            <button class="docs-tab" data-target="tab-algorithms">Algorithms</button>
+            <button class="docs-tab" data-target="tab-auth">Auth & Security</button>
+            <button class="docs-tab" data-target="tab-routes">Pages & Routes</button>
+        </div>
+
+        <!-- Architecture Tab -->
+        <div id="tab-architecture" class="tab-content">
+
+        <div style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; padding: 2.5rem; margin-bottom: 2.5rem;">
+            <h2 style="font-size: 1.5rem; display: flex; align-items: center; gap: 0.5rem; margin-bottom: 2rem;">
+                <span style="color: var(--primary);">📚</span> Technology Stack
+            </h2>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+                
+                <div class="tech-card">
+                    <h3 style="font-size: 1rem; color: var(--text-main); margin-bottom: 1rem;">Frontend</h3>
+                    <div>
+                        <span class="tech-badge"><span>&lt;/&gt;</span> Vanilla JS</span>
+                        <span class="tech-badge"><span>&lt;/&gt;</span> HTML5/CSS3</span>
+                        <span class="tech-badge"><span>&lt;/&gt;</span> Fetch API</span>
+                        <span class="tech-badge"><span>&lt;/&gt;</span> Chart.js</span>
+                    </div>
+                </div>
+
+                <div class="tech-card">
+                    <h3 style="font-size: 1rem; color: var(--text-main); margin-bottom: 1rem;">State Management</h3>
+                    <div>
+                        <span class="tech-badge"><span>&lt;/&gt;</span> LocalStorage Auth Token</span>
+                        <span class="tech-badge"><span>&lt;/&gt;</span> URL Search Params</span>
+                        <span class="tech-badge"><span>&lt;/&gt;</span> DOM Events</span>
+                    </div>
+                </div>
+
+                <div class="tech-card">
+                    <h3 style="font-size: 1rem; color: var(--text-main); margin-bottom: 1rem;">Backend</h3>
+                    <div>
+                        <span class="tech-badge"><span>&lt;/&gt;</span> Node.js</span>
+                        <span class="tech-badge"><span>&lt;/&gt;</span> Express</span>
+                        <span class="tech-badge"><span>&lt;/&gt;</span> MongoDB (Memory/Atlas)</span>
+                        <span class="tech-badge"><span>&lt;/&gt;</span> Mongoose</span>
+                    </div>
+                </div>
+
+                <div class="tech-card">
+                    <h3 style="font-size: 1rem; color: var(--text-main); margin-bottom: 1rem;">AI & Integration</h3>
+                    <div>
+                        <span class="tech-badge"><span>&lt;/&gt;</span> Google Auth</span>
+                        <span class="tech-badge"><span>&lt;/&gt;</span> Candidate Scoring Engine</span>
+                    </div>
+                </div>
+
+                <div class="tech-card">
+                    <h3 style="font-size: 1rem; color: var(--text-main); margin-bottom: 1rem;">Auth & Security</h3>
+                    <div>
+                        <span class="tech-badge"><span>&lt;/&gt;</span> JWT (JSON Web Tokens)</span>
+                        <span class="tech-badge"><span>&lt;/&gt;</span> Role-Based Middleware</span>
+                        <span class="tech-badge"><span>&lt;/&gt;</span> Bcrypt Password Hashing</span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; padding: 2.5rem;">
+            <h2 style="font-size: 1.5rem; display: flex; align-items: center; gap: 0.5rem; margin-bottom: 2rem;">
+                <span style="color: var(--primary);">🔀</span> System Architecture
+            </h2>
+            
+            <div style="background: var(--bg-muted); border-radius: 12px; padding: 3rem; overflow-x: auto; font-family: monospace; white-space: pre; color: var(--text-main); border: 1px solid var(--border-color); font-size: 0.875rem; line-height: 1.6;">
+    ┌────────────────────────────────────────────────────────┐
+    │                        Frontend                        │
+    │             Vanilla JS + HTML5 + Custom CSS            │
+    │  ┌─────────────────┬────────────────┬───────────────┐  │
+    │  │   Student UI    │  Recruiter UI  │   Admin UI    │  │
+    │  └─────────────────┴────────────────┴───────────────┘  │
+    │                        Fetch API                       │
+    └────────────────────────────────────────────────────────┘
+                               │
+    ┌────────────────────────────────────────────────────────┐
+    │                        Backend                         │
+    │                    Node.js + Express                   │
+    │  ┌─────────────────┬────────────────┬───────────────┐  │
+    │  │  Auth Service   │  Jobs & Match  │  Prep Routes  │  │
+    │  └─────────────────┴────────────────┴───────────────┘  │
+    │                        Mongoose                        │
+    │                                                        │
+    │  ┌──────────────────────────────────────────────────┐  │
+    │  │              MongoDB (In-Memory / Atlas)         │  │
+    │  └──────────────────────────────────────────────────┘  │
+    └────────────────────────────────────────────────────────┘
+            </div>
+        </div>
+        </div>
+
+        <!-- Database Schema Tab -->
+        <div id="tab-schema" class="tab-content" style="display: none;">
+            <div style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; padding: 2.5rem;">
+                <h2 style="font-size: 1.5rem; display: flex; align-items: center; gap: 0.5rem; margin-bottom: 2rem;">
+                    <span style="color: var(--primary);">🛢</span> Database Schema
+                </h2>
+                <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Core collections used in MongoDB:</p>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                    <div style="border: 1px solid var(--border-color); border-radius: 8px; padding: 1.5rem;">
+                        <h3 style="font-weight: 600; margin-bottom: 0.5rem;">Users</h3>
+                        <p style="font-size: 0.875rem; color: var(--text-muted);">_id, name, email, password, role (student/recruiter/admin), createdAt</p>
+                    </div>
+                    <div style="border: 1px solid var(--border-color); border-radius: 8px; padding: 1.5rem;">
+                        <h3 style="font-weight: 600; margin-bottom: 0.5rem;">Jobs</h3>
+                        <p style="font-size: 0.875rem; color: var(--text-muted);">_id, title, company, requiredSkills, description, location, salary, postedBy</p>
+                    </div>
+                    <div style="border: 1px solid var(--border-color); border-radius: 8px; padding: 1.5rem;">
+                        <h3 style="font-weight: 600; margin-bottom: 0.5rem;">Profiles</h3>
+                        <p style="font-size: 0.875rem; color: var(--text-muted);">_id, userId, bio, skills, education, experience, resumeLink</p>
+                    </div>
+                    <div style="border: 1px solid var(--border-color); border-radius: 8px; padding: 1.5rem;">
+                        <h3 style="font-weight: 600; margin-bottom: 0.5rem;">Applications</h3>
+                        <p style="font-size: 0.875rem; color: var(--text-muted);">_id, jobId, applicantId, status, matchScore, appliedAt</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edge Functions Tab -->
+        <div id="tab-functions" class="tab-content" style="display: none;">
+            <div style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; padding: 2.5rem;">
+                <h2 style="font-size: 1.5rem; display: flex; align-items: center; gap: 0.5rem; margin-bottom: 2rem;">
+                    <span style="color: var(--primary);">⚡</span> Edge Functions & API Services
+                </h2>
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    <div style="border: 1px solid var(--border-color); border-radius: 8px; padding: 1.5rem;">
+                        <h3 style="font-weight: 600; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                            <span style="background: #e0e7ff; color: #4338ca; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.75rem;">POST</span> 
+                            /api/match
+                        </h3>
+                        <p style="font-size: 0.875rem; color: var(--text-muted);">Calculates the skill match score between a student profile and a job listing in real-time.</p>
+                    </div>
+                    <div style="border: 1px solid var(--border-color); border-radius: 8px; padding: 1.5rem;">
+                        <h3 style="font-weight: 600; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                            <span style="background: #dcfce3; color: #15803d; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.75rem;">GET</span> 
+                            /api/prep-data
+                        </h3>
+                        <p style="font-size: 0.875rem; color: var(--text-muted);">Fetches company-specific preparation modules, questions, and roadmaps.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Algorithms Tab -->
+        <div id="tab-algorithms" class="tab-content" style="display: none;">
+            <div style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; padding: 2.5rem; margin-bottom: 2.5rem;">
+                <h2 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem;">Skill Matching Algorithm</h2>
+                <span style="display: inline-block; background: #f1f5f9; padding: 0.2rem 0.8rem; border-radius: 99px; font-size: 0.75rem; font-weight: 600; color: #64748b; margin-bottom: 1.5rem;">Sunny's Module</span>
+                <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 1rem 1.5rem; color: #ef4444; font-family: monospace; font-size: 0.875rem; margin-bottom: 1.5rem;">
+                    Match % = (Σ skill_scores / required_skills.length) × 100
+                </div>
+                <ul style="list-style-type: none; padding: 0; color: var(--text-muted); font-size: 0.875rem; line-height: 2;">
+                    <li><span style="color: #ef4444; margin-right: 0.5rem;">▪</span> Exact match: 1.0 score (e.g., 'React' = 'React')</li>
+                    <li><span style="color: #ef4444; margin-right: 0.5rem;">▪</span> Partial match: 0.6 score (e.g., 'React.js' contains 'React')</li>
+                    <li><span style="color: #ef4444; margin-right: 0.5rem;">▪</span> Alias match: 0.4 score (e.g., 'JS' ↔ 'JavaScript')</li>
+                    <li><span style="color: #ef4444; margin-right: 0.5rem;">▪</span> Supports 15+ alias groups (TypeScript ↔ TS, Python ↔ Py, etc.)</li>
+                </ul>
+            </div>
+
+            <div style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; padding: 2.5rem;">
+                <h2 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem;">Hiring Probability Formula</h2>
+                <span style="display: inline-block; background: #f1f5f9; padding: 0.2rem 0.8rem; border-radius: 99px; font-size: 0.75rem; font-weight: 600; color: #64748b; margin-bottom: 1.5rem;">Sunny's Module</span>
+                <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 1rem 1.5rem; color: #ef4444; font-family: monospace; font-size: 0.875rem; margin-bottom: 1.5rem;">
+                    Score = (Skill Match × 60%) + (Resume Score × 25%) + 15% base
+                </div>
+                <ul style="list-style-type: none; padding: 0; color: var(--text-muted); font-size: 0.875rem; line-height: 2;">
+                    <li><span style="color: #ef4444; margin-right: 0.5rem;">▪</span> Skill component: match_percentage × 0.6</li>
+                    <li><span style="color: #ef4444; margin-right: 0.5rem;">▪</span> Resume component: resume_score × 0.25</li>
+                    <li><span style="color: #ef4444; margin-right: 0.5rem;">▪</span> Base probability: 15% (floor for all candidates)</li>
+                    <li><span style="color: #ef4444; margin-right: 0.5rem;">▪</span> Capped at 100%</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Auth & Security Tab -->
+        <div id="tab-auth" class="tab-content" style="display: none;">
+            <div style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; padding: 2.5rem;">
+                <h2 style="font-size: 1.5rem; display: flex; align-items: center; gap: 0.5rem; margin-bottom: 2rem;">
+                    <span style="color: var(--primary);">🛡</span> Auth & Security
+                </h2>
+                <ul style="list-style-type: disc; padding-left: 1.5rem; color: var(--text-muted); font-size: 0.875rem; line-height: 2;">
+                    <li><strong>JWT Authentication:</strong> Secure token-based authentication for all protected routes.</li>
+                    <li><strong>Role-Based Access Control (RBAC):</strong> Strict separation between Student, Recruiter, and Admin endpoints.</li>
+                    <li><strong>Password Hashing:</strong> Bcrypt implementation for secure password storage.</li>
+                    <li><strong>Google OAuth:</strong> Integration for fast and secure social login.</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Pages & Routes Tab -->
+        <div id="tab-routes" class="tab-content" style="display: none;">
+            <div style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; padding: 2.5rem;">
+                <h2 style="font-size: 1.5rem; display: flex; align-items: center; gap: 0.5rem; margin-bottom: 2rem;">
+                    <span style="color: var(--primary);">📄</span> Application Routes
+                </h2>
+
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
+                        <div style="display: flex; align-items: center; gap: 1.5rem;">
+                            <span style="background: #f1f5f9; color: #64748b; padding: 0.2rem 0.6rem; border-radius: 6px; font-family: monospace; font-size: 0.875rem;">/</span>
+                            <div>
+                                <div style="font-weight: 600; color: #1e293b; font-size: 1rem;">Index</div>
+                                <div style="font-size: 0.875rem; color: var(--text-muted);">Landing page with hero, stats, features, how-it-works</div>
+                            </div>
+                        </div>
+                        <span style="background: white; border: 1px solid var(--border-color); padding: 0.2rem 0.6rem; border-radius: 99px; font-size: 0.75rem; font-weight: 600; color: #64748b;">All</span>
+                    </div>
+
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
+                        <div style="display: flex; align-items: center; gap: 1.5rem;">
+                            <span style="background: #f1f5f9; color: #64748b; padding: 0.2rem 0.6rem; border-radius: 6px; font-family: monospace; font-size: 0.875rem;">/auth</span>
+                            <div>
+                                <div style="font-weight: 600; color: #1e293b; font-size: 1rem;">AuthPage</div>
+                                <div style="font-size: 0.875rem; color: var(--text-muted);">Login & signup with role selection, admin setup button</div>
+                            </div>
+                        </div>
+                        <span style="background: white; border: 1px solid var(--border-color); padding: 0.2rem 0.6rem; border-radius: 99px; font-size: 0.75rem; font-weight: 600; color: #64748b;">Shikha/Sunny</span>
+                    </div>
+
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
+                        <div style="display: flex; align-items: center; gap: 1.5rem;">
+                            <span style="background: #f1f5f9; color: #64748b; padding: 0.2rem 0.6rem; border-radius: 6px; font-family: monospace; font-size: 0.875rem;">/jobs</span>
+                            <div>
+                                <div style="font-weight: 600; color: #1e293b; font-size: 1rem;">JobSearchPage</div>
+                                <div style="font-size: 0.875rem; color: var(--text-muted);">Browse active jobs with filters, match scores, apply</div>
+                            </div>
+                        </div>
+                        <span style="background: white; border: 1px solid var(--border-color); padding: 0.2rem 0.6rem; border-radius: 99px; font-size: 0.75rem; font-weight: 600; color: #64748b;">Shikha/Sunny</span>
+                    </div>
+
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
+                        <div style="display: flex; align-items: center; gap: 1.5rem;">
+                            <span style="background: #fef2f2; color: #ef4444; padding: 0.2rem 0.6rem; border-radius: 6px; font-family: monospace; font-size: 0.875rem;">/student/dashboard</span>
+                            <div>
+                                <div style="font-weight: 600; color: #1e293b; font-size: 1rem;">StudentDashboard</div>
+                                <div style="font-size: 0.875rem; color: var(--text-muted);">Student profile, skills, applications, prep progress</div>
+                            </div>
+                        </div>
+                        <span style="background: white; border: 1px solid var(--border-color); padding: 0.2rem 0.6rem; border-radius: 99px; font-size: 0.75rem; font-weight: 600; color: #64748b;">Shikha</span>
+                    </div>
+
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
+                        <div style="display: flex; align-items: center; gap: 1.5rem;">
+                            <span style="background: #ecfdf5; color: #10b981; padding: 0.2rem 0.6rem; border-radius: 6px; font-family: monospace; font-size: 0.875rem;">/recruiter/dashboard</span>
+                            <div>
+                                <div style="font-weight: 600; color: #1e293b; font-size: 1rem;">RecruiterDashboard</div>
+                                <div style="font-size: 0.875rem; color: var(--text-muted);">Post jobs, view ranked candidates, update status</div>
+                            </div>
+                        </div>
+                        <span style="background: white; border: 1px solid var(--border-color); padding: 0.2rem 0.6rem; border-radius: 99px; font-size: 0.75rem; font-weight: 600; color: #64748b;">Reenu</span>
+                    </div>
+
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
+                        <div style="display: flex; align-items: center; gap: 1.5rem;">
+                            <span style="background: #fef2f2; color: #ef4444; padding: 0.2rem 0.6rem; border-radius: 6px; font-family: monospace; font-size: 0.875rem;">/preparation</span>
+                            <div>
+                                <div style="font-weight: 600; color: #1e293b; font-size: 1rem;">PreparationPage</div>
+                                <div style="font-size: 0.875rem; color: var(--text-muted);">Company-wise questions, roadmaps, progress tracking</div>
+                            </div>
+                        </div>
+                        <span style="background: white; border: 1px solid var(--border-color); padding: 0.2rem 0.6rem; border-radius: 99px; font-size: 0.75rem; font-weight: 600; color: #64748b;">Shikha</span>
+                    </div>
+
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
+                        <div style="display: flex; align-items: center; gap: 1.5rem;">
+                            <span style="background: #fef2f2; color: #ef4444; padding: 0.2rem 0.6rem; border-radius: 6px; font-family: monospace; font-size: 0.875rem;">/company/:id</span>
+                            <div>
+                                <div style="font-weight: 600; color: #1e293b; font-size: 1rem;">CompanyDetailPage</div>
+                                <div style="font-size: 0.875rem; color: var(--text-muted);">Detailed company view with tabs for questions, roadmap, jobs</div>
+                            </div>
+                        </div>
+                        <span style="background: white; border: 1px solid var(--border-color); padding: 0.2rem 0.6rem; border-radius: 99px; font-size: 0.75rem; font-weight: 600; color: #64748b;">Shikha</span>
+                    </div>
+
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
+                        <div style="display: flex; align-items: center; gap: 1.5rem;">
+                            <span style="background: #fef2f2; color: #ef4444; padding: 0.2rem 0.6rem; border-radius: 6px; font-family: monospace; font-size: 0.875rem;">/profile/edit</span>
+                            <div>
+                                <div style="font-weight: 600; color: #1e293b; font-size: 1rem;">ProfileEditPage</div>
+                                <div style="font-size: 0.875rem; color: var(--text-muted);">Edit profile, skills, resume upload, AI analysis</div>
+                            </div>
+                        </div>
+                        <span style="background: white; border: 1px solid var(--border-color); padding: 0.2rem 0.6rem; border-radius: 99px; font-size: 0.75rem; font-weight: 600; color: #64748b;">Shikha/Sunny</span>
+                    </div>
+
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
+                        <div style="display: flex; align-items: center; gap: 1.5rem;">
+                            <span style="background: #ecfdf5; color: #10b981; padding: 0.2rem 0.6rem; border-radius: 6px; font-family: monospace; font-size: 0.875rem;">/admin</span>
+                            <div>
+                                <div style="font-weight: 600; color: #1e293b; font-size: 1rem;">AdminDashboard</div>
+                                <div style="font-size: 0.875rem; color: var(--text-muted);">Manage users, jobs, questions, companies, admin roles</div>
+                            </div>
+                        </div>
+                        <span style="background: white; border: 1px solid var(--border-color); padding: 0.2rem 0.6rem; border-radius: 99px; font-size: 0.75rem; font-weight: 600; color: #64748b;">Reenu</span>
+                    </div>
+
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
+                        <div style="display: flex; align-items: center; gap: 1.5rem;">
+                            <span style="background: #f1f5f9; color: #64748b; padding: 0.2rem 0.6rem; border-radius: 6px; font-family: monospace; font-size: 0.875rem;">/notifications</span>
+                            <div>
+                                <div style="font-weight: 600; color: #1e293b; font-size: 1rem;">NotificationsPage</div>
+                                <div style="font-size: 0.875rem; color: var(--text-muted);">In-app notification inbox with real-time updates</div>
+                            </div>
+                        </div>
+                        <span style="background: white; border: 1px solid var(--border-color); padding: 0.2rem 0.6rem; border-radius: 99px; font-size: 0.75rem; font-weight: 600; color: #64748b;">Sunny</span>
+                    </div>
+
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
+                        <div style="display: flex; align-items: center; gap: 1.5rem;">
+                            <span style="background: #f1f5f9; color: #64748b; padding: 0.2rem 0.6rem; border-radius: 6px; font-family: monospace; font-size: 0.875rem;">/team</span>
+                            <div>
+                                <div style="font-weight: 600; color: #1e293b; font-size: 1rem;">TeamPage</div>
+                                <div style="font-size: 0.875rem; color: var(--text-muted);">Team member profiles with contributions and links</div>
+                            </div>
+                        </div>
+                        <span style="background: white; border: 1px solid var(--border-color); padding: 0.2rem 0.6rem; border-radius: 99px; font-size: 0.75rem; font-weight: 600; color: #64748b;">All</span>
+                    </div>
+
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 1rem; border-bottom: none;">
+                        <div style="display: flex; align-items: center; gap: 1.5rem;">
+                            <span style="background: #f1f5f9; color: #64748b; padding: 0.2rem 0.6rem; border-radius: 6px; font-family: monospace; font-size: 0.875rem;">/docs</span>
+                            <div>
+                                <div style="font-weight: 600; color: #1e293b; font-size: 1rem;">ProjectDocsPage</div>
+                                <div style="font-size: 0.875rem; color: var(--text-muted);">Technical documentation, schema, APIs, algorithms</div>
+                            </div>
+                        </div>
+                        <span style="background: white; border: 1px solid var(--border-color); padding: 0.2rem 0.6rem; border-radius: 99px; font-size: 0.75rem; font-weight: 600; color: #64748b;">Suraj</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script src="js/api.js"></script>
+    <script src="js/nav-auth.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Admin Check
+            if (window.API) {
+                const user = window.API.getUser();
+                if (!user || user.role !== 'admin') {
+                    window.location.href = 'index.html';
+                }
+            }
+
+            // Tab Switching Logic
+            const tabs = document.querySelectorAll('.docs-tab');
+            const contents = document.querySelectorAll('.tab-content');
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    contents.forEach(c => c.style.display = 'none');
+                    
+                    tab.classList.add('active');
+                    const targetId = tab.getAttribute('data-target');
+                    document.getElementById(targetId).style.display = 'block';
+                });
+            });
+        });
+    </script>
+</body>
+</html>

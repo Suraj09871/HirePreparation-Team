@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard - HireSmart</title>
+    <link rel="stylesheet" href="../../css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body style="background: #f8fafc;">
+    <nav class="navbar" style="border-bottom: 1px solid var(--border-color); background: white;">
+        <div class="logo">
+            <span class="logo-icon"></span>
+            HireSmart
+        </div>
+        <div class="nav-links">
+            <a href="../../index.html">Home</a>
+            <a href="jobs.html">Jobs</a>
+            <a href="practice.html">Practice</a>
+            <a href="preparation.html">Preparation</a>
+            <a href="#" class="active">Dashboard</a>
+            <a href="resume-builder.html">Resume Builder</a>
+        </div>
+        <div class="nav-actions">
+            <span id="notifIcon" style="cursor:pointer;font-size:1.15rem;position:relative;">🔔<span id="notifBadge" style="position:absolute;top:-4px;right:-6px;background:#ef4444;color:white;font-size:0.55rem;padding:0.1rem 0.25rem;border-radius:999px;display:none;">0</span></span>
+            <a href="student-profile.html" id="studentName" style="display:flex;align-items:center;gap:0.5rem;font-weight:500;font-size:0.875rem;text-decoration:none;color:var(--text-main);"><span style="width:28px;height:28px;background:var(--primary);color:white;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:bold;font-size:0.75rem;">S</span>Student</a>
+            <button class="btn btn-outline" onclick="handleLogout()"><span style="margin-right:0.25rem;">↪</span>Sign Out</button>
+        </div>
+    </nav>
+
+    <main class="container py-12">
+        <!-- Welcome Banner -->
+        <div id="welcomeBanner" style="background:linear-gradient(135deg,#1e293b 0%,#334155 100%);border-radius:16px;padding:2rem 2.5rem;color:white;margin-bottom:2rem;display:flex;justify-content:space-between;align-items:center;">
+            <div>
+                <h1 style="font-size:1.75rem;margin-bottom:0.5rem;" id="welcomeTitle">Welcome back! 👋</h1>
+                <p style="margin:0;opacity:0.8;font-size:0.9rem;">Track your progress, practice questions, and prepare for dream companies.</p>
+            </div>
+            <div style="display:flex;gap:0.75rem;">
+                <a href="practice.html" class="btn btn-primary" style="text-decoration:none;">Start Practicing</a>
+                <a href="mock-test.html" class="btn" style="text-decoration:none;background:rgba(255,255,255,0.15);color:white;border:1px solid rgba(255,255,255,0.2);">Take Mock Test</a>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div id="statsGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:1.25rem;margin-bottom:2.5rem;">
+            <div class="card-gradient-1" style="border-radius:12px;padding:1.25rem;">
+                <div style="font-size:0.75rem;font-weight:600;color:var(--text-muted);margin-bottom:0.5rem;">Profile Completion</div>
+                <div id="statProfile" style="font-size:2rem;font-weight:700;color:var(--text-main);">--%</div>
+            </div>
+            <div class="card-gradient-2" style="border-radius:12px;padding:1.25rem;">
+                <div style="font-size:0.75rem;font-weight:600;color:var(--text-muted);margin-bottom:0.5rem;">Resume Score</div>
+                <div id="statResume" style="font-size:2rem;font-weight:700;color:var(--text-main);">--%</div>
+            </div>
+            <div class="card-gradient-3" style="border-radius:12px;padding:1.25rem;">
+                <div style="font-size:0.75rem;font-weight:600;color:var(--text-muted);margin-bottom:0.5rem;">Skills Added</div>
+                <div id="statSkills" style="font-size:2rem;font-weight:700;color:var(--text-main);">0</div>
+            </div>
+            <div class="card-gradient-4" style="border-radius:12px;padding:1.25rem;">
+                <div style="font-size:0.75rem;font-weight:600;color:var(--text-muted);margin-bottom:0.5rem;">Mock Tests</div>
+                <div id="statMockTests" style="font-size:2rem;font-weight:700;color:var(--text-main);">0</div>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:2.5rem;">
+            <div style="background:white;border-radius:12px;border:1px solid var(--border-color);padding:1.5rem;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+                <h3 style="font-size:1rem;margin:0 0 1rem 0;">📊 Skill Overview</h3>
+                <canvas id="skillChart" height="220"></canvas>
+            </div>
+            <div style="background:white;border-radius:12px;border:1px solid var(--border-color);padding:1.5rem;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+                <h3 style="font-size:1rem;margin:0 0 1rem 0;">🏢 Recommended Companies</h3>
+                <div id="recommendedCompanies" style="display:flex;flex-direction:column;gap:0.75rem;"></div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <h2 style="font-size:1.25rem;margin-bottom:1rem;">⚡ Quick Access</h2>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:2.5rem;">
+            <a href="practice.html" style="text-decoration:none;"><div style="background:white;border:1px solid var(--border-color);border-radius:12px;padding:1.5rem;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 16px rgba(0,0,0,0.08)';" onmouseout="this.style.transform='';this.style.boxShadow='none';"><div style="font-size:2rem;margin-bottom:0.5rem;">💻</div><div style="font-weight:600;color:var(--text-main);">Practice Coding</div><div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.25rem;">Solve DSA problems</div></div></a>
+            <a href="preparation.html" style="text-decoration:none;"><div style="background:white;border:1px solid var(--border-color);border-radius:12px;padding:1.5rem;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 16px rgba(0,0,0,0.08)';" onmouseout="this.style.transform='';this.style.boxShadow='none';"><div style="font-size:2rem;margin-bottom:0.5rem;">📖</div><div style="font-weight:600;color:var(--text-main);">Company Prep</div><div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.25rem;">Interview guides</div></div></a>
+            <a href="resume-builder.html" style="text-decoration:none;"><div style="background:white;border:1px solid var(--border-color);border-radius:12px;padding:1.5rem;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 16px rgba(0,0,0,0.08)';" onmouseout="this.style.transform='';this.style.boxShadow='none';"><div style="font-size:2rem;margin-bottom:0.5rem;">📄</div><div style="font-weight:600;color:var(--text-main);">Resume Builder</div><div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.25rem;">Build & analyze</div></div></a>
+            <a href="mock-test.html" style="text-decoration:none;"><div style="background:white;border:1px solid var(--border-color);border-radius:12px;padding:1.5rem;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 16px rgba(0,0,0,0.08)';" onmouseout="this.style.transform='';this.style.boxShadow='none';"><div style="font-size:2rem;margin-bottom:0.5rem;">⏱</div><div style="font-weight:600;color:var(--text-main);">Mock Test</div><div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.25rem;">Timed practice</div></div></a>
+            <a href="student-profile.html" style="text-decoration:none;"><div style="background:white;border:1px solid var(--border-color);border-radius:12px;padding:1.5rem;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 16px rgba(0,0,0,0.08)';" onmouseout="this.style.transform='';this.style.boxShadow='none';"><div style="font-size:2rem;margin-bottom:0.5rem;">👤</div><div style="font-weight:600;color:var(--text-main);">My Profile</div><div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.25rem;">Edit details</div></div></a>
+        </div>
+
+        <!-- Notifications -->
+        <div id="notifPanel" style="display:none;margin-bottom:2rem;">
+            <h2 style="font-size:1.25rem;margin-bottom:1rem;">🔔 Notifications</h2>
+            <div id="notifList" style="display:flex;flex-direction:column;gap:0.5rem;"></div>
+        </div>
+    </main>
+
+    <script src="../../js/api.js"></script>
+    <script src="../../js/student-dashboard.js"></script>
+</body>
+</html>

@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HireSmart - Connect with Opportunities</title>
+    <link rel="stylesheet" href="./css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">
+            <span class="logo-icon"></span>
+            HireSmart
+        </div>
+        <div class="nav-links">
+            <a href="index.html" class="active">Home</a>
+            <a href="frontend/student/jobs.html">Jobs</a>
+            <a href="frontend/student/practice.html">Practice</a>
+            <a href="frontend/student/preparation.html">Preparation</a>
+            <a href="frontend/student/student-dashboard.html">Dashboard</a>
+            <a href="frontend/student/resume-builder.html">Resume Builder</a>
+
+        </div>
+        <div class="nav-actions">
+            <span style="font-size: 1.25rem; color: var(--text-muted); cursor: pointer; margin-right: 0.5rem;">☼</span>
+            <button id="loginBtn" class="btn btn-outline"><span class="icon-graduation" style="color: var(--text-main); margin-right: 0.25rem;"></span> Sign In</button>
+            <button id="signupBtn" class="btn btn-dark">Get Started</button>
+            <button id="logoutBtn" class="btn btn-outline hidden">Log Out</button>
+            <div id="userProfile" class="user-profile hidden"></div>
+        </div>
+    </nav>
+
+    <main>
+        <section class="hero bg-gradient-hero py-32 relative">
+            <div class="container relative z-10">
+                <div class="hero-content text-center mx-auto max-w-3xl">
+                    <div class="hero-badge"><span class="icon-zap"></span> Preparation meets opportunity</div>
+                    <h1 class="text-white text-5xl">Prepare Smart. <span class="highlight">Get Hired.</span></h1>
+                    <p class="text-white-70 max-w-xl mx-auto mt-6 text-lg">The only platform that combines company-specific interview preparation with intelligent candidate-job matching. Know your chances before you apply.</p>
+                    <div class="hero-actions justify-center mt-10">
+                        <button class="btn btn-primary btn-large px-8">Start Preparing <span class="icon-arrow"></span></button>
+                        <button class="btn btn-secondary btn-large px-8">I'm a Recruiter</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Stats Section -->
+        <section class="stats-section relative z-10">
+            <div class="container">
+                <div class="stats-grid glassmorphism">
+                    <div class="stat-item">
+                        <div class="stat-icon icon-briefcase"></div>
+                        <div class="stat-value-large">500+</div>
+                        <div class="stat-label-muted">Companies</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-icon icon-graduation"></div>
+                        <div class="stat-value-large">10K+</div>
+                        <div class="stat-label-muted">Students Prepared</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-icon icon-target"></div>
+                        <div class="stat-value-large">85%</div>
+                        <div class="stat-label-muted">Avg Match Rate</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-icon icon-zap"></div>
+                        <div class="stat-value-large">3x</div>
+                        <div class="stat-label-muted">Faster Hiring</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section class="features-section py-24">
+            <div class="container">
+                <div class="section-header text-center mx-auto max-w-2xl">
+                    <h2>Everything You Need to <span class="highlight">Succeed</span></h2>
+                    <p>A unified platform for job seekers and recruiters with intelligent matching at its core.</p>
+                </div>
+                <div class="features-grid mt-16">
+                    <div class="feature-card">
+                        <div class="feature-icon-wrapper"><span class="feature-icon icon-book"></span></div>
+                        <h3>Company-Wise Prep</h3>
+                        <p>Structured preparation paths tailored to each company's interview process and expectations.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon-wrapper"><span class="feature-icon icon-brain"></span></div>
+                        <h3>Intelligent Matching</h3>
+                        <p>Our rule-based AI calculates your skill match percentage and hiring probability before you apply.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon-wrapper"><span class="feature-icon icon-chart"></span></div>
+                        <h3>Smart Ranking</h3>
+                        <p>Recruiters see candidates ranked by weighted scores across skills, experience, and resume quality.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon-wrapper"><span class="feature-icon icon-search"></span></div>
+                        <h3>Skill Gap Detection</h3>
+                        <p>Identify missing skills and get targeted learning roadmaps to improve your match score.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon-wrapper"><span class="feature-icon icon-users"></span></div>
+                        <h3>Recruiter Dashboard</h3>
+                        <p>Post jobs, view ranked applicants, and manage hiring pipeline with intelligent insights.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon-wrapper"><span class="feature-icon icon-trending"></span></div>
+                        <h3>Application Tracking</h3>
+                        <p>Track every application from submission to offer with real-time status updates.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- How It Works Section -->
+        <section class="how-it-works py-24 bg-muted">
+            <div class="container">
+                <div class="section-header text-center mx-auto max-w-2xl">
+                    <h2>How It Works</h2>
+                    <p>Four simple steps from preparation to placement.</p>
+                </div>
+                <div class="steps-grid mt-16">
+                    <div class="step-card relative">
+                        <div class="step-connector"></div>
+                        <div class="step-number shadow-accent">01</div>
+                        <h3>Build Your Profile</h3>
+                        <p>Add skills, projects, and upload your resume for analysis.</p>
+                    </div>
+                    <div class="step-card relative">
+                        <div class="step-connector"></div>
+                        <div class="step-number shadow-accent">02</div>
+                        <h3>Prepare for Companies</h3>
+                        <p>Follow company-specific roadmaps and practice interview questions.</p>
+                    </div>
+                    <div class="step-card relative">
+                        <div class="step-connector"></div>
+                        <div class="step-number shadow-accent">03</div>
+                        <h3>Check Your Match</h3>
+                        <p>See your skill match % and hiring probability before applying.</p>
+                    </div>
+                    <div class="step-card relative">
+                        <div class="step-number shadow-accent">04</div>
+                        <h3>Get Hired</h3>
+                        <p>Apply with confidence and track your applications in real-time.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Matching Formula Section -->
+        <section class="matching-section py-24">
+            <div class="container mx-auto max-w-4xl">
+                <div class="matching-grid">
+                    <div class="matching-content">
+                        <h2>Intelligent <span class="highlight">Match Scoring</span></h2>
+                        <p>Our rule-based scoring system evaluates candidates across multiple dimensions to calculate precise hiring probability.</p>
+                        
+                        <div class="matching-list mt-8">
+                            <div class="matching-item">
+                                <span class="matching-icon icon-check"></span>
+                                <div>
+                                    <div class="matching-label">Skill Match <span class="accent">(60%)</span></div>
+                                    <div class="matching-desc">How well your skills align with requirements</div>
+                                </div>
+                            </div>
+                            <div class="matching-item">
+                                <span class="matching-icon icon-check"></span>
+                                <div>
+                                    <div class="matching-label">Experience <span class="accent">(20%)</span></div>
+                                    <div class="matching-desc">Relevant work and project experience</div>
+                                </div>
+                            </div>
+                            <div class="matching-item">
+                                <span class="matching-icon icon-check"></span>
+                                <div>
+                                    <div class="matching-label">Resume Quality <span class="accent">(20%)</span></div>
+                                    <div class="matching-desc">Completeness and presentation of your resume</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="matching-visual glass-card p-8">
+                        <div class="visual-header text-center">
+                            <div class="visual-title">Hiring Probability</div>
+                            <div class="visual-score highlight">87%</div>
+                            <div class="visual-subtitle">Sample match score</div>
+                        </div>
+                        <div class="skill-bars mt-8">
+                            <div class="skill-bar-container">
+                                <div class="skill-bar-header">
+                                    <span>React.js</span>
+                                    <span class="accent">95%</span>
+                                </div>
+                                <div class="skill-bar-bg"><div class="skill-bar-fill bg-gradient-accent" style="width: 95%"></div></div>
+                            </div>
+                            <div class="skill-bar-container">
+                                <div class="skill-bar-header">
+                                    <span>TypeScript</span>
+                                    <span class="accent">90%</span>
+                                </div>
+                                <div class="skill-bar-bg"><div class="skill-bar-fill bg-gradient-accent" style="width: 90%"></div></div>
+                            </div>
+                            <div class="skill-bar-container">
+                                <div class="skill-bar-header">
+                                    <span>Node.js</span>
+                                    <span class="accent">75%</span>
+                                </div>
+                                <div class="skill-bar-bg"><div class="skill-bar-fill bg-gradient-accent" style="width: 75%"></div></div>
+                            </div>
+                            <div class="skill-bar-container">
+                                <div class="skill-bar-header">
+                                    <span>System Design</span>
+                                    <span class="accent">60%</span>
+                                </div>
+                                <div class="skill-bar-bg"><div class="skill-bar-fill bg-gradient-accent" style="width: 60%"></div></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA Section -->
+        <section class="cta-section py-20 bg-gradient-hero">
+            <div class="container text-center">
+                <h2 class="text-white text-3xl md-text-4xl">Ready to Start Your Journey?</h2>
+                <p class="text-white-70 max-w-lg mx-auto mt-4">Join thousands of students who prepared smart and got hired at their dream companies.</p>
+                <div class="hero-actions justify-center mt-8">
+                    <button class="btn btn-primary btn-large px-8">Get Started Free <span class="icon-arrow"></span></button>
+                    <button class="btn btn-secondary btn-large px-8">Explore Companies</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Auth Modal -->
+        <div id="authModal" class="modal-overlay hidden">
+            <div class="modal-content glassmorphism">
+                <button id="closeModal" class="close-btn">&times;</button>
+                <h2 id="modalTitle">Welcome Back</h2>
+                <p id="modalSubtitle">Enter your credentials to continue</p>
+                
+                <form id="authForm">
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" placeholder="you@example.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" placeholder="••••••••" required>
+                    </div>
+                    <div id="authError" class="error-message hidden"></div>
+                    <button type="submit" id="submitAuth" class="btn btn-primary w-full">Sign In</button>
+                </form>
+                
+                <p class="switch-auth">
+                    <span id="switchText">Don't have an account?</span>
+                    <a href="#" id="switchMode">Sign Up</a>
+                </p>
+            </div>
+        </div>
+
+        <!-- Sample Content Section to test Supabase Data -->
+        <section id="jobs" class="jobs-section py-24 hidden">
+            <div class="container">
+                <div class="section-header text-center mx-auto max-w-2xl">
+                    <h2>Featured Opportunities</h2>
+                    <p>Latest roles from our partner companies</p>
+                </div>
+                <div id="jobsList" class="jobs-grid mt-16">
+                    <!-- Job cards will be injected here via JS -->
+                </div>
+                <div id="loadingJobs" class="loading-spinner hidden"></div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer border-t bg-card py-12">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <div class="logo">
+                        <span class="logo-icon"></span>
+                        HireSmart
+                    </div>
+                    <p class="footer-desc mt-3 text-sm text-muted">From preparation to hiring — your complete career platform.</p>
+                </div>
+                <div>
+                    <h4 class="footer-heading">For Students</h4>
+                    <ul class="footer-links mt-3 space-y-2 text-sm">
+                        <li><a href="#">Company Prep</a></li>
+                        <li><a href="#">Dashboard</a></li>
+                        <li><a href="#">Resume Builder</a></li>
+                        <li><a href="#">Job Search</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="footer-heading">For Recruiters</h4>
+                    <ul class="footer-links mt-3 space-y-2 text-sm">
+                        <li><a href="#">Dashboard</a></li>
+                        <li><a href="#">Post Jobs</a></li>
+                        <li><a href="#">Candidate Ranking</a></li>
+                        <li><a href="#">Analytics</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="footer-heading">Platform</h4>
+                    <ul class="footer-links mt-3 space-y-2 text-sm">
+                        <li><a href="#">About Us</a></li>
+                        <li><a href="#">Contact</a></li>
+                        <li><a href="#">Privacy Policy</a></li>
+                        <li><a href="#">Terms of Service</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom mt-10 border-t pt-6 text-center text-sm text-muted">
+                © 2026 HireSmart. Built by Shikha, Reenu, Sunny & Suraj.
+            </div>
+        </div>
+    </footer>
+
+    <!-- App Scripts -->
+    <script src="./js/api.js"></script>
+    <script src="./js/app.js"></script>
+</body>
+</html>

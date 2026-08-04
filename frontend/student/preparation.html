@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Company-Wise Preparation - HireSmart</title>
+    <link rel="stylesheet" href="../../css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body style="background: var(--bg-muted);">
+    <nav class="navbar" style="border-bottom: 1px solid var(--border-color); background: var(--card-bg);">
+        <div class="logo">
+            <span class="logo-icon"></span>
+            HireSmart
+        </div>
+        <div class="nav-links">
+            <a href="../../index.html">Home</a>
+            <a href="jobs.html">Jobs</a>
+            <a href="practice.html">Practice</a>
+            <a href="#" class="active">Preparation</a>
+            <a href="student-dashboard.html">Dashboard</a>
+        </div>
+        <div class="nav-actions">
+            <!-- Populated by nav-auth.js -->
+        </div>
+    </nav>
+
+    <!-- Main React-like rendering container -->
+    <main id="prepApp" style="min-height: calc(100vh - 70px);">
+        <div style="text-align:center;padding:5rem;color:var(--text-muted);">
+            <div style="font-size:2rem;margin-bottom:1rem;animation:pulse 2s infinite;">⏳</div>
+            Loading preparation data...
+        </div>
+    </main>
+
+    <script src="../../js/api.js"></script>
+    <script src="../../js/nav-auth.js"></script>
+    <script src="../../js/preparation.js"></script>
+</body>
+</html>

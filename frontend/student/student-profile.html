@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Profile - HireSmart</title>
+    <link rel="stylesheet" href="../../css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="../../js/theme.js"></script>
+</head>
+<body style="background: var(--bg-muted);">
+    <nav class="navbar" style="border-bottom: 1px solid var(--border-color); background: var(--card-bg);">
+        <div class="logo">
+            <span class="logo-icon"></span>
+            HireSmart
+        </div>
+        <div class="nav-links">
+            <a href="../../index.html">Home</a>
+            <a href="#">Jobs</a>
+            <a href="practice.html">Practice</a>
+            <a href="preparation.html">Preparation</a>
+            <a href="student-dashboard.html">Dashboard</a>
+            <a href="#">Resume Builder</a>
+
+        </div>
+        <div class="nav-actions">
+            <span id="themeToggle" style="font-size: 1.25rem; color: var(--text-muted); cursor: pointer; margin-right: 0.5rem;">☼</span>
+            <span style="font-size: 1.25rem; color: var(--text-muted); cursor: pointer; margin-right: 0.5rem;">🔔</span>
+            <span style="display: flex; align-items: center; gap: 0.5rem; font-weight: 500; font-size: 0.875rem;">
+                <span style="width: 28px; height: 28px; background: #e2e8f0; border-radius: 50%; display: inline-block;"></span> Ujjwal
+            </span>
+            <button class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.875rem;" onclick="handleLogout()">Sign Out</button>
+        </div>
+    </nav>
+
+    <main class="container py-12">
+        <div class="profile-layout">
+            
+            <!-- Sidebar Navigation -->
+            <aside class="profile-sidebar">
+                <div class="profile-sidebar-header">
+                    <div style="width: 48px; height: 48px; border-radius: 50%; background: #ea580c; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.5rem;">U</div>
+                    <div>
+                        <div style="font-weight: 600; color: var(--text-main); font-size: 1rem;" id="sideName">Ujjwal</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);" id="sideEmail">looserbrothers.18@gmail.com</div>
+                    </div>
+                </div>
+                <div class="profile-sidebar-nav">
+                    <a href="#" class="sidebar-link">🎓 Internships</a>
+                    <a href="#" class="sidebar-link">💼 Jobs</a>
+                    <a href="roadmap.html" class="sidebar-link">🗺 Roadmap</a>
+                    <a href="preparation.html" class="sidebar-link">🏢 Company Prep</a>
+                    <a href="student-profile.html" class="sidebar-link active">⚙ Settings</a>
+                    <a href="#" class="sidebar-link">📈 Your Activity</a>
+                </div>
+                <div style="margin-top: 2rem; padding: 0 1rem;">
+                    <a href="#" class="sidebar-link text-danger" onclick="handleLogout()">🚪 Sign Out</a>
+                </div>
+            </aside>
+
+            <!-- Main Content Area -->
+            <section class="profile-content">
+                <a href="student-dashboard.html" style="color: var(--text-muted); text-decoration: none; font-size: 0.875rem; display: inline-flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">← Go Back</a>
+                
+                <h1 style="font-size: 1.5rem; margin-bottom: 0.25rem;">Settings</h1>
+                <p style="margin: 0 0 2rem 0; color: var(--text-muted); font-size: 0.875rem;">Manage your account settings</p>
+
+                <!-- Settings Nav -->
+                <div class="settings-nav">
+                    <button class="settings-tab active">👤 Edit Profile</button>
+                    <button class="settings-tab">📷 Profile Image</button>
+                    <button class="settings-tab">🔑 Password Manager</button>
+                    <button class="settings-tab">🛡 Privacy</button>
+                    <button class="settings-tab text-danger">🗑 Delete Account</button>
+                </div>
+
+                <!-- Create Resume CTA -->
+                <div style="background: #1e293b; color: white; border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; display: flex; align-items: center; gap: 1.5rem; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#0f172a'" onmouseout="this.style.background='#1e293b'">
+                    <div style="width: 48px; height: 48px; background: rgba(255,255,255,0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">📄</div>
+                    <h3 style="margin: 0; font-size: 1.125rem;">+ Create your Resume</h3>
+                </div>
+
+                <!-- Edit Profile Accordions -->
+                <div class="accordion-wrapper">
+                    
+                    <!-- Basic Details -->
+                    <div class="accordion-item">
+                        <div class="accordion-header">
+                            <div class="accordion-title"><span class="accordion-icon">▶</span> Basic Details</div>
+                            <div class="accordion-status"><span class="badge-required">Required</span> &gt;</div>
+                        </div>
+                        <div class="accordion-content">
+                            <div style="display: flex; justify-content: center; margin-bottom: 2rem;">
+                                <div style="position: relative;">
+                                    <div style="width: 80px; height: 80px; border-radius: 50%; background: #ea580c; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 2rem;">U</div>
+                                    <div style="position: absolute; bottom: 0; right: 0; background: white; padding: 0.3rem; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer; font-size: 0.75rem;">📷</div>
+                                </div>
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                                <div class="form-group">
+                                    <label>Full Name <span style="color:#ef4444">*</span></label>
+                                    <input type="text" id="profileName">
+                                </div>
+                                <div class="form-group">
+                                    <label>Professional Title</label>
+                                    <input type="text" id="profileTitle" placeholder="e.g. Full Stack Developer">
+                                </div>
+                                <div class="form-group" style="grid-column: span 2;">
+                                    <label>Email <span style="color:#ef4444">*</span></label>
+                                    <input type="email" id="profileEmail" readonly>
+                                </div>
+                                <div class="form-group" style="grid-column: span 2;">
+                                    <label>Mobile <span style="color:#ef4444">*</span></label>
+                                    <input type="text" id="profilePhone" placeholder="+91 9876543210">
+                                </div>
+                                <div class="form-group" style="grid-column: span 2;">
+                                    <label>Date of Birth <span style="color:#ef4444">*</span></label>
+                                    <input type="date" id="profileDob">
+                                </div>
+                                <div class="form-group" style="grid-column: span 2;">
+                                    <label>Gender <span style="color:#ef4444">*</span></label>
+                                    <div class="pill-group" id="genderGroup">
+                                        <button class="pill-btn" data-value="Male">Male</button>
+                                        <button class="pill-btn" data-value="Female">Female</button>
+                                        <button class="pill-btn" data-value="Other">Other</button>
+                                    </div>
+                                </div>
+                                <div class="form-group" style="grid-column: span 2;">
+                                    <label>User Type <span style="color:#ef4444">*</span></label>
+                                    <div class="pill-group" style="display: grid; grid-template-columns: 1fr 1fr;" id="userTypeGroup">
+                                        <button class="pill-btn" data-value="College Student">College Student</button>
+                                        <button class="pill-btn" data-value="Professional">Professional</button>
+                                        <button class="pill-btn" data-value="School Student">School Student</button>
+                                        <button class="pill-btn" data-value="Fresher">Fresher</button>
+                                    </div>
+                                </div>
+                                <div class="form-group" style="grid-column: span 2;">
+                                    <label>Domain <span style="color:#ef4444">*</span></label>
+                                    <div class="pill-group" id="domainGroup">
+                                        <button class="pill-btn" data-value="Management">Management</button>
+                                        <button class="pill-btn" data-value="Engineering">Engineering</button>
+                                        <button class="pill-btn" data-value="Arts & Science">Arts & Science</button>
+                                        <button class="pill-btn" data-value="Medicine">Medicine</button>
+                                        <button class="pill-btn" data-value="Law">Law</button>
+                                        <button class="pill-btn" data-value="Others">Others</button>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Course <span style="color:#ef4444">*</span></label>
+                                    <input type="text" id="profileCourse" placeholder="e.g. B.Tech/BE">
+                                </div>
+                                <div class="form-group">
+                                    <label>Specialization <span style="color:#ef4444">*</span></label>
+                                    <input type="text" id="profileSpecialization" placeholder="e.g. Computer Science">
+                                </div>
+                            </div>
+                            <button class="btn btn-dark w-full mt-6" onclick="saveBasicDetails()">💾 Save</button>
+                        </div>
+                    </div>
+
+                    <!-- Personal Details -->
+                    <div class="accordion-item">
+                        <div class="accordion-header">
+                            <div class="accordion-title"><span class="accordion-icon">▶</span> Personal Details</div>
+                            <div class="accordion-status">&gt;</div>
+                        </div>
+                        <div class="accordion-content">
+                            <div class="form-group">
+                                <label>Pronouns</label>
+                                <div class="pill-group" id="pronounsGroup">
+                                    <button class="pill-btn" data-value="He/Him/his">He/Him/his</button>
+                                    <button class="pill-btn" data-value="She/Her">She/Her</button>
+                                    <button class="pill-btn" data-value="Them/They">Them/They</button>
+                                </div>
+                            </div>
+                            <div style="border: 1px solid var(--border-color); border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem;">
+                                <h4 style="margin: 0 0 1rem 0; font-size: 0.875rem;">Current Address</h4>
+                                <div class="form-group">
+                                    <label>Address Line 1</label>
+                                    <input type="text" id="profileAddress" placeholder="Street / Area">
+                                </div>
+                                <div class="form-group">
+                                    <label>Landmark</label>
+                                    <input type="text" id="profileLandmark" placeholder="Landmark">
+                                </div>
+                                <div class="form-group">
+                                    <label>Pincode</label>
+                                    <input type="text" id="profilePincode" placeholder="e.g. 110076">
+                                </div>
+                                <div class="form-group">
+                                    <label>City, State</label>
+                                    <input type="text" id="profileCity" placeholder="e.g. New Delhi, Delhi, India">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Hobbies</label>
+                                <input type="text" id="profileHobbies" placeholder="List your hobbies. Press Enter to add.">
+                            </div>
+                            <button class="btn btn-dark w-full mt-4" onclick="savePersonalDetails()">💾 Save</button>
+                        </div>
+                    </div>
+
+                    <!-- Accomplishments & Initiatives -->
+                    <div class="accordion-item">
+                        <div class="accordion-header">
+                            <div class="accordion-title"><span class="accordion-icon">▶</span> Accomplishments & Initiatives</div>
+                            <div class="accordion-status">&gt;</div>
+                        </div>
+                        <div class="accordion-content">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+                                <div class="card-gradient-1" style="padding: 1.5rem; border-radius: 12px; cursor: pointer;">
+                                    <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">🏆</div>
+                                    <h4 style="margin: 0 0 0.25rem 0; font-size: 0.875rem;">Add Certificates</h4>
+                                    <p style="margin: 0; font-size: 0.75rem; color: var(--text-muted);">Boost your profile with a certificate to impress employers</p>
+                                </div>
+                                <div class="card-gradient-2" style="padding: 1.5rem; border-radius: 12px; cursor: pointer;">
+                                    <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">📄</div>
+                                    <h4 style="margin: 0 0 0.25rem 0; font-size: 0.875rem;">Add Projects</h4>
+                                    <p style="margin: 0; font-size: 0.75rem; color: var(--text-muted);">Boost your profile with a project to impress employers</p>
+                                </div>
+                                <div class="card-gradient-3" style="padding: 1.5rem; border-radius: 12px; cursor: pointer;">
+                                    <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">🏅</div>
+                                    <h4 style="margin: 0 0 0.25rem 0; font-size: 0.875rem;">Add Achievements</h4>
+                                    <p style="margin: 0; font-size: 0.75rem; color: var(--text-muted);">Boost your profile with an achievement to impress employers</p>
+                                </div>
+                                <div class="card-gradient-4" style="padding: 1.5rem; border-radius: 12px; cursor: pointer;">
+                                    <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">🤝</div>
+                                    <h4 style="margin: 0 0 0.25rem 0; font-size: 0.875rem;">Add Responsibility</h4>
+                                    <p style="margin: 0; font-size: 0.75rem; color: var(--text-muted);">Boost your profile with a responsibility to impress employers</p>
+                                </div>
+                            </div>
+                            <button class="btn btn-dark w-full">💾 Save</button>
+                        </div>
+                    </div>
+
+                    <!-- Legacy Sections Mapping -->
+                    <div class="accordion-item">
+                        <div class="accordion-header">
+                            <div class="accordion-title"><span class="accordion-icon">▶</span> Resume (Legacy Score)</div>
+                            <div class="accordion-status">&gt;</div>
+                        </div>
+                        <div class="accordion-content">
+                            <div style="border: 2px dashed var(--border-color); border-radius: 8px; padding: 2rem; text-align: center; margin-bottom: 1rem;">
+                                <div style="font-size: 2rem; margin-bottom: 0.5rem;">📄</div>
+                                <p style="color: var(--text-muted); font-size: 0.875rem;">Upload your latest resume (PDF)</p>
+                                <input type="file" id="resumeInput" accept=".pdf,.doc,.docx" style="display:none;">
+                                <button class="btn btn-primary mt-3" id="resumeBtn">Select File</button>
+                            </div>
+                            <div style="display: flex; align-items: center; justify-content: space-between;">
+                                <span>ATS Score</span>
+                                <span style="font-size: 1.5rem; font-weight: 700; color: #10b981;"><span id="resumeScore">0</span>/100</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Profile Image Tab -->
+                <div id="tab-profile-image" class="tab-panel" style="display:none;">
+                    <div class="accordion-wrapper" style="padding:2rem;">
+                        <div style="text-align:center;margin-bottom:2rem;">
+                            <div style="width:120px;height:120px;border-radius:50%;background:var(--primary);color:white;display:inline-flex;align-items:center;justify-content:center;font-size:3rem;font-weight:bold;" id="avatarPreview">U</div>
+                        </div>
+                        <div style="border:2px dashed var(--border-color);border-radius:12px;padding:2rem;text-align:center;">
+                            <p style="color:var(--text-muted);font-size:0.875rem;margin-bottom:1rem;">Upload a profile picture (JPG, PNG)</p>
+                            <button class="btn btn-primary">📷 Choose Image</button>
+                        </div>
+                        <button class="btn btn-dark w-full mt-6">💾 Save Image</button>
+                    </div>
+                </div>
+
+                <!-- Password Manager Tab -->
+                <div id="tab-password" class="tab-panel" style="display:none;">
+                    <div class="accordion-wrapper" style="padding:2rem;">
+                        <h3 style="margin-bottom:1.5rem;font-size:1.125rem;">Change Password</h3>
+                        <div class="form-group"><label>Current Password</label><input type="password" placeholder="Enter current password"></div>
+                        <div class="form-group"><label>New Password</label><input type="password" placeholder="Enter new password"></div>
+                        <div class="form-group"><label>Confirm New Password</label><input type="password" placeholder="Confirm new password"></div>
+                        <button class="btn btn-dark w-full mt-4">🔑 Update Password</button>
+                    </div>
+                </div>
+
+                <!-- Privacy Tab -->
+                <div id="tab-privacy" class="tab-panel" style="display:none;">
+                    <div class="accordion-wrapper" style="padding:2rem;">
+                        <h3 style="margin-bottom:1.5rem;font-size:1.125rem;">Privacy Settings</h3>
+                        <div style="display:flex;justify-content:space-between;align-items:center;padding:1rem 0;border-bottom:1px solid var(--border-color);">
+                            <div><strong>Profile Visibility</strong><p style="font-size:0.8rem;">Allow recruiters to view your profile</p></div>
+                            <label style="position:relative;width:50px;height:26px;"><input type="checkbox" checked style="opacity:0;width:0;height:0;"><span style="position:absolute;cursor:pointer;inset:0;background:#10b981;border-radius:26px;transition:0.3s;"></span></label>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;align-items:center;padding:1rem 0;border-bottom:1px solid var(--border-color);">
+                            <div><strong>Email Notifications</strong><p style="font-size:0.8rem;">Receive email alerts for new jobs</p></div>
+                            <label style="position:relative;width:50px;height:26px;"><input type="checkbox" checked style="opacity:0;width:0;height:0;"><span style="position:absolute;cursor:pointer;inset:0;background:#10b981;border-radius:26px;transition:0.3s;"></span></label>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;align-items:center;padding:1rem 0;">
+                            <div><strong>Show Resume Score</strong><p style="font-size:0.8rem;">Display your ATS score to recruiters</p></div>
+                            <label style="position:relative;width:50px;height:26px;"><input type="checkbox" style="opacity:0;width:0;height:0;"><span style="position:absolute;cursor:pointer;inset:0;background:var(--border-color);border-radius:26px;transition:0.3s;"></span></label>
+                        </div>
+                        <button class="btn btn-dark w-full mt-6">💾 Save Privacy Settings</button>
+                    </div>
+                </div>
+
+                <!-- Delete Account Tab -->
+                <div id="tab-delete" class="tab-panel" style="display:none;">
+                    <div class="accordion-wrapper" style="padding:2rem;">
+                        <div style="text-align:center;padding:2rem;">
+                            <div style="font-size:3rem;margin-bottom:1rem;">⚠️</div>
+                            <h3 style="color:#ef4444;margin-bottom:0.5rem;">Delete Your Account</h3>
+                            <p style="color:var(--text-muted);font-size:0.875rem;margin-bottom:2rem;">This action is permanent and cannot be undone. All your data will be erased.</p>
+                            <div class="form-group"><label>Type "DELETE" to confirm</label><input type="text" id="deleteConfirm" placeholder="DELETE"></div>
+                            <button class="btn w-full mt-4" style="background:#ef4444;color:white;" onclick="if(document.getElementById('deleteConfirm').value==='DELETE'){alert('Account deletion requested.');}else{alert('Please type DELETE to confirm.');}">🗑 Permanently Delete Account</button>
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+        </div>
+    </main>
+
+    <footer style="margin-top: 4rem; padding: 2rem 0; border-top: 1px solid var(--border-color); background: var(--bg-color);">
+        <div class="container text-center text-muted" style="font-size: 0.75rem;">
+            © 2026 HireSmart. Built by Shikha, Reenu, Sunny & Suraj.
+        </div>
+    </footer>
+
+    <script src="../../js/api.js"></script>
+    <script src="../../js/nav-auth.js"></script>
+    <script src="../../js/student-profile.js"></script>
+</body>
+</html>

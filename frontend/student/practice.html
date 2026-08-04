@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Practice - HireSmart | 500+ Real Interview Questions</title>
+    <meta name="description" content="Practice coding, MCQ, and aptitude questions asked by top companies like Google, Amazon, Microsoft, TCS, Infosys and more.">
+    <link rel="stylesheet" href="../../css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="../../js/theme.js"></script>
+    <style>
+        .practice-hero {
+            background: linear-gradient(135deg, rgba(249, 115, 22, 0.08) 0%, rgba(30, 41, 59, 0.05) 100%);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 2rem 2.5rem;
+            margin-bottom: 2rem;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 1.25rem;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .stat-card .stat-value { font-size: 1.75rem; font-weight: 700; color: var(--primary); }
+        .stat-card .stat-label { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem; }
+        
+        .topic-chips {
+            display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.5rem;
+            padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);
+        }
+        .topic-chip {
+            padding: 0.4rem 1rem; border-radius: 999px; font-size: 0.8rem; font-weight: 500;
+            border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-main);
+            cursor: pointer; transition: all 0.2s; white-space: nowrap;
+        }
+        .topic-chip:hover, .topic-chip.active {
+            background: var(--primary); color: white; border-color: var(--primary);
+        }
+        
+        .company-pills {
+            display: flex; gap: 0.75rem; overflow-x: auto; padding-bottom: 0.5rem;
+            scrollbar-width: thin; margin-bottom: 1.5rem;
+        }
+        .company-pill {
+            display: flex; align-items: center; gap: 0.5rem;
+            padding: 0.5rem 1.25rem; border-radius: 999px; font-size: 0.85rem; font-weight: 600;
+            border: 2px solid var(--border-color); background: var(--card-bg); color: var(--text-main);
+            cursor: pointer; transition: all 0.25s; white-space: nowrap; flex-shrink: 0;
+        }
+        .company-pill:hover { border-color: var(--primary); transform: translateY(-1px); }
+        .company-pill.active { border-color: var(--primary); background: var(--primary); color: white; }
+        .company-pill .company-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        
+        .category-tabs {
+            display: flex; gap: 0.5rem; border-bottom: 2px solid var(--border-color);
+            margin-bottom: 1.5rem; padding-bottom: 0;
+        }
+        .category-tab {
+            padding: 0.75rem 1.5rem; border: none; background: none; font-size: 0.95rem; font-weight: 500;
+            color: var(--text-muted); cursor: pointer; border-bottom: 3px solid transparent;
+            transition: all 0.2s; display: flex; align-items: center; gap: 0.5rem; margin-bottom: -2px;
+        }
+        .category-tab:hover { color: var(--text-main); }
+        .category-tab.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
+        .category-tab .tab-count {
+            background: var(--bg-muted); padding: 0.1rem 0.5rem; border-radius: 999px; font-size: 0.75rem;
+        }
+        .category-tab.active .tab-count { background: rgba(249, 115, 22, 0.15); color: var(--primary); }
+        
+        .controls-bar {
+            display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; align-items: center;
+        }
+        .search-box {
+            flex: 1; min-width: 280px; position: relative;
+        }
+        .search-box input {
+            width: 100%; padding: 0.75rem 1rem 0.75rem 2.75rem;
+            border: 2px solid var(--border-color); border-radius: 12px;
+            font-size: 0.95rem; background: var(--card-bg); color: var(--text-main);
+            transition: border-color 0.2s;
+        }
+        .search-box input:focus { outline: none; border-color: var(--primary); }
+        .search-box .search-icon {
+            position: absolute; left: 1rem; top: 50%; transform: translateY(-50%);
+            color: var(--text-muted); font-size: 1.1rem;
+        }
+        
+        .filter-select {
+            padding: 0.75rem 1.25rem; border: 2px solid var(--border-color); border-radius: 12px;
+            font-size: 0.9rem; background: var(--card-bg); color: var(--text-main);
+            cursor: pointer; min-width: 160px;
+        }
+        
+        .question-card {
+            background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 14px;
+            padding: 1.25rem 1.5rem; display: flex; align-items: center; justify-content: space-between;
+            transition: all 0.25s; cursor: pointer; margin-bottom: 0.625rem;
+        }
+        .question-card:hover {
+            transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+            border-color: var(--primary);
+        }
+        .question-card .q-number {
+            width: 36px; height: 36px; background: var(--bg-muted); border-radius: 10px;
+            display: flex; align-items: center; justify-content: center; font-weight: 700;
+            color: var(--text-muted); font-size: 0.8rem; flex-shrink: 0;
+        }
+        .question-card .q-info { min-width: 0; flex: 1; margin-left: 1rem; }
+        .question-card .q-title { font-weight: 600; font-size: 0.95rem; color: var(--text-main); margin-bottom: 0.35rem; }
+        .question-card .q-meta { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+        .badge-easy { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+        .badge-medium { background: rgba(249, 115, 22, 0.1); color: #f97316; }
+        .badge-hard { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+        .badge {
+            font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 6px; font-weight: 600;
+        }
+        .badge-tag {
+            font-size: 0.7rem; background: var(--bg-muted); border: 1px solid var(--border-color);
+            padding: 0.12rem 0.45rem; border-radius: 6px; color: var(--text-muted);
+        }
+        .badge-company {
+            font-size: 0.72rem; background: #e0f2fe; color: #0284c7; padding: 0.15rem 0.6rem;
+            border-radius: 999px; font-weight: 600;
+        }
+        .badge-acceptance {
+            font-size: 0.7rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.25rem;
+        }
+        
+        .solve-btn {
+            padding: 0.5rem 1.25rem; background: var(--primary); color: white; border: none;
+            border-radius: 10px; font-size: 0.85rem; font-weight: 600; cursor: pointer;
+            transition: all 0.2s; flex-shrink: 0;
+        }
+        .solve-btn:hover { opacity: 0.9; transform: scale(1.03); }
+        
+        .pagination {
+            display: flex; justify-content: center; align-items: center; gap: 0.5rem;
+            margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);
+        }
+        .page-btn {
+            padding: 0.5rem 0.875rem; border: 1px solid var(--border-color); border-radius: 8px;
+            background: var(--card-bg); color: var(--text-main); cursor: pointer;
+            font-size: 0.85rem; transition: all 0.2s;
+        }
+        .page-btn:hover { border-color: var(--primary); }
+        .page-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+        .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        
+        .quiz-float-btn {
+            position: fixed; bottom: 2rem; right: 2rem;
+            padding: 0.875rem 1.75rem; background: linear-gradient(135deg, #f97316, #ea580c);
+            color: white; border: none; border-radius: 14px; font-size: 1rem; font-weight: 600;
+            cursor: pointer; box-shadow: 0 8px 24px rgba(249, 115, 22, 0.35);
+            transition: all 0.3s; z-index: 50; display: none;
+        }
+        .quiz-float-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(249, 115, 22, 0.45); }
+        
+        @media (max-width: 768px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .controls-bar { flex-direction: column; }
+            .search-box { min-width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo"><span class="logo-icon"></span>HireSmart</div>
+        <div class="nav-links">
+            <a href="../../index.html">Home</a>
+            <a href="jobs.html">Jobs</a>
+            <a href="#" class="active">Practice</a>
+            <a href="preparation.html">Preparation</a>
+            <a href="student-dashboard.html">Dashboard</a>
+            <a href="resume-builder.html">Resume Builder</a>
+        </div>
+        <div class="nav-actions">
+            <span id="themeToggle" onclick="toggleTheme()" style="font-size: 1.25rem; color: var(--text-muted); cursor: pointer; margin-right: 0.5rem;">☼</span>
+            <button class="btn btn-outline" onclick="window.location.href='../auth.html'">Sign In</button>
+            <button class="btn btn-dark" onclick="window.location.href='../auth.html'">Get Started</button>
+        </div>
+    </nav>
+
+    <main class="container py-12">
+        <!-- Hero Section -->
+        <div class="practice-hero">
+            <div style="display: flex; gap: 1.5rem; align-items: center;">
+                <div style="background: linear-gradient(135deg, #f97316, #ea580c); color: white; width: 64px; height: 64px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 1.75rem; font-weight: bold; box-shadow: 0 10px 20px rgba(249, 115, 22, 0.25);">&lt;/&gt;</div>
+                <div>
+                    <h1 style="font-size: 2rem; margin-bottom: 0.25rem; background: linear-gradient(135deg, var(--text-main), var(--primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Practice Hub</h1>
+                    <p style="margin: 0; color: var(--text-muted); font-size: 0.95rem;">Master coding, aptitude & MCQ questions asked by Google, Amazon, TCS, Infosys & 10+ companies</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="codingCount">0</div>
+                <div class="stat-label">Coding Problems</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="mcqCount">0</div>
+                <div class="stat-label">MCQ Questions</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="aptitudeCount">0</div>
+                <div class="stat-label">Aptitude Questions</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">13+</div>
+                <div class="stat-label">Companies Covered</div>
+            </div>
+        </div>
+
+        <!-- Company Filter Pills -->
+        <div class="company-pills">
+            <button class="company-pill company-btn"><span class="company-dot" style="background: #ea4335;"></span>Google</button>
+            <button class="company-pill company-btn"><span class="company-dot" style="background: #ff9900;"></span>Amazon</button>
+            <button class="company-pill company-btn"><span class="company-dot" style="background: #00a1f1;"></span>Microsoft</button>
+            <button class="company-pill company-btn"><span class="company-dot" style="background: #0668E1;"></span>Meta</button>
+            <button class="company-pill company-btn"><span class="company-dot" style="background: #1B69B6;"></span>TCS</button>
+            <button class="company-pill company-btn"><span class="company-dot" style="background: #007CC3;"></span>Infosys</button>
+            <button class="company-pill company-btn"><span class="company-dot" style="background: #4E2A84;"></span>Wipro</button>
+            <button class="company-pill company-btn"><span class="company-dot" style="background: #A100FF;"></span>Accenture</button>
+            <button class="company-pill company-btn"><span class="company-dot" style="background: #0033A0;"></span>Cognizant</button>
+            <button class="company-pill company-btn"><span class="company-dot" style="background: #DA291C;"></span>HCL</button>
+            <button class="company-pill company-btn"><span class="company-dot" style="background: #0070AD;"></span>Capgemini</button>
+            <button class="company-pill company-btn"><span class="company-dot" style="background: #A2AAAD;"></span>Apple</button>
+            <button class="company-pill company-btn"><span class="company-dot" style="background: #E50914;"></span>Netflix</button>
+        </div>
+
+        <!-- Category Tabs -->
+        <div class="category-tabs">
+            <button class="category-tab active" data-type="coding">
+                <span>⟨/⟩</span> Coding <span class="tab-count" id="codingTabCount">0</span>
+            </button>
+            <button class="category-tab" data-type="coding_mcq">
+                <span>❓</span> Coding MCQ <span class="tab-count" id="mcqTabCount">0</span>
+            </button>
+            <button class="category-tab" data-type="aptitude">
+                <span>🧠</span> Aptitude <span class="tab-count" id="aptitudeTabCount">0</span>
+            </button>
+        </div>
+
+        <!-- Controls Bar -->
+        <div class="controls-bar">
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="searchInput" placeholder="Search questions, topics, companies...">
+            </div>
+            <select id="diffFilter" class="filter-select">
+                <option value="">All Difficulties</option>
+                <option value="Easy">🟢 Easy</option>
+                <option value="Medium">🟠 Medium</option>
+                <option value="Hard">🔴 Hard</option>
+            </select>
+        </div>
+
+        <!-- Questions Container -->
+        <div id="questions-container" style="display: flex; flex-direction: column;">
+            <div id="loading-indicator" style="text-align: center; padding: 3rem; color: var(--text-muted);">
+                <div style="width: 40px; height: 40px; border: 3px solid var(--border-color); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 1rem;"></div>
+                Loading questions from database...
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        <div id="pagination-controls" class="pagination"></div>
+        
+        <!-- Floating Quiz Button -->
+        <button class="quiz-float-btn" id="takeQuizBtn" onclick="window.location.href='mcq-quiz.html'">▶ Start Practice Quiz</button>
+    </main>
+
+    <style>
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+
+    <script src="../../js/api.js"></script>
+    <script src="../../js/nav-auth.js"></script>
+    <script src="../../js/practice.js"></script>
+</body>
+</html>

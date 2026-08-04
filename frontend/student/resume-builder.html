@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ATS Resume Builder - HireSmart</title>
+    <link rel="stylesheet" href="../../css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body style="background: #f8fafc;">
+    <nav class="navbar">
+        <div class="logo">
+            <span class="logo-icon"></span>
+            HireSmart
+        </div>
+        <div class="nav-links">
+            <a href="../../index.html">Home</a>
+            <a href="jobs.html">Jobs</a>
+            <a href="practice.html">Practice</a>
+            <a href="preparation.html">Preparation</a>
+            <a href="student-dashboard.html">Dashboard</a>
+            <a href="#" class="active">Resume Builder</a>
+        </div>
+        <div class="nav-actions">
+            <span style="font-size: 1.25rem; color: var(--text-muted); cursor: pointer; margin-right: 0.5rem;">☼</span>
+            <button class="btn btn-outline" onclick="window.location.href='/frontend/student/student-auth.html'">Sign In</button>
+            <button class="btn btn-dark" onclick="window.location.href='/frontend/student/student-auth.html'">Get Started</button>
+        </div>
+    </nav>
+
+    <main class="container py-12">
+        <div style="margin-bottom: 2rem;">
+            <a href="student-dashboard.html" style="color: var(--text-muted); text-decoration: none; font-size: 0.875rem; display: inline-flex; align-items: center; gap: 0.5rem;">← Back to Dashboard</a>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2.5rem;">
+            <div>
+                <h1 style="font-size: 2.25rem; margin-bottom: 0.25rem;">ATS Resume Builder</h1>
+                <p style="margin: 0; color: var(--text-muted);">Choose a template, fill in your details, and see live preview.</p>
+            </div>
+            <button id="downloadPdfBtn" class="btn btn-dark" style="display: flex; align-items: center; gap: 0.5rem; border-radius: 8px;">
+                <span style="font-size: 1.25rem;">🖨</span> Download PDF
+            </button>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2.5rem;">
+            <!-- Left Column (Form) -->
+            <div id="resumeForm" style="display: flex; flex-direction: column; gap: 1.5rem;">
+                
+                <!-- Choose Template -->
+                <div style="background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                    <h3 style="font-size: 1.125rem; margin-bottom: 1.25rem; font-weight: 600; color: var(--text-main);">Choose Template</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+                        <div class="template-option" style="border: 2px solid var(--primary); border-radius: 8px; padding: 1rem; position: relative; cursor: pointer;">
+                            <div class="tmpl-check" style="position: absolute; top: -8px; right: -8px; background: var(--primary); color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem;">✓</div>
+                            <div style="height: 50px; background: linear-gradient(to right, #fecaca, #fbcfe8); border-radius: 4px; margin-bottom: 0.5rem;"></div>
+                            <div class="tmpl-label" style="font-size: 0.8rem; font-weight: 500;">Modern</div>
+                        </div>
+                        <div class="template-option" style="border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; cursor: pointer;">
+                            <div class="tmpl-check" style="position: absolute; top: -8px; right: -8px; background: var(--primary); color: white; width: 20px; height: 20px; border-radius: 50%; display: none; align-items: center; justify-content: center; font-size: 0.75rem;">✓</div>
+                            <div style="height: 50px; background: #f1f5f9; border-radius: 4px; margin-bottom: 0.5rem;"></div>
+                            <div class="tmpl-label" style="font-size: 0.8rem; font-weight: 500; color: var(--text-muted);">Classic</div>
+                        </div>
+                        <div class="template-option" style="border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; cursor: pointer;">
+                            <div class="tmpl-check" style="position: absolute; top: -8px; right: -8px; background: var(--primary); color: white; width: 20px; height: 20px; border-radius: 50%; display: none; align-items: center; justify-content: center; font-size: 0.75rem;">✓</div>
+                            <div style="height: 50px; border: 1px solid #e2e8f0; border-radius: 4px; margin-bottom: 0.5rem;"></div>
+                            <div class="tmpl-label" style="font-size: 0.8rem; font-weight: 500; color: var(--text-muted);">Minimal</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Import from Profile -->
+                <div style="background: white; border: 1px solid rgba(249, 115, 22, 0.3); border-radius: 12px; padding: 1.5rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px -1px rgba(249, 115, 22, 0.05);">
+                    <div>
+                        <h3 style="font-size: 1rem; margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.5rem; color: var(--text-main); font-weight: 600;"><span style="color: var(--primary);">👤</span> Import from Profile</h3>
+                        <p style="margin: 0; color: var(--text-muted); font-size: 0.875rem;">Auto-fill name, email, phone, bio & skills from your profile.</p>
+                    </div>
+                    <button id="importProfileBtn" class="btn btn-outline" style="border-radius: 8px; display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem;">
+                        <span>📥</span> Import
+                    </button>
+                </div>
+
+                <!-- Personal Information -->
+                <div style="background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                    <h3 style="font-size: 1.125rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem; font-weight: 600; color: var(--text-main);"><span style="color: var(--primary);">✉</span> Personal Information</h3>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+                        <div>
+                            <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-main); margin-bottom: 0.5rem;">Full Name</label>
+                            <input type="text" id="rbName" placeholder="Your full name" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.875rem; background: white;">
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-main); margin-bottom: 0.5rem;">Professional Title</label>
+                            <input type="text" id="rbTitle" placeholder="Full Stack Developer" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.875rem; background: white;">
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-main); margin-bottom: 0.5rem;">Email</label>
+                            <input type="email" id="rbEmail" placeholder="you@example.com" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.875rem; background: white;">
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-main); margin-bottom: 0.5rem;">Phone</label>
+                            <input type="text" id="rbPhone" placeholder="+91 98765 43210" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.875rem; background: white;">
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-main); margin-bottom: 0.5rem;">Location</label>
+                            <input type="text" id="rbLocation" placeholder="New Delhi, India" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.875rem; background: white;">
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-main); margin-bottom: 0.5rem;">Portfolio / LinkedIn</label>
+                            <input type="text" id="rbPortfolio" placeholder="linkedin.com/in/yourname" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.875rem; background: white;">
+                        </div>
+                        <div style="grid-column: span 2;">
+                            <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-main); margin-bottom: 0.5rem;">Professional Summary</label>
+                            <textarea id="rbSummary" placeholder="Describe your experience and career goals..." style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.875rem; background: white; min-height: 80px; font-family: 'Inter', sans-serif; resize: vertical;"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column (Preview) -->
+            <div>
+                <div style="background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); position: sticky; top: 100px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h3 style="font-size: 0.875rem; font-weight: 600; color: var(--text-muted); display: flex; align-items: center; gap: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;"><span>👁</span> Live Preview</h3>
+                        <span id="previewTemplateName" style="font-size: 0.75rem; background: #f8fafc; border: 1px solid var(--border-color); padding: 0.2rem 0.6rem; border-radius: 999px; color: var(--text-main); font-weight: 500;">Modern</span>
+                    </div>
+
+                    <!-- Resume Preview Box -->
+                    <div id="resumePreviewContent" style="border: 1px solid var(--border-color); border-radius: 8px; background: white; min-height: 500px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); overflow: hidden;">
+                        <!-- Updated dynamically by resume-builder.js -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="../../js/api.js"></script>
+    <script src="../../js/nav-auth.js"></script>
+    <script src="../../js/resume-builder.js"></script>
+</body>
+</html>

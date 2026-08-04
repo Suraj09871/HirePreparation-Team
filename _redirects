@@ -1,0 +1,2 @@
+/* Redirects for Netlify SPA - serve index for all routes */
+/*    /api/*    /api/:splat    200

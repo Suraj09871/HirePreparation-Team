@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Career Roadmap - HireSmart</title>
+    <link rel="stylesheet" href="../../css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="../../js/theme.js"></script>
+</head>
+<body style="background: var(--bg-muted);">
+    <nav class="navbar" style="border-bottom: 1px solid var(--border-color); background: var(--card-bg);">
+        <div class="logo">
+            <span class="logo-icon"></span>
+            HireSmart
+        </div>
+        <div class="nav-links">
+            <a href="../../index.html">Home</a>
+            <a href="#">Jobs</a>
+            <a href="practice.html">Practice</a>
+            <a href="preparation.html">Preparation</a>
+            <a href="student-dashboard.html">Dashboard</a>
+            <a href="#">Resume Builder</a>
+
+        </div>
+        <div class="nav-actions">
+            <span id="themeToggle" style="font-size: 1.25rem; color: var(--text-muted); cursor: pointer; margin-right: 0.5rem;">☼</span>
+            <span style="font-size: 1.25rem; color: var(--text-muted); cursor: pointer; margin-right: 0.5rem;">🔔</span>
+            <span style="display: flex; align-items: center; gap: 0.5rem; font-weight: 500; font-size: 0.875rem;">
+                <span style="width: 28px; height: 28px; background: #e2e8f0; border-radius: 50%; display: inline-block;"></span> <span id="navName">Ujjwal</span>
+            </span>
+            <button class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.875rem;" onclick="handleLogout()">Sign Out</button>
+        </div>
+    </nav>
+
+    <main class="container py-12">
+        <div class="profile-layout">
+            
+            <!-- Sidebar Navigation -->
+            <aside class="profile-sidebar">
+                <div class="profile-sidebar-header">
+                    <div style="width: 48px; height: 48px; border-radius: 50%; background: #ea580c; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.5rem;" id="sideAvatar">U</div>
+                    <div>
+                        <div style="font-weight: 600; color: var(--text-main); font-size: 1rem;" id="sideName">Ujjwal</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);" id="sideEmail">looserbrothers.18@gmail.com</div>
+                    </div>
+                </div>
+                <div class="profile-sidebar-nav">
+                    <a href="#" class="sidebar-link">🎓 Internships</a>
+                    <a href="#" class="sidebar-link">💼 Jobs</a>
+                    <a href="roadmap.html" class="sidebar-link active">🗺 Roadmap</a>
+                    <a href="preparation.html" class="sidebar-link">🏢 Company Prep</a>
+                    <a href="student-profile.html" class="sidebar-link">⚙ Settings</a>
+                    <a href="#" class="sidebar-link">📈 Your Activity</a>
+                </div>
+                <div style="margin-top: 2rem; padding: 0 1rem;">
+                    <a href="#" class="sidebar-link text-danger" onclick="handleLogout()">🚪 Sign Out</a>
+                </div>
+            </aside>
+
+            <!-- Main Content Area -->
+            <section class="profile-content">
+                <a href="student-dashboard.html" style="color: var(--text-muted); text-decoration: none; font-size: 0.875rem; display: inline-flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">← Go Back</a>
+                
+                <h1 style="font-size: 1.5rem; margin-bottom: 0.25rem;">Career Roadmap</h1>
+                <p style="margin: 0 0 2rem 0; color: var(--text-muted); font-size: 0.875rem;">Your step-by-step guide to career success</p>
+
+                <div class="roadmap-container">
+                    <!-- Step 1 -->
+                    <div class="roadmap-step">
+                        <div class="roadmap-step-header">
+                            <div class="roadmap-step-number" id="step1Num">1</div>
+                            <div style="flex: 1;">
+                                <h3 style="font-size: 1.125rem; margin: 0 0 0.25rem 0;">Build Your Profile</h3>
+                                <p style="font-size: 0.875rem; color: var(--text-muted); margin: 0;">Complete your profile with skills, bio, and title</p>
+                            </div>
+                            <div style="color: var(--text-muted);">&gt;</div>
+                        </div>
+                        <div class="roadmap-step-content">
+                            <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1rem;">Update your settings to make your profile stand out.</p>
+                            <a href="student-profile.html" class="btn btn-dark">Go to Settings</a>
+                        </div>
+                    </div>
+
+                    <!-- Step 2 -->
+                    <div class="roadmap-step">
+                        <div class="roadmap-step-header">
+                            <div class="roadmap-step-number" id="step2Num">2</div>
+                            <div style="flex: 1;">
+                                <h3 style="font-size: 1.125rem; margin: 0 0 0.25rem 0;">Upload Resume</h3>
+                                <p style="font-size: 0.875rem; color: var(--text-muted); margin: 0;">Upload and get your resume analyzed</p>
+                            </div>
+                            <div style="color: var(--text-muted);">&gt;</div>
+                        </div>
+                        <div class="roadmap-step-content">
+                            <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1rem;">Ensure your ATS score is above 75 for best results.</p>
+                            <a href="student-profile.html" class="btn btn-dark">Go to Resume Upload</a>
+                        </div>
+                    </div>
+
+                    <!-- Step 3 -->
+                    <div class="roadmap-step active">
+                        <div class="roadmap-step-header">
+                            <div class="roadmap-step-number" id="step3Num">3</div>
+                            <div style="flex: 1;">
+                                <h3 style="font-size: 1.125rem; margin: 0 0 0.25rem 0;">Prepare for Interviews</h3>
+                                <p style="font-size: 0.875rem; color: var(--text-muted); margin: 0;">Complete company-wise preparation topics</p>
+                            </div>
+                            <div style="color: var(--text-muted);">⌄</div>
+                        </div>
+                        <div class="roadmap-step-content">
+                            <p style="font-size: 0.875rem; color: var(--text-main); margin-bottom: 1.5rem; font-weight: 500;">Go to Company Prep or the Preparation page to start studying.</p>
+                            <a href="preparation.html" class="btn btn-dark">📖 Start Preparation</a>
+                        </div>
+                    </div>
+
+                    <!-- Step 4 -->
+                    <div class="roadmap-step">
+                        <div class="roadmap-step-header">
+                            <div class="roadmap-step-number" id="step4Num">4</div>
+                            <div style="flex: 1;">
+                                <h3 style="font-size: 1.125rem; margin: 0 0 0.25rem 0;">Apply to Jobs</h3>
+                                <p style="font-size: 0.875rem; color: var(--text-muted); margin: 0;">Start applying to matching positions</p>
+                            </div>
+                            <div style="color: var(--text-muted);">&gt;</div>
+                        </div>
+                        <div class="roadmap-step-content">
+                            <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1rem;">Find jobs that match your skills.</p>
+                            <a href="#" class="btn btn-dark">View Jobs</a>
+                        </div>
+                    </div>
+
+                    <!-- Step 5 -->
+                    <div class="roadmap-step">
+                        <div class="roadmap-step-header">
+                            <div class="roadmap-step-number" id="step5Num">5</div>
+                            <div style="flex: 1;">
+                                <h3 style="font-size: 1.125rem; margin: 0 0 0.25rem 0;">Track Applications</h3>
+                                <p style="font-size: 0.875rem; color: var(--text-muted); margin: 0;">Monitor your application status and follow up</p>
+                            </div>
+                            <div style="color: var(--text-muted);">&gt;</div>
+                        </div>
+                        <div class="roadmap-step-content">
+                            <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1rem;">View your application history.</p>
+                            <a href="student-dashboard.html" class="btn btn-dark">Go to Dashboard</a>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem; margin-top: 2rem;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
+                        <span style="font-weight: 600; font-size: 0.875rem;">Overall Progress</span>
+                        <span style="font-weight: 600; color: #ef4444;" id="progressText">0/5</span>
+                    </div>
+                    <div style="height: 6px; background: var(--bg-muted); border-radius: 999px; overflow: hidden; border: 1px solid var(--border-color);">
+                        <div style="height: 100%; width: 0%; background: #ef4444; transition: width 1s ease;" id="progressBar"></div>
+                    </div>
+                </div>
+
+            </section>
+        </div>
+    </main>
+
+    <footer style="margin-top: 4rem; padding: 2rem 0; border-top: 1px solid var(--border-color); background: var(--bg-color);">
+        <div class="container text-center text-muted" style="font-size: 0.75rem;">
+            © 2026 HireSmart. Built by Shikha, Reenu, Sunny & Suraj.
+        </div>
+    </footer>
+
+    <script src="../../js/api.js"></script>
+    <script src="../../js/unified-auth.js"></script>
+    <script src="../../js/roadmap.js"></script>
+</body>
+</html>
