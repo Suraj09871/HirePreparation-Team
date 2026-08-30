@@ -50,4 +50,8 @@ const jobSchema = new mongoose.Schema({
     }
 });
 
+// Indexes for common query patterns
+jobSchema.index({ recruiterId: 1 });
+jobSchema.index({ status: 1, createdAt: -1 });
+
 module.exports = mongoose.model('Job', jobSchema);

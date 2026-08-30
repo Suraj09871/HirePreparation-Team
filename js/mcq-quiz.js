@@ -8,9 +8,25 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function showSetup() {
-    const history = JSON.parse(localStorage.getItem('hiresmart_quiz_history') || '[]');
+    const isLogged = typeof API !== 'undefined' && API.isLoggedIn();
+    const history = JSON.parse(localStorage.getItem('hireprep_quiz_history') || '[]');
+
+    const guestNotice = !isLogged ? `
+        <div style="background:var(--card-bg, #ffffff);border:1px solid var(--primary);border-radius:12px;padding:1rem 1.25rem;margin-bottom:1.5rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;box-shadow:0 4px 12px rgba(249,115,22,0.08);">
+            <div style="display:flex;align-items:center;gap:0.75rem;">
+                <span style="font-size:1.5rem;">🔒</span>
+                <div>
+                    <div style="font-weight:700;color:var(--text-main);font-size:0.95rem;">Guest Quiz Preview</div>
+                    <div style="font-size:0.8rem;color:var(--text-muted);">Sign in to access 500+ MCQ test banks, full timed mock tests, and save performance records.</div>
+                </div>
+            </div>
+            <a href="../auth.html?redirect=practice" class="btn btn-primary" style="padding:0.45rem 1rem;font-size:0.8rem;white-space:nowrap;font-weight:600;">Sign In to Unlock Full Quiz →</a>
+        </div>
+    ` : '';
+
     container().innerHTML = `
         <div class="test-setup">
+            ${guestNotice}
             <div style="text-align:center;margin-bottom:2rem;">
                 <div style="font-size:3rem;margin-bottom:0.5rem;">⏱</div>
                 <h1 style="font-size:1.75rem;margin-bottom:0.5rem;">Coding MCQ Practice</h1>
@@ -34,7 +50,7 @@ function showSetup() {
                     <label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.4rem;">Number of Questions</label>
                     <select id="quizCount" style="width:100%;padding:0.6rem;border:1px solid var(--border-color);border-radius:8px;">
                         <option value="5">5 Questions (Quick)</option>
-                        <option value="10" selected>10 Questions (Standard)</option>
+                        <option value="10" ${isLogged ? 'selected' : ''}>10 Questions (Standard)</option>
                         <option value="20">20 Questions (Extended)</option>
                     </select>
                 </div>
@@ -72,7 +88,21 @@ async function startQuiz() {
         let pool = data.coding_mcq || [];
         
         if (topic !== 'Mixed') {
-            pool = pool.filter(q => q.topic === topic);
+            // Support both old and new topic names for backwards compatibility
+            const topicAliases = {
+                'DBMS': ['DBMS', 'Database', 'Databases'],
+                'Operating Systems': ['Operating Systems', 'OS'],
+                'Computer Networks': ['Computer Networks', 'Networking', 'Networks'],
+                'OOPs': ['OOPs', 'OOP', 'Object Oriented Programming'],
+                'Data Structures': ['Data Structures', 'DS'],
+                'Algorithms': ['Algorithms', 'Algorithm'],
+                'JavaScript': ['JavaScript', 'JS'],
+                'Python': ['Python'],
+                'Java': ['Java'],
+                'C++': ['C++', 'C/C++', 'CPP']
+            };
+            const matchTopics = topicAliases[topic] || [topic];
+            pool = pool.filter(q => matchTopics.some(t => t.toLowerCase() === (q.topic || '').toLowerCase()));
         }
 
         if (pool.length === 0) {
@@ -204,9 +234,9 @@ function submitQuiz() {
     const topic = document.getElementById('quizTopic')?.value || 'Mixed';
 
     // Save result
-    const history = JSON.parse(localStorage.getItem('hiresmart_quiz_history') || '[]');
+    const history = JSON.parse(localStorage.getItem('hireprep_quiz_history') || '[]');
     history.push({ topic, count: questions.length, correct, score, date: new Date().toISOString() });
-    localStorage.setItem('hiresmart_quiz_history', JSON.stringify(history));
+    localStorage.setItem('hireprep_quiz_history', JSON.stringify(history));
 
     isReviewMode = true; // Flag for reviewing mode
     showResults(score, correct);
@@ -236,3 +266,13 @@ function showResults(scoreParam, correctParam) {
         </div>
     `;
 }
+
+// Window Bindings for Inline onclick Handlers
+window.showSetup = showSetup;
+window.startQuiz = startQuiz;
+window.selectAnswer = selectAnswer;
+window.nextQ = nextQ;
+window.prevQ = prevQ;
+window.goToQ = goToQ;
+window.submitQuiz = submitQuiz;
+window.showResults = showResults;

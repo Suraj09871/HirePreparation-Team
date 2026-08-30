@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (!response.ok) throw new Error("Failed to fetch questions");
         state.allData = await response.json();
         if (loadingEl) loadingEl.style.display = 'none';
+        checkResumeBanner();
 
         // Update counts in stats and tabs
         const codingLen = (state.allData.coding || []).length;
@@ -133,11 +134,36 @@ function renderQuestions() {
         return true;
     });
 
-    const totalPages = Math.ceil(filtered.length / state.itemsPerPage);
+    const isLogged = API.isLoggedIn();
+
+    // Guest notice handler
+    const existingNotice = document.getElementById('practiceGuestNotice');
+    if (existingNotice) existingNotice.remove();
+
+    if (!isLogged) {
+        const notice = document.createElement('div');
+        notice.id = 'practiceGuestNotice';
+        notice.style.cssText = 'background:var(--card-bg);border:1px solid var(--primary);border-radius:12px;padding:1rem 1.5rem;margin-bottom:1.5rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;box-shadow:0 4px 12px rgba(249,115,22,0.08);';
+        notice.innerHTML = `
+            <div style="display:flex;align-items:center;gap:0.75rem;">
+                <span style="font-size:1.6rem;">🔒</span>
+                <div>
+                    <div style="font-weight:700;color:var(--text-main);font-size:0.95rem;">Guest Practice Preview</div>
+                    <div style="font-size:0.825rem;color:var(--text-muted);">You can preview 3 sample questions. Sign in to unlock 500+ coding & MCQ problems, run in-browser tests, and save solutions.</div>
+                </div>
+            </div>
+            <a href="../auth.html?redirect=practice" class="btn btn-primary" style="padding:0.5rem 1.25rem;font-size:0.85rem;white-space:nowrap;font-weight:600;">Sign In to Unlock All →</a>
+        `;
+        if (container.parentNode) {
+            container.parentNode.insertBefore(notice, container);
+        }
+    }
+
+    const totalPages = isLogged ? Math.ceil(filtered.length / state.itemsPerPage) : 1;
     if (state.currentPage > totalPages) state.currentPage = Math.max(1, totalPages);
 
     const startIdx = (state.currentPage - 1) * state.itemsPerPage;
-    const questionsToRender = filtered.slice(startIdx, startIdx + state.itemsPerPage);
+    const questionsToRender = isLogged ? filtered.slice(startIdx, startIdx + state.itemsPerPage) : filtered.slice(0, 3);
 
     if (questionsToRender.length === 0) {
         container.innerHTML = `<div style="text-align:center;padding:3rem;color:var(--text-muted);">
@@ -168,11 +194,26 @@ function renderQuestions() {
             window.location.href = detailUrl;
         });
 
+        const qType = (q.type || state.category).toLowerCase();
+        const isMcqType = qType === 'coding mcq' || qType === 'coding_mcq' || qType === 'mcq' || qType === 'aptitude';
+        const subtitleText = isMcqType && q.question ? q.question.substring(0, 90) + (q.question.length > 90 ? '...' : '') : '';
+
+        // Check solved status from localStorage
+        const solvedKey = 'hireprep_solved_' + (q.type || state.category);
+        let solvedStatus = '';
+        try { const map = JSON.parse(localStorage.getItem(solvedKey) || '{}'); solvedStatus = map[q.id] || ''; } catch(e){}
+        const solvedBadge = solvedStatus === 'correct' 
+            ? '<span style="font-size:0.7rem;font-weight:700;padding:0.15rem 0.5rem;border-radius:999px;color:#10b981;background:rgba(16,185,129,0.1);margin-left:0.5rem;">✅ Solved</span>'
+            : solvedStatus === 'wrong'
+            ? '<span style="font-size:0.7rem;font-weight:700;padding:0.15rem 0.5rem;border-radius:999px;color:#ef4444;background:rgba(239,68,68,0.1);margin-left:0.5rem;">❌ Attempted</span>'
+            : '';
+
         card.innerHTML = `
             <div style="display:flex;gap:1rem;align-items:center;min-width:0;flex:1;">
-                <div class="q-number">${startIdx + index + 1}</div>
+                <div class="q-number" ${solvedStatus === 'correct' ? 'style="background:#10b981;color:white;border-color:#10b981;"' : solvedStatus === 'wrong' ? 'style="background:#ef4444;color:white;border-color:#ef4444;"' : ''}>${startIdx + index + 1}</div>
                 <div class="q-info">
-                    <div class="q-title">${q.title}</div>
+                    <div class="q-title">${q.title}${solvedBadge}</div>
+                    ${subtitleText ? `<div style="font-size:0.8rem;color:var(--text-muted);margin-top:0.2rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:500px;">${subtitleText}</div>` : ''}
                     <div class="q-meta">
                         <span class="badge ${diffClass}">${q.difficulty}</span>
                         ${companyBadge}
@@ -181,12 +222,30 @@ function renderQuestions() {
                     </div>
                 </div>
             </div>
-            <button class="solve-btn">Solve →</button>
+            <button class="solve-btn">${solvedStatus ? (isMcqType ? 'Retry →' : 'Redo →') : (isMcqType ? 'Attempt →' : 'Solve →')}</button>
         `;
         container.appendChild(card);
     });
 
-    renderPagination(totalPages);
+    if (!isLogged && filtered.length > 3) {
+        const lockCard = document.createElement('div');
+        lockCard.className = 'question-card';
+        lockCard.style.cssText = 'background:linear-gradient(135deg, rgba(249,115,22,0.08), rgba(59,130,246,0.08));border:2px dashed var(--primary);display:flex;align-items:center;justify-content:space-between;padding:1.25rem 1.5rem;cursor:pointer;margin-top:1rem;';
+        lockCard.onclick = () => { window.location.href = '../auth.html?redirect=practice'; };
+        lockCard.innerHTML = `
+            <div style="display:flex;align-items:center;gap:1rem;">
+                <span style="font-size:2rem;">🔒</span>
+                <div>
+                    <div style="font-weight:700;font-size:1rem;color:var(--text-main);">+${filtered.length - 3} More Interview Problems Locked</div>
+                    <div style="font-size:0.8rem;color:var(--text-muted);">Sign in to unlock all coding challenges, MCQs, and full solutions.</div>
+                </div>
+            </div>
+            <button class="btn btn-primary" style="padding:0.45rem 1.25rem;font-size:0.85rem;font-weight:600;">Unlock All Problems →</button>
+        `;
+        container.appendChild(lockCard);
+    }
+
+    renderPagination(isLogged ? totalPages : 0);
 }
 
 function renderPagination(totalPages) {
@@ -198,7 +257,7 @@ function renderPagination(totalPages) {
         return;
     }
 
-    let html = `<button class="page-btn" onclick="changePage(1)" ${state.currentPage === 1 ? 'disabled' : ''}>← Prev</button>`;
+    let html = `<button class="page-btn" onclick="changePage(-1)" ${state.currentPage === 1 ? 'disabled' : ''}>← Prev</button>`;
     
     // Show page numbers
     const maxVisible = 5;
@@ -224,14 +283,34 @@ function renderPagination(totalPages) {
     controls.innerHTML = html;
 }
 
-function changePage(dir) {
+window.changePage = function(dir) {
     state.currentPage += dir;
     renderQuestions();
     window.scrollTo({ top: 0, behavior: 'smooth' });
-}
+};
 
-function goToPage(page) {
+window.goToPage = function(page) {
     state.currentPage = page;
     renderQuestions();
     window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+// ── Autosave Resume Banner ──
+function checkResumeBanner() {
+    try {
+        const last = JSON.parse(localStorage.getItem('hireprep_last_problem') || 'null');
+        const banner = document.getElementById('resumePracticeBanner');
+        if (last && banner && last.title && last.url) {
+            banner.style.display = 'flex';
+            const titleEl = document.getElementById('resumeProblemTitle');
+            if (titleEl) titleEl.textContent = `Resume: ${last.title}`;
+            const categoryLabel = last.type === 'coding' ? 'Coding Problem' : last.type === 'aptitude' ? 'Aptitude Test' : 'MCQ Quiz';
+            const metaEl = document.getElementById('resumeProblemMeta');
+            if (metaEl) metaEl.textContent = `${categoryLabel} · ${last.difficulty || 'Medium'} · Autosaved session`;
+            const linkEl = document.getElementById('resumeProblemLink');
+            if (linkEl) linkEl.href = last.url;
+        }
+    } catch(e) {}
 }
+window.checkResumeBanner = checkResumeBanner;
+

@@ -15,7 +15,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
         const data = await API.get('/preparation');
         state.paths = data.preparations || data.paths || [];
-        if (state.paths.length > 0) {
+        const savedPath = localStorage.getItem('hireprep_last_prep_path');
+        if (savedPath && state.paths.some(p => p._id === savedPath)) {
+            state.currentPathId = savedPath;
+        } else if (state.paths.length > 0) {
             state.currentPathId = state.paths[0]._id;
         }
         render();
@@ -26,7 +29,31 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
+function showPrepAuthModal(msg) {
+    let modal = document.getElementById('prepAuthModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'prepAuthModal';
+        modal.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.7);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:99999;padding:1.5rem;';
+        document.body.appendChild(modal);
+    }
+    modal.innerHTML = `
+        <div style="background:var(--card-bg, #ffffff);color:var(--text-main, #0f172a);border-radius:16px;padding:2rem;max-width:440px;width:100%;box-shadow:0 20px 40px rgba(0,0,0,0.3);border:1px solid var(--border-color);text-align:center;">
+            <div style="font-size:2.5rem;margin-bottom:0.75rem;">🔒</div>
+            <h3 style="margin:0 0 0.5rem;font-size:1.2rem;font-weight:700;">Sign In Required</h3>
+            <p style="font-size:0.875rem;color:var(--text-muted);margin:0 0 1.5rem;line-height:1.5;">${msg || 'Please sign in to access full company interview kits, take mock tests, and save your progress.'}</p>
+            <a href="../auth.html?redirect=preparation" class="btn btn-primary" style="display:block;width:100%;padding:0.75rem;border-radius:8px;font-weight:600;text-decoration:none;margin-bottom:0.75rem;">Sign In / Sign Up →</a>
+            <button onclick="document.getElementById('prepAuthModal').style.display='none'" class="btn btn-outline" style="width:100%;padding:0.6rem;font-size:0.85rem;border-radius:8px;cursor:pointer;">Continue Previewing</button>
+        </div>
+    `;
+    modal.style.display = 'flex';
+}
+
 async function setDetailView(pathId) {
+    if (typeof API !== 'undefined' && !API.isLoggedIn()) {
+        showPrepAuthModal('Sign in to explore full company interview question archives, test syllabus, and personalized preparation roadmap.');
+        return;
+    }
     // Show loading
     document.getElementById('prepApp').innerHTML = '<div style="text-align:center;padding:5rem;color:var(--text-muted);"><div style="font-size:2rem;margin-bottom:1rem;animation:pulse 2s infinite;">⏳</div>Loading company details...</div>';
     
@@ -39,6 +66,7 @@ async function setDetailView(pathId) {
                 state.paths[idx] = data.preparation;
             }
             setState({ currentPathId: pathId, currentView: 'detail', currentTab: 'questions' });
+            try { localStorage.setItem('hireprep_last_prep_path', pathId); } catch(e) {}
         } else {
             throw new Error('Failed');
         }
@@ -52,6 +80,18 @@ function setState(newState) {
     state = { ...state, ...newState };
     render();
 }
+
+window.setState = setState;
+window.setDetailView = setDetailView;
+window.showPrepAuthModal = showPrepAuthModal;
+
+function openPrepQuestion(qTitle, qCategory, qDiff, companyName) {
+    const isMcq = (qCategory || '').toLowerCase().includes('mcq') || (qCategory || '').toLowerCase() === 'aptitude';
+    const baseUrl = isMcq ? 'mcq-detail.html' : 'question-detail.html';
+    const url = `${baseUrl}?title=${encodeURIComponent(qTitle || 'Problem')}&company=${encodeURIComponent(companyName || '')}&difficulty=${encodeURIComponent(qDiff || 'Medium')}&type=${isMcq ? 'mcq' : 'coding'}`;
+    window.location.href = url;
+}
+window.openPrepQuestion = openPrepQuestion;
 
 function render() {
     const app = document.getElementById('prepApp');
@@ -87,9 +127,26 @@ function renderOverview() {
         </div>
     `;
 
-    const diffColor = path.difficulty === 'Hard' ? '#ef4444' : path.difficulty === 'Medium' ? '#f59e0b' : '#10b981';
+    const isLogged = typeof API !== 'undefined' && API.isLoggedIn();
+    const diffColor = (path.difficulty === 'Hard' ? '#ef4444' : path.difficulty === 'Medium' ? '#f59e0b' : '#10b981');
+
+    const guestNoticeHTML = !isLogged ? `
+        <div class="container" style="padding-top:1.5rem;">
+            <div style="background:var(--card-bg);border:1px solid var(--primary);border-radius:12px;padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;box-shadow:0 4px 12px rgba(249,115,22,0.08);">
+                <div style="display:flex;align-items:center;gap:0.75rem;">
+                    <span style="font-size:1.6rem;">🔒</span>
+                    <div>
+                        <div style="font-weight:700;color:var(--text-main);font-size:0.95rem;">Guest Preparation Preview</div>
+                        <div style="font-size:0.825rem;color:var(--text-muted);">You are viewing preview company preparation guides. Sign in to access full question archives, take timed mock assessments, and unlock all 50+ companies.</div>
+                    </div>
+                </div>
+                <a href="../auth.html?redirect=preparation" class="btn btn-primary" style="padding:0.5rem 1.25rem;font-size:0.85rem;white-space:nowrap;font-weight:600;">Sign In to Unlock All →</a>
+            </div>
+        </div>
+    ` : '';
 
     const mainHTML = `
+        ${guestNoticeHTML}
         <div class="container py-12">
             <div class="prep-main-grid" style="display:grid; grid-template-columns: 2fr 1fr; gap:2rem;">
                 
@@ -99,31 +156,31 @@ function renderOverview() {
                     <div style="background:var(--card-bg); border:1px solid var(--border-color); border-radius:12px; padding:2rem; margin-bottom:1.5rem; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
                         <div style="display:flex; align-items:center; gap:1.5rem; margin-bottom:1.5rem;">
                             <div style="width:64px; height:64px; background:rgba(249,115,22,0.1); color:var(--primary); border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:1.75rem; font-weight:700;">
-                                ${path.companyName.charAt(0)}
+                                ${(path.companyName || 'C').charAt(0)}
                             </div>
                             <div>
-                                <h1 style="font-size:1.5rem; margin-bottom:0.5rem; color:var(--text-main);">${path.companyName}</h1>
+                                <h1 style="font-size:1.5rem; margin-bottom:0.5rem; color:var(--text-main);">${sanitize(path.companyName || 'Company')}</h1>
                                 <div style="display:flex; gap:0.75rem; font-size:0.8rem;">
-                                    <span style="background:${diffColor}15; color:${diffColor}; padding:0.2rem 0.6rem; border-radius:999px; font-weight:600;">${path.difficulty}</span>
-                                    <span style="background:var(--bg-muted); border:1px solid var(--border-color); color:var(--text-main); padding:0.2rem 0.6rem; border-radius:999px;">${path.questionCount} questions</span>
-                                    <span style="background:var(--bg-muted); border:1px solid var(--border-color); color:var(--text-main); padding:0.2rem 0.6rem; border-radius:999px;">${path.topicCount} topics</span>
+                                    <span style="background:${diffColor}15; color:${diffColor}; padding:0.2rem 0.6rem; border-radius:999px; font-weight:600;">${path.difficulty || 'Medium'}</span>
+                                    <span style="background:var(--bg-muted); border:1px solid var(--border-color); color:var(--text-main); padding:0.2rem 0.6rem; border-radius:999px;">${path.questionCount || (path.questions || []).length || 20} questions</span>
+                                    <span style="background:var(--bg-muted); border:1px solid var(--border-color); color:var(--text-main); padding:0.2rem 0.6rem; border-radius:999px;">${path.topicCount || (path.topics || []).length || 5} topics</span>
                                 </div>
                             </div>
                         </div>
                         
-                        <p style="color:var(--text-muted); font-size:0.95rem; line-height:1.6; margin-bottom:2rem;">${path.description}</p>
+                        <p style="color:var(--text-muted); font-size:0.95rem; line-height:1.6; margin-bottom:2rem;">${sanitize(path.description || 'Comprehensive placement preparation roadmap and interview question bank.')}</p>
                         
                         <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:1rem; margin-bottom:2rem;">
                             <div style="background:var(--bg-muted); padding:1.25rem; border-radius:8px; text-align:center;">
-                                <div style="font-size:1.5rem; font-weight:700; color:var(--text-main); margin-bottom:0.25rem;">${path.questionCount}</div>
+                                <div style="font-size:1.5rem; font-weight:700; color:var(--text-main); margin-bottom:0.25rem;">${path.questionCount || (path.questions || []).length || 20}</div>
                                 <div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em;">Questions</div>
                             </div>
                             <div style="background:var(--bg-muted); padding:1.25rem; border-radius:8px; text-align:center;">
-                                <div style="font-size:1.5rem; font-weight:700; color:var(--text-main); margin-bottom:0.25rem;">${path.topicCount}</div>
+                                <div style="font-size:1.5rem; font-weight:700; color:var(--text-main); margin-bottom:0.25rem;">${path.topicCount || (path.topics || []).length || 5}</div>
                                 <div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em;">Topics</div>
                             </div>
                             <div style="background:var(--bg-muted); padding:1.25rem; border-radius:8px; text-align:center;">
-                                <div style="font-size:1.5rem; font-weight:700; color:var(--text-main); margin-bottom:0.25rem;">${path.avgSalary}</div>
+                                <div style="font-size:1.5rem; font-weight:700; color:var(--text-main); margin-bottom:0.25rem;">${sanitize(path.avgSalary || '12-25 LPA')}</div>
                                 <div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em;">Avg Salary</div>
                             </div>
                         </div>
@@ -142,20 +199,26 @@ function renderOverview() {
 
                     <!-- FAQ -->
                     <div style="background:var(--card-bg); border:1px solid var(--border-color); border-radius:12px; box-shadow:0 1px 3px rgba(0,0,0,0.05); overflow:hidden;">
-                        <div style="padding:1.5rem; border-bottom:1px solid var(--border-color);">
+                        <div style="padding:1.5rem; border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center;">
                             <h3 style="font-size:1.125rem; margin:0; display:flex; align-items:center; gap:0.5rem;"><span style="color:#ef4444;">❓</span> Frequently Asked Questions</h3>
+                            <span style="font-size:0.8rem; color:var(--primary); font-weight:600;">Click question to solve & run code →</span>
                         </div>
                         <div>
                             ${(path.questions || []).slice(0, 10).map((q, idx) => {
                                 const qColor = q.difficulty === 'Hard' ? '#ef4444' : q.difficulty === 'Medium' ? '#f59e0b' : '#10b981';
+                                const qTitle = q.title || q.question || 'Problem';
+                                const qCat = q.category || q.topic || 'Coding';
+                                const qDiff = q.difficulty || 'Medium';
+                                const compName = path.companyName || '';
                                 return `
-                                <div onclick="window.location.href='question-detail.html?id=${encodeURIComponent(q.id || '')}&type=coding'" style="display:flex; align-items:center; gap:1.25rem; padding:1.25rem 1.5rem; border-bottom:1px solid var(--border-color); cursor:pointer; transition: background 0.2s;" onmouseover="this.style.background='var(--bg-muted)'" onmouseout="this.style.background='transparent'">
+                                <div onclick="openPrepQuestion('${sanitize(qTitle)}', '${sanitize(qCat)}', '${sanitize(qDiff)}', '${sanitize(compName)}')" style="display:flex; align-items:center; gap:1.25rem; padding:1.25rem 1.5rem; border-bottom:1px solid var(--border-color); cursor:pointer; transition: background 0.2s;" onmouseover="this.style.background='var(--bg-muted)'" onmouseout="this.style.background='transparent'" title="Click to solve this question">
                                     <div style="width:32px; height:32px; background:var(--bg-muted); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.875rem; font-weight:600; color:var(--text-muted); flex-shrink:0;">${idx + 1}</div>
                                     <div style="flex:1;">
-                                        <div style="font-weight:500; font-size:0.95rem; margin-bottom:0.4rem; color:var(--text-main);">${q.title || q.question}</div>
-                                        <div style="display:flex; gap:0.5rem;">
-                                            <span style="font-size:0.7rem; background:var(--bg-muted); border:1px solid var(--border-color); color:var(--text-main); padding:0.15rem 0.5rem; border-radius:4px;">${q.topic || q.category}</span>
-                                            <span style="font-size:0.7rem; background:white; border:1px solid ${qColor}40; color:${qColor}; padding:0.15rem 0.5rem; border-radius:4px; font-weight:600;">${q.difficulty}</span>
+                                        <div style="font-weight:600; font-size:0.95rem; margin-bottom:0.4rem; color:var(--text-main);">${sanitize(qTitle)}</div>
+                                        <div style="display:flex; gap:0.5rem; align-items:center;">
+                                            <span style="font-size:0.7rem; background:var(--bg-muted); border:1px solid var(--border-color); color:var(--text-main); padding:0.15rem 0.5rem; border-radius:4px;">${sanitize(qCat)}</span>
+                                            <span style="font-size:0.7rem; background:white; border:1px solid ${qColor}40; color:${qColor}; padding:0.15rem 0.5rem; border-radius:4px; font-weight:600;">${sanitize(qDiff)}</span>
+                                            <span style="font-size:0.75rem; color:var(--primary); font-weight:500; margin-left:auto;">Solve ▷</span>
                                         </div>
                                     </div>
                                     <span style="color:var(--text-muted); font-size:1.25rem;">›</span>
@@ -277,14 +340,19 @@ function renderDetail() {
             <div style="background:var(--card-bg); border:1px solid var(--border-color); border-radius:12px; box-shadow:0 1px 3px rgba(0,0,0,0.05); overflow:hidden;">
                 ${filteredQ.length > 0 ? filteredQ.map((q, idx) => {
                     const qColor = q.difficulty === 'Hard' ? '#ef4444' : q.difficulty === 'Medium' ? '#f59e0b' : '#10b981';
+                    const qTitle = q.title || q.question || 'Problem';
+                    const qCat = q.category || q.topic || 'Coding';
+                    const qDiff = q.difficulty || 'Medium';
+                    const compName = path.companyName || '';
                     return `
-                    <div onclick="window.location.href='question-detail.html?id=${encodeURIComponent(q.id || '')}&type=coding'" style="display:flex; align-items:center; gap:1.25rem; padding:1.25rem 1.5rem; border-bottom:1px solid var(--border-color); cursor:pointer; transition: background 0.2s;" onmouseover="this.style.background='var(--bg-muted)'" onmouseout="this.style.background='transparent'">
+                    <div onclick="openPrepQuestion('${sanitize(qTitle)}', '${sanitize(qCat)}', '${sanitize(qDiff)}', '${sanitize(compName)}')" style="display:flex; align-items:center; gap:1.25rem; padding:1.25rem 1.5rem; border-bottom:1px solid var(--border-color); cursor:pointer; transition: background 0.2s;" onmouseover="this.style.background='var(--bg-muted)'" onmouseout="this.style.background='transparent'" title="Click to solve this question">
                         <div style="width:32px; height:32px; background:var(--bg-muted); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.875rem; font-weight:600; color:var(--text-muted); flex-shrink:0;">${idx + 1}</div>
                         <div style="flex:1;">
-                            <div style="font-weight:500; font-size:0.95rem; margin-bottom:0.4rem; color:var(--text-main);">${q.title || q.question}</div>
-                            <div style="display:flex; gap:0.5rem;">
-                                <span style="font-size:0.7rem; background:var(--bg-muted); border:1px solid var(--border-color); color:var(--text-main); padding:0.15rem 0.5rem; border-radius:4px;">${q.topic || q.category}</span>
-                                <span style="font-size:0.7rem; background:transparent; border:1px solid ${qColor}40; color:${qColor}; padding:0.15rem 0.5rem; border-radius:4px; font-weight:600;">${q.difficulty}</span>
+                            <div style="font-weight:600; font-size:0.95rem; margin-bottom:0.4rem; color:var(--text-main);">${sanitize(qTitle)}</div>
+                            <div style="display:flex; gap:0.5rem; align-items:center;">
+                                <span style="font-size:0.7rem; background:var(--bg-muted); border:1px solid var(--border-color); color:var(--text-main); padding:0.15rem 0.5rem; border-radius:4px;">${sanitize(qCat)}</span>
+                                <span style="font-size:0.7rem; background:transparent; border:1px solid ${qColor}40; color:${qColor}; padding:0.15rem 0.5rem; border-radius:4px; font-weight:600;">${sanitize(qDiff)}</span>
+                                <span style="font-size:0.75rem; color:var(--primary); font-weight:500; margin-left:auto;">Solve ▷</span>
                             </div>
                         </div>
                         <span style="color:var(--text-muted); font-size:1.25rem;">›</span>

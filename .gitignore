@@ -1,6 +1,29 @@
+# Dependencies
 node_modules/
-server/.env
+server/node_modules/
+
+# Environment Variables & Secrets (CRITICAL: NEVER COMMIT TO GIT)
 .env
+.env.*
+server/.env
+server/.env.*
+*.env
+*.env.local
+
+# IDE & OS Files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
 .qodo/
+scratch/
+
+# Logs & Debugging
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Uploads
 server/uploads/*
 !server/uploads/.gitkeep

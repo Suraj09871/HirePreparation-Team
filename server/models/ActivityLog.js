@@ -8,8 +8,11 @@ const activityLogSchema = new mongoose.Schema({
     },
     action: {
         type: String,
-        enum: ['login', 'apply', 'practice', 'view_prep', 'build_resume', 'mock_test', 'profile_update'],
         required: true
+    },
+    details: {
+        type: String,
+        default: ''
     },
     metadata: {
         type: mongoose.Schema.Types.Mixed,

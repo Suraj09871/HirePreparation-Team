@@ -89,4 +89,91 @@ document.addEventListener('DOMContentLoaded', () => {
             if (submitBtn) { submitBtn.disabled = false; updateMode(); }
         }
     });
+
+    // Google Sign-In button click
+    const googleBtn = document.getElementById('googleBtn');
+    if (googleBtn) {
+        googleBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            if (authError) authError.style.display = 'none';
+
+            let isAuthActive = false;
+            const handleAuth = async (token) => {
+                if (!token) {
+                    if (authError) { authError.textContent = 'Google sign-in was cancelled.'; authError.style.display = 'block'; }
+                    return;
+                }
+
+                const adminKeyVal = document.getElementById('adminSecretKey')?.value?.trim() || document.getElementById('adminKey')?.value?.trim() || '';
+                const activeRole = (typeof currentRole !== 'undefined') ? currentRole : selectedRole;
+                if ((activeRole === 'developer' || activeRole === 'admin') && !adminKeyVal) {
+                    if (authError) {
+                        authError.textContent = '🔑 Admin Secret Key is required to sign in as Admin with Google.';
+                        authError.style.display = 'block';
+                    }
+                    return;
+                }
+
+                isAuthActive = true;
+                try {
+                    const data = await API.post('/auth/google', {
+                        token: token,
+                        role: activeRole,
+                        adminKey: adminKeyVal
+                    });
+                    if (data.token && data.user) {
+                        API.saveAuth(data.token, data.user);
+                        if (typeof showToast === 'function') showToast('Google Authentication successful!', 'success');
+                        setTimeout(() => {
+                            if (data.user.role === 'recruiter') window.location.href = '/frontend/recruiter/recruiter-dashboard.html';
+                            else if (data.user.role === 'admin' || data.user.role === 'sub-admin') window.location.href = '/frontend/admin/admin-dashboard.html';
+                            else window.location.href = '/frontend/student/student-dashboard.html';
+                        }, 300);
+                    } else {
+                        isAuthActive = false;
+                        if (authError) { authError.textContent = data.message || 'Google Auth failed'; authError.style.display = 'block'; }
+                    }
+                } catch (err) {
+                    isAuthActive = false;
+                    if (authError) { authError.textContent = err.message || 'Google Auth failed'; authError.style.display = 'block'; }
+                }
+            };
+
+            if (typeof google !== 'undefined' && google.accounts) {
+                try {
+                    if (google.accounts.oauth2) {
+                        const tokenClient = google.accounts.oauth2.initTokenClient({
+                            client_id: '622950445435-o4rmk192qnuttg77mv1poo707ov6upng.apps.googleusercontent.com',
+                            scope: 'email profile openid',
+                            callback: function(tokenResponse) {
+                                if (tokenResponse && tokenResponse.access_token) {
+                                    handleAuth(tokenResponse.access_token);
+                                }
+                            },
+                            error_callback: function(err) {
+                                if (isAuthActive) return;
+                                if (err && (err.type === 'popup_closed' || err.type === 'popup_blocked_by_browser')) return;
+                                if (authError) { authError.textContent = 'Google Sign-In: ' + (err.message || 'Popup closed'); authError.style.display = 'block'; }
+                            }
+                        });
+                        tokenClient.requestAccessToken({ prompt: 'select_account' });
+                    } else if (google.accounts.id) {
+                        google.accounts.id.initialize({
+                            client_id: '622950445435-o4rmk192qnuttg77mv1poo707ov6upng.apps.googleusercontent.com',
+                            callback: function(response) {
+                                if (response && response.credential) {
+                                    handleAuth(response.credential);
+                                }
+                            }
+                        });
+                        google.accounts.id.prompt();
+                    }
+                } catch (err) {
+                    if (authError) { authError.textContent = 'Google Sign-In failed: ' + err.message; authError.style.display = 'block'; }
+                }
+            } else {
+                if (authError) { authError.textContent = 'Google auth service is loading. Please try again in a moment.'; authError.style.display = 'block'; }
+            }
+        });
+    }
 });

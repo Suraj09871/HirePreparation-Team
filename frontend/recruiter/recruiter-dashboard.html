@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Recruiter Dashboard - HireSmart</title>
+    <title>Recruiter Dashboard - HirePrep</title>
     <link rel="stylesheet" href="../../css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -52,7 +52,7 @@
         <aside class="rec-sidebar">
             <div class="logo-area">
                 <span class="logo-icon"></span>
-                <span style="font-weight:700;font-size:1.1rem;">HireSmart</span>
+                <span style="font-weight:700;font-size:1.1rem;">HirePrep</span>
                 <span class="badge">Recruiter</span>
             </div>
             <nav>
@@ -60,27 +60,34 @@
                 <a class="nav-item active" data-section="overview"><span class="icon">📊</span> Dashboard</a>
                 <a class="nav-item" data-section="jobs"><span class="icon">💼</span> My Jobs</a>
                 <div class="nav-section">Hiring</div>
+                <a class="nav-item" data-section="applicants"><span class="icon">📄</span> Applicants & Ranking</a>
+                <a class="nav-item" data-section="interviews"><span class="icon">📅</span> Interview Schedule</a>
                 <a class="nav-item" data-section="pipeline"><span class="icon">🔄</span> Pipeline</a>
                 <a class="nav-item" data-section="candidates"><span class="icon">🔍</span> Candidate Search</a>
+                <a class="nav-item" data-section="company"><span class="icon">🏢</span> Company & Rounds</a>
                 <div class="nav-section">Tools</div>
                 <a class="nav-item" data-section="notifications"><span class="icon">🔔</span> Notifications</a>
             </nav>
             <div class="sidebar-footer">
-                <button id="recSignOut" class="btn btn-outline" style="width:100%;border-color:rgba(255,255,255,0.2);color:rgba(255,255,255,0.7);font-size:0.8rem;">↪ Sign Out</button>
+                <button id="recSignOut" onclick="handleRecruiterLogout()" class="btn btn-outline" style="width:100%;border-color:rgba(255,255,255,0.2);color:rgba(255,255,255,0.7);font-size:0.8rem;cursor:pointer;">↪ Sign Out</button>
             </div>
         </aside>
         <div class="rec-main">
             <div class="rec-topbar">
                 <h1 id="topbarTitle">📊 Dashboard</h1>
                 <div style="display:flex;align-items:center;gap:1rem;">
+                    <button id="recThemeToggle" type="button" aria-label="Toggle dark mode" style="background:none;border:none;font-size:1.25rem;cursor:pointer;color:var(--text-muted);padding:0.25rem;">☼</button>
                     <span id="recName" style="font-size:0.85rem;font-weight:600;"></span>
                     <div id="recAvatar" style="width:32px;height:32px;background:#3b82f6;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:0.8rem;">R</div>
+                    <button id="recTopSignOut" onclick="handleRecruiterLogout()" class="btn btn-outline" style="padding:0.4rem 0.8rem;font-size:0.8rem;display:inline-flex;align-items:center;gap:0.3rem;cursor:pointer;">↪ Sign Out</button>
                 </div>
             </div>
             <div class="rec-content" id="recContent"></div>
         </div>
     </div>
     <div id="compareModal" style="display:none;"></div>
+    <script src="../../js/theme.js"></script>
+    <script src="../../js/sanitize.js"></script>
     <script src="../../js/api.js"></script>
     <script src="../../js/recruiter-dashboard.js"></script>
 </body>

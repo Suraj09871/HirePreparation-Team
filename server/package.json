@@ -1,7 +1,7 @@
 {
-  "name": "hiresmart-server",
+  "name": "hireprep-server",
   "version": "1.0.0",
-  "description": "HireSmart - Intelligent Job Matching Platform Backend",
+  "description": "HirePrep - Intelligent Job Matching Platform Backend",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

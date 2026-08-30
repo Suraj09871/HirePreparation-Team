@@ -3,17 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Applicant List & Ranking - HireSmart Recruiter</title>
+    <title>Applicant List & Ranking - HirePrep Recruiter</title>
     <link rel="stylesheet" href="../../css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body style="background: #f8fafc;">
-    <nav class="navbar" style="border-bottom: 1px solid var(--border-color); background: white;">
+    <nav class="navbar" style="border-bottom: 1px solid var(--border-color); background: var(--card-bg);">
         <div class="logo">
             <span class="logo-icon"></span>
-            HireSmart <span style="font-size: 0.75rem; background: var(--bg-muted); padding: 0.2rem 0.5rem; border-radius: 4px; margin-left: 0.5rem; font-weight: normal; border: 1px solid var(--border-color); color: var(--text-muted);">Recruiter</span>
+            HirePrep <span style="font-size: 0.75rem; background: var(--bg-muted); padding: 0.2rem 0.5rem; border-radius: 4px; margin-left: 0.5rem; font-weight: normal; border: 1px solid var(--border-color); color: var(--text-muted);">Recruiter</span>
         </div>
-        <div class="nav-links">
+        <button class="hamburger" id="hamburgerBtn" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="navLinks">
+
+            <span class="bar"></span>
+
+            <span class="bar"></span>
+
+            <span class="bar"></span>
+
+        </button>
+
+        <div class="nav-links" id="navLinks">
             <a href="recruiter-dashboard.html">Dashboard</a>
             <a href="job-posting.html">Post a Job</a>
             <a href="#" class="active">Applicants</a>
@@ -73,88 +83,15 @@
                     </tr>
                 </thead>
                 <tbody id="applicantTableBody">
-                    <!-- Rendered by JS -->
-                </tbody>
-                    <tr style="border-bottom: 1px solid var(--border-color);">
-                        <td style="padding: 1rem 1.5rem;">
-                            <div style="font-weight: 600; color: var(--text-main);">Sarah Jenkins</div>
-                            <div style="font-size: 0.75rem; color: var(--text-muted);">sarah.j@example.com</div>
-                        </td>
-                        <td style="padding: 1rem 1.5rem;">
-                            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                <div style="font-weight: 700; color: #10b981;">94%</div>
-                                <div style="width: 60px; height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden;">
-                                    <div style="width: 94%; height: 100%; background: #10b981;"></div>
-                                </div>
-                            </div>
-                        </td>
-                        <td style="padding: 1rem 1.5rem;"><span style="background: rgba(16, 185, 129, 0.1); color: #10b981; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">High</span></td>
-                        <td style="padding: 1rem 1.5rem; color: var(--text-muted); font-size: 0.875rem;">5 years</td>
-                        <td style="padding: 1rem 1.5rem;"><span style="color: var(--primary); font-weight: 500; font-size: 0.875rem;">In Review</span></td>
-                        <td style="padding: 1rem 1.5rem;"><button class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.75rem;">View Profile</button></td>
-                    </tr>
-                    
-                    <tr style="border-bottom: 1px solid var(--border-color);">
-                        <td style="padding: 1rem 1.5rem;">
-                            <div style="font-weight: 600; color: var(--text-main);">Michael Chen</div>
-                            <div style="font-size: 0.75rem; color: var(--text-muted);">m.chen@example.com</div>
-                        </td>
-                        <td style="padding: 1rem 1.5rem;">
-                            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                <div style="font-weight: 700; color: #10b981;">88%</div>
-                                <div style="width: 60px; height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden;">
-                                    <div style="width: 88%; height: 100%; background: #10b981;"></div>
-                                </div>
-                            </div>
-                        </td>
-                        <td style="padding: 1rem 1.5rem;"><span style="background: rgba(16, 185, 129, 0.1); color: #10b981; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">High</span></td>
-                        <td style="padding: 1rem 1.5rem; color: var(--text-muted); font-size: 0.875rem;">4 years</td>
-                        <td style="padding: 1rem 1.5rem;"><span style="color: var(--text-muted); font-weight: 500; font-size: 0.875rem;">New</span></td>
-                        <td style="padding: 1rem 1.5rem;"><button class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.75rem;">View Profile</button></td>
-                    </tr>
-
-                    <tr style="border-bottom: 1px solid var(--border-color);">
-                        <td style="padding: 1rem 1.5rem;">
-                            <div style="font-weight: 600; color: var(--text-main);">Amanda Smith</div>
-                            <div style="font-size: 0.75rem; color: var(--text-muted);">amandasmith@example.com</div>
-                        </td>
-                        <td style="padding: 1rem 1.5rem;">
-                            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                <div style="font-weight: 700; color: #f59e0b;">72%</div>
-                                <div style="width: 60px; height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden;">
-                                    <div style="width: 72%; height: 100%; background: #f59e0b;"></div>
-                                </div>
-                            </div>
-                        </td>
-                        <td style="padding: 1rem 1.5rem;"><span style="background: rgba(245, 158, 11, 0.1); color: #f59e0b; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">Medium</span></td>
-                        <td style="padding: 1rem 1.5rem; color: var(--text-muted); font-size: 0.875rem;">2 years</td>
-                        <td style="padding: 1rem 1.5rem;"><span style="color: var(--text-muted); font-weight: 500; font-size: 0.875rem;">New</span></td>
-                        <td style="padding: 1rem 1.5rem;"><button class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.75rem;">View Profile</button></td>
-                    </tr>
-
-                    <tr>
-                        <td style="padding: 1rem 1.5rem;">
-                            <div style="font-weight: 600; color: var(--text-main);">David Johnson</div>
-                            <div style="font-size: 0.75rem; color: var(--text-muted);">d.johnson99@example.com</div>
-                        </td>
-                        <td style="padding: 1rem 1.5rem;">
-                            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                <div style="font-weight: 700; color: #ef4444;">45%</div>
-                                <div style="width: 60px; height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden;">
-                                    <div style="width: 45%; height: 100%; background: #ef4444;"></div>
-                                </div>
-                            </div>
-                        </td>
-                        <td style="padding: 1rem 1.5rem;"><span style="background: rgba(239, 68, 68, 0.1); color: #ef4444; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">Low</span></td>
-                        <td style="padding: 1rem 1.5rem; color: var(--text-muted); font-size: 0.875rem;">1 year</td>
-                        <td style="padding: 1rem 1.5rem;"><span style="color: #ef4444; font-weight: 500; font-size: 0.875rem;">Rejected</span></td>
-                        <td style="padding: 1rem 1.5rem;"><button class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.75rem;">View Profile</button></td>
-                    </tr>
+                    <!-- Populated dynamically by applicant-list.js -->
                 </tbody>
             </table>
         </div>
     </main>
+    <script src="../../js/theme.js"></script>
+    <script src="../../js/sanitize.js"></script>
     <script src="../../js/api.js"></script>
+    <script src="../../js/nav-auth.js"></script>
     <script src="../../js/applicant-list.js"></script>
 </body>
 </html>

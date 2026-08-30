@@ -13,7 +13,18 @@ const app = express();
 
 // Security middleware
 app.use(helmet({
-    contentSecurityPolicy: false,
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdn.jsdelivr.net", "https://accounts.google.com", "https://apis.google.com", "https://cdnjs.cloudflare.com"],
+            styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://cdn.jsdelivr.net"],
+            fontSrc: ["'self'", "https://fonts.gstatic.com"],
+            imgSrc: ["'self'", "data:", "https:", "https://lh3.googleusercontent.com"],
+            connectSrc: ["'self'", "https://accounts.google.com", "https://oauth2.googleapis.com", "https://www.googleapis.com", "https://play.google.com", "*"],
+            frameSrc: ["'self'", "https://accounts.google.com"]
+        }
+    },
+    crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
     crossOriginEmbedderPolicy: false
 }));
 
@@ -24,11 +35,48 @@ if (process.env.NODE_ENV !== 'production') {
     app.use(morgan('combined'));
 }
 
-// CORS configuration
+// CORS configuration for Render (Backend) + Netlify (Frontend)
+const allowedOrigins = [
+    'http://localhost:5000',
+    'http://localhost:3000',
+    'http://localhost:5500',
+    'http://127.0.0.1:5500',
+    'http://127.0.0.1:5000',
+    'http://127.0.0.1:3000',
+    'https://hiresmart.netlify.app',
+    process.env.CLIENT_URL,
+    process.env.CORS_ORIGIN
+].filter(Boolean);
+
 app.use(cors({
-    origin: process.env.CORS_ORIGIN || '*',
-    credentials: true
+    origin: function (origin, callback) {
+        if (!origin) return callback(null, true);
+        if (
+            allowedOrigins.includes(origin) ||
+            origin.endsWith('.netlify.app') ||
+            origin.endsWith('.onrender.com') ||
+            origin.includes('localhost')
+        ) {
+            return callback(null, true);
+        }
+        return callback(null, true); // Allow all valid web clients
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
 }));
+app.options('*', cors());
+
+// Health Check Endpoint (essential for Render wake-up and uptime monitoring)
+app.get('/api/health', (req, res) => {
+    res.json({
+        status: 'online',
+        server: 'HirePrep Backend (Render)',
+        uptime: Math.floor(process.uptime()),
+        timestamp: new Date().toISOString(),
+        database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
+    });
+});
 
 // Body parsing
 app.use(express.json({ limit: '10mb' }));
@@ -47,7 +95,14 @@ const authLimiter = rateLimit({
 app.use(express.static(path.join(__dirname, '..')));
 
 // Serve uploaded files (with basic protection)
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', (req, res, next) => {
+    // Basic referrer check - uploads should be accessed from the app
+    const referer = req.get('referer');
+    if (!referer && req.query.token === undefined) {
+        return res.status(403).json({ success: false, message: 'Direct access not allowed' });
+    }
+    next();
+}, express.static(path.join(__dirname, 'uploads')));
 
 // Apply rate limiting to auth routes
 app.use('/api/auth', authLimiter);
@@ -60,6 +115,7 @@ app.use('/api/applications', require('./routes/applications'));
 app.use('/api/preparation', require('./routes/preparation'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/notifications', require('./routes/notifications'));
+app.use('/api/companies', require('./routes/companies'));
 
 // Resume routes (new)
 try {
@@ -68,15 +124,7 @@ try {
     console.log('⚠️ Resume routes not loaded:', e.message);
 }
 
-// Health check
-app.get('/api/health', (req, res) => {
-    res.json({
-        status: 'ok',
-        message: 'HireSmart API is running',
-        environment: process.env.NODE_ENV || 'development',
-        timestamp: new Date().toISOString()
-    });
-});
+// (Health check endpoint is defined above near line 71)
 
 // Global error handling middleware (no stack trace leaks)
 app.use((err, req, res, next) => {
@@ -108,14 +156,22 @@ async function startServer() {
             await runSeed();
         }
 
-        app.listen(PORT, () => {
-            console.log(`🚀 HireSmart server running on http://localhost:${PORT}`);
+        const server = app.listen(PORT, () => {
+            console.log(`🚀 HirePrep server running on http://localhost:${PORT}`);
             console.log(`📂 Frontend served from: ${path.join(__dirname, '..')}`);
             console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-            console.log('\n📋 Demo Login Credentials:');
-            console.log('   Admin:     surajkr09871@gmail.com / admin123');
-            console.log('   Student:   ujjwal@demo.com / student123');
-            console.log('   Recruiter: hr@acme.com / recruiter123');
+            console.log('📋 Demo credentials available in seed data.');
+        });
+
+        server.on('error', (err) => {
+            if (err.code === 'EADDRINUSE') {
+                console.error(`\n❌ Port ${PORT} is already in use by another background process.`);
+                console.error(`💡 Please re-run 'npm run dev' or kill the existing process on port ${PORT}.\n`);
+                process.exit(1);
+            } else {
+                console.error('❌ Server error:', err.message);
+                process.exit(1);
+            }
         });
     } catch (err) {
         console.error('❌ Server start error:', err.message);
@@ -166,37 +222,8 @@ async function runSeed() {
     const recruiter2 = new User({ name: 'TechHire Team', email: 'hr@techhire.com', password: 'recruiter123', role: 'recruiter' });
     await recruiter2.save();
 
-    // Companies
-    await Company.insertMany([
-        { name: 'Google', website: 'google.com', domain: 'product', industry: 'Technology', size: 'enterprise', headquarter: 'Mountain View, CA', description: 'Search, cloud, AI leader', isVerified: true },
-        { name: 'Amazon', website: 'amazon.com', domain: 'product', industry: 'E-Commerce', size: 'enterprise', headquarter: 'Seattle, WA', description: 'E-commerce and cloud giant', isVerified: true },
-        { name: 'Microsoft', website: 'microsoft.com', domain: 'product', industry: 'Technology', size: 'enterprise', headquarter: 'Redmond, WA', description: 'Enterprise software leader', isVerified: true },
-        { name: 'Meta', website: 'meta.com', domain: 'product', industry: 'Social Media', size: 'enterprise', headquarter: 'Menlo Park, CA', description: 'Social media and VR', isVerified: true },
-        { name: 'Apple', website: 'apple.com', domain: 'product', industry: 'Consumer Electronics', size: 'enterprise', headquarter: 'Cupertino, CA', isVerified: true },
-        { name: 'Netflix', website: 'netflix.com', domain: 'product', industry: 'Entertainment', size: 'enterprise', headquarter: 'Los Gatos, CA', isVerified: true },
-        { name: 'Stripe', website: 'stripe.com', domain: 'product', industry: 'Fintech', size: 'enterprise', headquarter: 'San Francisco, CA', isVerified: true },
-        { name: 'Uber', website: 'uber.com', domain: 'product', industry: 'Transportation', size: 'enterprise', headquarter: 'San Francisco, CA', isVerified: true },
-        { name: 'Spotify', website: 'spotify.com', domain: 'product', industry: 'Music', size: 'enterprise', headquarter: 'Stockholm, Sweden', isVerified: true },
-        { name: 'LinkedIn', website: 'linkedin.com', domain: 'product', industry: 'Professional Network', size: 'enterprise', headquarter: 'Sunnyvale, CA', isVerified: true },
-        { name: 'Salesforce', website: 'salesforce.com', domain: 'product', industry: 'CRM', size: 'enterprise', headquarter: 'San Francisco, CA', isVerified: true },
-        { name: 'Adobe', website: 'adobe.com', domain: 'product', industry: 'Creative Software', size: 'enterprise', headquarter: 'San Jose, CA', isVerified: true },
-        { name: 'Oracle', website: 'oracle.com', domain: 'product', industry: 'Enterprise Software', size: 'enterprise', headquarter: 'Austin, TX', isVerified: true },
-        { name: 'Atlassian', website: 'atlassian.com', domain: 'product', industry: 'Developer Tools', size: 'enterprise', headquarter: 'Sydney, Australia', isVerified: true },
-        { name: 'Airbnb', website: 'airbnb.com', domain: 'product', industry: 'Travel', size: 'enterprise', headquarter: 'San Francisco, CA', isVerified: true },
-        { name: 'Infosys', website: 'infosys.com', domain: 'service', industry: 'IT Services', size: 'enterprise', headquarter: 'Bangalore, India', isVerified: true },
-        { name: 'TCS', website: 'tcs.com', domain: 'service', industry: 'IT Services', size: 'enterprise', headquarter: 'Mumbai, India', isVerified: true },
-        { name: 'Wipro', website: 'wipro.com', domain: 'service', industry: 'IT Services', size: 'enterprise', headquarter: 'Bangalore, India', isVerified: true },
-        { name: 'Accenture', website: 'accenture.com', domain: 'service', industry: 'Consulting', size: 'enterprise', headquarter: 'Dublin, Ireland', isVerified: true },
-        { name: 'Cognizant', website: 'cognizant.com', domain: 'service', industry: 'IT Services', size: 'enterprise', headquarter: 'Teaneck, NJ', isVerified: true },
-        { name: 'HCLTech', website: 'hcltech.com', domain: 'service', industry: 'IT Services', size: 'enterprise', headquarter: 'Noida, India', isVerified: true },
-        { name: 'Razorpay', website: 'razorpay.com', domain: 'startup', industry: 'Fintech', size: 'mid', headquarter: 'Bangalore, India', isVerified: true },
-        { name: 'CRED', website: 'cred.club', domain: 'startup', industry: 'Fintech', size: 'startup', headquarter: 'Bangalore, India', isVerified: true },
-        { name: 'PhonePe', website: 'phonepe.com', domain: 'startup', industry: 'Fintech', size: 'mid', headquarter: 'Bangalore, India', isVerified: true },
-        { name: 'Swiggy', website: 'swiggy.com', domain: 'startup', industry: 'Food Delivery', size: 'mid', headquarter: 'Bangalore, India', isVerified: true },
-        { name: 'Zerodha', website: 'zerodha.com', domain: 'startup', industry: 'Fintech', size: 'mid', headquarter: 'Bangalore, India', isVerified: true },
-        { name: 'TechNova Inc.', website: 'technova.io', isVerified: false, submittedBy: recruiter._id, domain: 'startup', size: 'startup' },
-        { name: 'Global Solutions', website: 'globalsol.com', isVerified: false, submittedBy: recruiter._id, domain: 'service', size: 'mid' }
-    ]);
+    // Real companies are created only when recruiters register or submit company verification requests
+    // No mock/fake companies seeded
 
     // Jobs
     await Job.insertMany([
@@ -221,7 +248,7 @@ async function runSeed() {
     const { calculateSkillMatch, calculateExperienceScore, calculateResumeCompleteness, calculateHiringProbability } = require('./utils/matchingAlgorithm');
 
     // Welcome notification
-    await new Notification({ type: 'announcement', title: 'Welcome to HireSmart!', message: 'Start your preparation journey today.', targetRole: 'all', createdBy: admin._id }).save();
+    await new Notification({ type: 'announcement', title: 'Welcome to HirePrep!', message: 'Start your preparation journey today.', targetRole: 'all', createdBy: admin._id }).save();
 
     // Seed sample applications for pipeline demo
     const allJobs = await Job.find();

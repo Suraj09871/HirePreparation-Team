@@ -39,4 +39,8 @@ const notificationSchema = new mongoose.Schema({
     }
 });
 
+// Indexes for common query patterns
+notificationSchema.index({ targetRole: 1, createdAt: -1 });
+notificationSchema.index({ targetUserId: 1 });
+
 module.exports = mongoose.model('Notification', notificationSchema);

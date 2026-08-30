@@ -54,42 +54,8 @@ async function seed() {
         await recruiter2.save();
         console.log('✅ Users created');
 
-        // === COMPANIES (25+) ===
-        const companies = [
-            { name: 'Google', website: 'google.com', domain: 'product', industry: 'Technology', size: 'enterprise', headquarter: 'Mountain View, CA', description: 'Search, cloud, and AI leader', isVerified: true },
-            { name: 'Amazon', website: 'amazon.com', domain: 'product', industry: 'E-Commerce / Cloud', size: 'enterprise', headquarter: 'Seattle, WA', description: 'E-commerce and cloud computing giant', isVerified: true },
-            { name: 'Microsoft', website: 'microsoft.com', domain: 'product', industry: 'Technology', size: 'enterprise', headquarter: 'Redmond, WA', description: 'Enterprise software and cloud leader', isVerified: true },
-            { name: 'Meta', website: 'meta.com', domain: 'product', industry: 'Social Media', size: 'enterprise', headquarter: 'Menlo Park, CA', description: 'Social media and VR/AR', isVerified: true },
-            { name: 'Apple', website: 'apple.com', domain: 'product', industry: 'Consumer Electronics', size: 'enterprise', headquarter: 'Cupertino, CA', description: 'Consumer electronics and software', isVerified: true },
-            { name: 'Netflix', website: 'netflix.com', domain: 'product', industry: 'Entertainment', size: 'enterprise', headquarter: 'Los Gatos, CA', description: 'Streaming entertainment platform', isVerified: true },
-            { name: 'Uber', website: 'uber.com', domain: 'product', industry: 'Transportation', size: 'enterprise', headquarter: 'San Francisco, CA', description: 'Ride-sharing and delivery platform', isVerified: true },
-            { name: 'Airbnb', website: 'airbnb.com', domain: 'product', industry: 'Travel', size: 'enterprise', headquarter: 'San Francisco, CA', description: 'Online marketplace for lodging', isVerified: true },
-            { name: 'Spotify', website: 'spotify.com', domain: 'product', industry: 'Music', size: 'enterprise', headquarter: 'Stockholm, Sweden', description: 'Audio streaming platform', isVerified: true },
-            { name: 'LinkedIn', website: 'linkedin.com', domain: 'product', industry: 'Professional Network', size: 'enterprise', headquarter: 'Sunnyvale, CA', description: 'Professional networking platform', isVerified: true },
-            { name: 'Salesforce', website: 'salesforce.com', domain: 'product', industry: 'CRM', size: 'enterprise', headquarter: 'San Francisco, CA', description: 'CRM and enterprise cloud', isVerified: true },
-            { name: 'Adobe', website: 'adobe.com', domain: 'product', industry: 'Creative Software', size: 'enterprise', headquarter: 'San Jose, CA', description: 'Creative and document solutions', isVerified: true },
-            { name: 'Oracle', website: 'oracle.com', domain: 'product', industry: 'Enterprise Software', size: 'enterprise', headquarter: 'Austin, TX', description: 'Database and cloud infrastructure', isVerified: true },
-            { name: 'Stripe', website: 'stripe.com', domain: 'product', industry: 'Fintech', size: 'enterprise', headquarter: 'San Francisco, CA', description: 'Payment infrastructure', isVerified: true },
-            { name: 'Atlassian', website: 'atlassian.com', domain: 'product', industry: 'Developer Tools', size: 'enterprise', headquarter: 'Sydney, Australia', description: 'Team collaboration software', isVerified: true },
-            // Service-based
-            { name: 'Infosys', website: 'infosys.com', domain: 'service', industry: 'IT Services', size: 'enterprise', headquarter: 'Bangalore, India', description: 'IT consulting and services', isVerified: true },
-            { name: 'TCS', website: 'tcs.com', domain: 'service', industry: 'IT Services', size: 'enterprise', headquarter: 'Mumbai, India', description: 'IT services and consulting', isVerified: true },
-            { name: 'Wipro', website: 'wipro.com', domain: 'service', industry: 'IT Services', size: 'enterprise', headquarter: 'Bangalore, India', description: 'IT and business consulting', isVerified: true },
-            { name: 'Accenture', website: 'accenture.com', domain: 'service', industry: 'Consulting', size: 'enterprise', headquarter: 'Dublin, Ireland', description: 'Global professional services', isVerified: true },
-            { name: 'Cognizant', website: 'cognizant.com', domain: 'service', industry: 'IT Services', size: 'enterprise', headquarter: 'Teaneck, NJ', description: 'IT services and consulting', isVerified: true },
-            { name: 'HCLTech', website: 'hcltech.com', domain: 'service', industry: 'IT Services', size: 'enterprise', headquarter: 'Noida, India', description: 'Technology services company', isVerified: true },
-            // Startups
-            { name: 'Razorpay', website: 'razorpay.com', domain: 'startup', industry: 'Fintech', size: 'mid', headquarter: 'Bangalore, India', description: 'Payment solutions for businesses', isVerified: true },
-            { name: 'Zerodha', website: 'zerodha.com', domain: 'startup', industry: 'Fintech', size: 'mid', headquarter: 'Bangalore, India', description: 'Online stock trading platform', isVerified: true },
-            { name: 'CRED', website: 'cred.club', domain: 'startup', industry: 'Fintech', size: 'startup', headquarter: 'Bangalore, India', description: 'Credit card bill payment app', isVerified: true },
-            { name: 'PhonePe', website: 'phonepe.com', domain: 'startup', industry: 'Fintech', size: 'mid', headquarter: 'Bangalore, India', description: 'Digital payments platform', isVerified: true },
-            { name: 'Swiggy', website: 'swiggy.com', domain: 'startup', industry: 'Food Delivery', size: 'mid', headquarter: 'Bangalore, India', description: 'Food and grocery delivery', isVerified: true },
-            // Unverified
-            { name: 'TechNova Inc.', website: 'technova.io', isVerified: false, submittedBy: recruiter._id, domain: 'startup', industry: 'SaaS', size: 'startup', headquarter: 'Pune, India', description: 'SaaS startup' },
-            { name: 'Global Solutions', website: 'globalsol.com', isVerified: false, submittedBy: recruiter._id, domain: 'service', industry: 'IT Services', size: 'mid', headquarter: 'Chennai, India', description: 'IT solutions provider' }
-        ];
-        await Company.insertMany(companies);
-        console.log('✅ Companies created (' + companies.length + ')');
+        // === COMPANIES ===
+        // No fake mock companies seeded. Real companies are registered directly by recruiters.
 
         // === JOBS ===
         const jobs = [
@@ -150,7 +116,7 @@ async function seed() {
         console.log('✅ Preparation paths created (' + preps.length + ')');
 
         // === WELCOME NOTIFICATION ===
-        await new Notification({ type: 'announcement', title: 'Welcome to HireSmart!', message: 'Start your interview preparation journey today. Explore company-wise prep guides and practice questions.', targetRole: 'all', createdBy: admin._id }).save();
+        await new Notification({ type: 'announcement', title: 'Welcome to HirePrep!', message: 'Start your interview preparation journey today. Explore company-wise prep guides and practice questions.', targetRole: 'all', createdBy: admin._id }).save();
 
         console.log('\n🎉 Database seeded successfully!');
         console.log('\n📋 Login Credentials:');

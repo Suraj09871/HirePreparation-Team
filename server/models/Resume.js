@@ -42,4 +42,7 @@ resumeSchema.pre('save', function(next) {
     next();
 });
 
+// Ensure one resume per user
+resumeSchema.index({ userId: 1 }, { unique: true });
+
 module.exports = mongoose.model('Resume', resumeSchema);

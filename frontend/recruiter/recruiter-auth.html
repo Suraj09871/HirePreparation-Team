@@ -3,48 +3,437 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Recruiter Login - HireSmart</title>
+    <title>Recruiter Registration - HirePrep</title>
     <link rel="stylesheet" href="../../css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <style>
+        .reg-section { margin-bottom: 1.5rem; }
+        .reg-section h3 { font-size: 0.95rem; font-weight: 600; margin: 0 0 0.75rem; display: flex; align-items: center; gap: 0.5rem; }
+        .reg-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+        .reg-field { margin-bottom: 0; }
+        .reg-field label { display: block; font-size: 0.8rem; font-weight: 500; margin-bottom: 0.35rem; color: var(--text-muted); }
+        .reg-field input, .reg-field select, .reg-field textarea {
+            width: 100%; padding: 0.65rem 0.75rem; border: 1px solid var(--border-color);
+            border-radius: 8px; font-size: 0.85rem; font-family: inherit;
+            transition: border-color 0.2s;
+        }
+        .reg-field input:focus, .reg-field select:focus, .reg-field textarea:focus {
+            outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(249,115,22,0.1);
+        }
+        .reg-field textarea { resize: vertical; min-height: 60px; }
+        .reg-field .required::after { content: ' *'; color: #ef4444; }
+        .section-divider { height: 1px; background: var(--border-color); margin: 1.5rem 0; }
+        .step-indicator { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; justify-content: center; }
+        .step-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--border-color); transition: 0.3s; }
+        .step-dot.active { background: var(--primary); transform: scale(1.2); }
+        .step-dot.done { background: #10b981; }
+        @media (max-width: 600px) { .reg-grid { grid-template-columns: 1fr; } }
+    </style>
 </head>
-<body style="background: #f8fafc; display: flex; align-items: center; justify-content: center; min-height: 100vh;">
-    <div style="background: white; padding: 3rem; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 100%; max-width: 480px; border: 1px solid var(--border-color);">
-        <div style="text-align: center; margin-bottom: 2rem;">
-            <div class="logo justify-center" style="margin-bottom: 1rem;">
+<body style="background: #f8fafc; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 1rem;">
+    <div style="background: white; padding: 2.5rem; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 100%; max-width: 600px; border: 1px solid var(--border-color);">
+        <div style="text-align: center; margin-bottom: 1.5rem;">
+            <div class="logo justify-center" style="margin-bottom: 0.75rem;">
                 <span class="logo-icon"></span>
-                HireSmart <span style="font-size: 0.75rem; background: var(--bg-muted); padding: 0.2rem 0.5rem; border-radius: 4px; margin-left: 0.5rem; font-weight: normal; border: 1px solid var(--border-color); color: var(--text-muted);">Recruiter</span>
+                HirePrep <span style="font-size: 0.75rem; background: var(--bg-muted); padding: 0.2rem 0.5rem; border-radius: 4px; margin-left: 0.5rem; font-weight: normal; border: 1px solid var(--border-color); color: var(--text-muted);">Recruiter</span>
             </div>
-            <h1 id="pageTitle" style="font-size: 1.5rem; margin-bottom: 0.5rem;">Recruiter Login</h1>
-            <p id="pageSubtitle" style="color: var(--text-muted); font-size: 0.875rem;">Sign in to manage your job postings.</p>
+            <h1 id="pageTitle" style="font-size: 1.4rem; margin-bottom: 0.4rem;">Recruiter Login</h1>
+            <p id="pageSubtitle" style="color: var(--text-muted); font-size: 0.85rem;">Sign in to manage your job postings.</p>
         </div>
 
-        <div id="authError" class="error-message" style="display:none;background:rgba(239,68,68,0.1);color:#ef4444;padding:0.75rem;border-radius:8px;text-align:center;margin-bottom:1rem;font-size:0.875rem;"></div>
+        <div id="authError" class="error-message" style="display:none;background:rgba(239,68,68,0.1);color:#ef4444;padding:0.75rem;border-radius:8px;text-align:center;margin-bottom:1rem;font-size:0.85rem;"></div>
 
-        <form id="authForm">
-            <div id="nameField" class="form-group" style="display:none;">
-                <label style="display:block;font-size:0.875rem;font-weight:500;margin-bottom:0.5rem;">Company Name</label>
-                <input type="text" id="authName" placeholder="Acme Corp" style="width:100%;padding:0.75rem;border:1px solid var(--border-color);border-radius:8px;">
+        <!-- LOGIN FORM -->
+        <form id="loginForm">
+            <div class="reg-field" style="margin-bottom:1rem;">
+                <label>Email</label>
+                <input type="email" id="loginEmail" placeholder="hr@company.com" required>
             </div>
-            <div class="form-group" style="margin-bottom:1.25rem;">
-                <label style="display:block;font-size:0.875rem;font-weight:500;margin-bottom:0.5rem;">Email</label>
-                <input type="email" id="authEmail" placeholder="hr@company.com" required style="width:100%;padding:0.75rem;border:1px solid var(--border-color);border-radius:8px;">
+            <div class="reg-field" style="margin-bottom:1.25rem;">
+                <label>Password</label>
+                <input type="password" id="loginPassword" placeholder="••••••••" required>
             </div>
-            <div class="form-group" style="margin-bottom:1.25rem;">
-                <label style="display:block;font-size:0.875rem;font-weight:500;margin-bottom:0.5rem;">Password</label>
-                <input type="password" id="authPassword" placeholder="••••••••" required style="width:100%;padding:0.75rem;border:1px solid var(--border-color);border-radius:8px;">
-            </div>
-            <button type="submit" id="submitBtn" class="btn btn-primary" style="width:100%;padding:0.75rem;font-size:1rem;">Sign In</button>
+            <button type="submit" id="loginBtn" class="btn btn-primary" style="width:100%;padding:0.75rem;font-size:1rem;">Sign In</button>
         </form>
 
-        <div style="margin-top:1.5rem;text-align:center;font-size:0.875rem;color:var(--text-muted);">
+        <div id="googleDivider" style="margin-top: 1.25rem; text-align: center; position: relative;">
+            <hr style="border: none; border-top: 1px solid var(--border-color);">
+            <span style="position: absolute; top: -0.6rem; left: 50%; transform: translateX(-50%); background: white; padding: 0 1rem; color: var(--text-muted); font-size: 0.8rem;">Or</span>
+        </div>
+
+        <button id="googleBtn" type="button" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.75rem; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; background: white; color: var(--text-main); font-weight: 600; font-size: 0.9rem; cursor: pointer; margin-top: 1rem; transition: all 0.2s;">
+            <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+            Continue with Google
+        </button>
+
+        <!-- REGISTRATION FORM -->
+        <form id="registerForm" style="display:none;">
+            <!-- Step indicator -->
+            <div class="step-indicator" id="stepIndicator">
+                <div class="step-dot active" data-step="1"></div>
+                <div class="step-dot" data-step="2"></div>
+                <div class="step-dot" data-step="3"></div>
+            </div>
+
+            <!-- STEP 1: Account Info -->
+            <div id="regStep1">
+                <div class="reg-section">
+                    <h3>👤 Your Account</h3>
+                    <div class="reg-grid">
+                        <div class="reg-field">
+                            <label class="required">Full Name</label>
+                            <input type="text" id="regName" placeholder="John Doe" required>
+                        </div>
+                        <div class="reg-field">
+                            <label class="required">Email</label>
+                            <input type="email" id="regEmail" placeholder="hr@company.com" required>
+                        </div>
+                    </div>
+                    <div class="reg-field" style="margin-top:0.75rem;">
+                        <label class="required">Password (min 6 characters)</label>
+                        <input type="password" id="regPassword" placeholder="••••••••" required minlength="6">
+                    </div>
+                </div>
+                <button type="button" onclick="goToStep(2)" class="btn btn-primary" style="width:100%;padding:0.7rem;font-size:0.95rem;">Next → Company Details</button>
+            </div>
+
+            <!-- STEP 2: Company Details -->
+            <div id="regStep2" style="display:none;">
+                <div class="reg-section">
+                    <h3>🏢 Company Information</h3>
+                    <div class="reg-grid">
+                        <div class="reg-field">
+                            <label class="required">Company Name</label>
+                            <input type="text" id="regCompanyName" placeholder="Acme Corp" required>
+                        </div>
+                        <div class="reg-field">
+                            <label>Website</label>
+                            <input type="url" id="regCompanyWebsite" placeholder="https://acme.com">
+                        </div>
+                        <div class="reg-field">
+                            <label>Industry</label>
+                            <input type="text" id="regCompanyIndustry" placeholder="Technology, Finance, etc.">
+                        </div>
+                        <div class="reg-field">
+                            <label>Domain</label>
+                            <select id="regCompanyDomain">
+                                <option value="product">Product-Based</option>
+                                <option value="service">Service-Based</option>
+                                <option value="startup">Startup</option>
+                            </select>
+                        </div>
+                        <div class="reg-field">
+                            <label>Company Size</label>
+                            <select id="regCompanySize">
+                                <option value="startup">Startup (1-50)</option>
+                                <option value="mid">Mid-size (51-500)</option>
+                                <option value="enterprise">Enterprise (500+)</option>
+                            </select>
+                        </div>
+                        <div class="reg-field">
+                            <label>Headquarter / City</label>
+                            <input type="text" id="regCompanyHQ" placeholder="Bangalore, India">
+                        </div>
+                        <div class="reg-field">
+                            <label>Founded Year</label>
+                            <input type="number" id="regCompanyFounded" placeholder="2020" min="1900" max="2030">
+                        </div>
+                        <div class="reg-field">
+                            <label>Employee Count</label>
+                            <input type="text" id="regCompanyEmployees" placeholder="50-100">
+                        </div>
+                    </div>
+                    <div class="reg-field" style="margin-top:0.75rem;">
+                        <label>Company Description</label>
+                        <textarea id="regCompanyDesc" placeholder="Brief description of what your company does..."></textarea>
+                    </div>
+                </div>
+                <div style="display:flex;gap:0.75rem;">
+                    <button type="button" onclick="goToStep(1)" class="btn btn-outline" style="flex:1;padding:0.7rem;">← Back</button>
+                    <button type="button" onclick="goToStep(3)" class="btn btn-primary" style="flex:2;padding:0.7rem;">Next → HR & Verification</button>
+                </div>
+            </div>
+
+            <!-- STEP 3: HR Contact & Verification -->
+            <div id="regStep3" style="display:none;">
+                <div class="reg-section">
+                    <h3>👨‍💼 HR / Contact Person</h3>
+                    <div class="reg-grid">
+                        <div class="reg-field">
+                            <label class="required">HR Name</label>
+                            <input type="text" id="regHrName" placeholder="HR Manager Name">
+                        </div>
+                        <div class="reg-field">
+                            <label>HR Email</label>
+                            <input type="email" id="regHrEmail" placeholder="hr@company.com">
+                        </div>
+                        <div class="reg-field">
+                            <label>HR Phone</label>
+                            <input type="tel" id="regHrPhone" placeholder="+91 9876543210">
+                        </div>
+                        <div class="reg-field">
+                            <label>Official Company Email</label>
+                            <input type="email" id="regCompanyEmail" placeholder="info@company.com">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-divider"></div>
+
+                <div class="reg-section">
+                    <h3>📋 Verification Details</h3>
+                    <div class="reg-grid">
+                        <div class="reg-field">
+                            <label>Registration / GST Number</label>
+                            <input type="text" id="regRegistrationNum" placeholder="GST/CIN/Registration No.">
+                        </div>
+                        <div class="reg-field">
+                            <label>Company LinkedIn URL</label>
+                            <input type="url" id="regLinkedIn" placeholder="https://linkedin.com/company/acme">
+                        </div>
+                    </div>
+                    <div class="reg-field" style="margin-top:0.75rem;">
+                        <label>Office Address</label>
+                        <textarea id="regAddress" placeholder="Full office address for verification..."></textarea>
+                    </div>
+                </div>
+
+                <div style="background:#fef3c7;border:1px solid #fbbf24;border-radius:8px;padding:0.85rem;margin-bottom:1.25rem;font-size:0.8rem;color:#92400e;">
+                    ⚠️ <strong>Note:</strong> Your company will be reviewed by our admin team. You'll be able to post jobs once your company is verified. This usually takes 24-48 hours.
+                </div>
+
+                <div style="display:flex;gap:0.75rem;">
+                    <button type="button" onclick="goToStep(2)" class="btn btn-outline" style="flex:1;padding:0.7rem;">← Back</button>
+                    <button type="submit" id="registerBtn" class="btn btn-primary" style="flex:2;padding:0.7rem;font-size:0.95rem;">🚀 Register Company</button>
+                </div>
+            </div>
+        </form>
+
+        <div style="margin-top:1.5rem;text-align:center;font-size:0.85rem;color:var(--text-muted);">
             <span id="toggleText">Don't have a recruiter account?</span> <a href="#" id="toggleLink" style="color:var(--primary);text-decoration:none;font-weight:600;">Sign Up</a>
         </div>
-        <div style="margin-top:1rem;text-align:center;font-size:0.875rem;">
+        <div style="margin-top:0.75rem;text-align:center;font-size:0.85rem;">
             <a href="../../index.html" style="color:var(--text-muted);text-decoration:none;">← Back to Home</a>
         </div>
     </div>
 
+    <script src="../../js/theme.js"></script>
+    <script src="../../js/sanitize.js"></script>
     <script src="../../js/api.js"></script>
-    <script src="../../js/auth.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Redirect if already logged in
+        if (API.isLoggedIn()) {
+            const user = API.getUser();
+            if (user.role === 'recruiter') return window.location.href = '/frontend/recruiter/recruiter-dashboard.html';
+            if (user.role === 'admin') return window.location.href = '/frontend/admin/admin-dashboard.html';
+            return window.location.href = '/frontend/student/student-dashboard.html';
+        }
+
+        let isLoginMode = true;
+        const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm');
+        const authError = document.getElementById('authError');
+        const toggleLink = document.getElementById('toggleLink');
+        const toggleText = document.getElementById('toggleText');
+        const pageTitle = document.getElementById('pageTitle');
+        const pageSubtitle = document.getElementById('pageSubtitle');
+
+        function updateMode() {
+            if (isLoginMode) {
+                loginForm.style.display = 'block';
+                registerForm.style.display = 'none';
+                pageTitle.textContent = 'Recruiter Login';
+                pageSubtitle.textContent = 'Sign in to manage your job postings.';
+                toggleText.textContent = "Don't have a recruiter account?";
+                toggleLink.textContent = 'Register Company';
+            } else {
+                loginForm.style.display = 'none';
+                registerForm.style.display = 'block';
+                pageTitle.textContent = 'Register Your Company';
+                pageSubtitle.textContent = 'Create your recruiter account with company details.';
+                toggleText.textContent = 'Already have an account?';
+                toggleLink.textContent = 'Sign In';
+                goToStep(1);
+            }
+            authError.style.display = 'none';
+        }
+
+        toggleLink.addEventListener('click', (e) => { e.preventDefault(); isLoginMode = !isLoginMode; updateMode(); });
+        updateMode();
+
+        // LOGIN
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            authError.style.display = 'none';
+            const loginBtn = document.getElementById('loginBtn');
+            loginBtn.textContent = 'Signing in...'; loginBtn.disabled = true;
+            try {
+                const data = await API.post('/auth/login', {
+                    email: document.getElementById('loginEmail').value,
+                    password: document.getElementById('loginPassword').value
+                });
+                API.saveAuth(data.token, data.user);
+                if (typeof showToast === 'function') showToast(data.message);
+                setTimeout(() => {
+                    if (data.user.role === 'recruiter') window.location.href = '/frontend/recruiter/recruiter-dashboard.html';
+                    else if (data.user.role === 'admin') window.location.href = '/frontend/admin/admin-dashboard.html';
+                    else window.location.href = '/frontend/student/student-dashboard.html';
+                }, 500);
+            } catch (error) {
+                authError.textContent = error.message; authError.style.display = 'block';
+            } finally {
+                loginBtn.textContent = 'Sign In'; loginBtn.disabled = false;
+            }
+        });
+
+        // REGISTER
+        registerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            authError.style.display = 'none';
+            const regBtn = document.getElementById('registerBtn');
+            regBtn.textContent = 'Registering...'; regBtn.disabled = true;
+
+            // Validate required fields
+            const name = document.getElementById('regName').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const password = document.getElementById('regPassword').value;
+            const companyName = document.getElementById('regCompanyName').value.trim();
+            const hrName = document.getElementById('regHrName').value.trim();
+
+            if (!name || !email || !password) { authError.textContent = 'Please fill in your account details (Step 1).'; authError.style.display = 'block'; goToStep(1); regBtn.textContent = '🚀 Register Company'; regBtn.disabled = false; return; }
+            if (!companyName) { authError.textContent = 'Company name is required (Step 2).'; authError.style.display = 'block'; goToStep(2); regBtn.textContent = '🚀 Register Company'; regBtn.disabled = false; return; }
+
+            try {
+                const data = await API.post('/auth/register', {
+                    name,
+                    email,
+                    password,
+                    role: 'recruiter',
+                    companyName,
+                    companyWebsite: document.getElementById('regCompanyWebsite').value.trim(),
+                    companyDomain: document.getElementById('regCompanyDomain').value,
+                    companyIndustry: document.getElementById('regCompanyIndustry').value.trim(),
+                    companySize: document.getElementById('regCompanySize').value,
+                    companyHeadquarter: document.getElementById('regCompanyHQ').value.trim(),
+                    companyFoundedYear: document.getElementById('regCompanyFounded').value || null,
+                    companyEmployeeCount: document.getElementById('regCompanyEmployees').value.trim(),
+                    companyDescription: document.getElementById('regCompanyDesc').value.trim(),
+                    hrName: hrName || name,
+                    hrEmail: document.getElementById('regHrEmail').value.trim(),
+                    hrPhone: document.getElementById('regHrPhone').value.trim(),
+                    companyEmail: document.getElementById('regCompanyEmail').value.trim(),
+                    registrationNumber: document.getElementById('regRegistrationNum').value.trim(),
+                    companyLinkedIn: document.getElementById('regLinkedIn').value.trim(),
+                    companyAddress: document.getElementById('regAddress').value.trim()
+                });
+                API.saveAuth(data.token, data.user);
+                if (typeof showToast === 'function') showToast(data.message || 'Registration successful!');
+                setTimeout(() => {
+                    window.location.href = '/frontend/recruiter/recruiter-dashboard.html';
+                }, 800);
+            } catch (error) {
+                authError.textContent = error.message; authError.style.display = 'block';
+            } finally {
+                regBtn.textContent = '🚀 Register Company'; regBtn.disabled = false;
+            }
+        });
+        // Google Sign-In for Recruiter
+        const googleBtn = document.getElementById('googleBtn');
+        if (googleBtn) {
+            googleBtn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                authError.style.display = 'none';
+                
+                let isRecAuthActive = false;
+                const processGoogleRecruiterAuth = async (token) => {
+                    if (!token) {
+                        authError.textContent = 'Google sign-in was cancelled.';
+                        authError.style.display = 'block';
+                        return;
+                    }
+                    isRecAuthActive = true;
+                    try {
+                        const data = await API.post('/auth/google', {
+                            token: token,
+                            role: 'recruiter'
+                        });
+                        if (data.token && data.user) {
+                            API.saveAuth(data.token, data.user);
+                            if (typeof showToast === 'function') showToast('Signed in with Google!', 'success');
+                            setTimeout(() => {
+                                window.location.href = '/frontend/recruiter/recruiter-dashboard.html';
+                            }, 500);
+                        } else {
+                            isRecAuthActive = false;
+                            authError.textContent = data.message || 'Google login failed';
+                            authError.style.display = 'block';
+                        }
+                    } catch (err) {
+                        isRecAuthActive = false;
+                        authError.textContent = err.message || 'Google login failed';
+                        authError.style.display = 'block';
+                    }
+                };
+
+                if (typeof google !== 'undefined' && google.accounts) {
+                    try {
+                        if (google.accounts.oauth2) {
+                            const tokenClient = google.accounts.oauth2.initTokenClient({
+                                client_id: '622950445435-o4rmk192qnuttg77mv1poo707ov6upng.apps.googleusercontent.com',
+                                scope: 'email profile openid',
+                                callback: function(tokenResponse) {
+                                    if (tokenResponse && tokenResponse.access_token) {
+                                        processGoogleRecruiterAuth(tokenResponse.access_token);
+                                    }
+                                },
+                                error_callback: function(err) {
+                                    if (isRecAuthActive) return;
+                                    if (err && (err.type === 'popup_closed' || err.type === 'popup_blocked_by_browser')) return;
+                                    authError.textContent = 'Google Sign-In: ' + (err.message || 'Popup closed');
+                                    authError.style.display = 'block';
+                                }
+                            });
+                            tokenClient.requestAccessToken({ prompt: 'select_account' });
+                        } else if (google.accounts.id) {
+                            google.accounts.id.initialize({
+                                client_id: '622950445435-o4rmk192qnuttg77mv1poo707ov6upng.apps.googleusercontent.com',
+                                callback: function(response) {
+                                    if (response && response.credential) {
+                                        processGoogleRecruiterAuth(response.credential);
+                                    }
+                                }
+                            });
+                            google.accounts.id.prompt();
+                        }
+                    } catch (err) {
+                        authError.textContent = 'Google Sign-In failed: ' + err.message;
+                        authError.style.display = 'block';
+                    }
+                } else {
+                    authError.textContent = 'Google authentication service is loading. Please try again.';
+                    authError.style.display = 'block';
+                }
+            });
+        }
+    });
+
+    // Step navigation
+    let currentStep = 1;
+    function goToStep(step) {
+        currentStep = step;
+        [1, 2, 3].forEach(s => {
+            const el = document.getElementById('regStep' + s);
+            if (el) el.style.display = s === step ? 'block' : 'none';
+        });
+        document.querySelectorAll('.step-dot').forEach(dot => {
+            const dotStep = parseInt(dot.dataset.step);
+            dot.classList.remove('active', 'done');
+            if (dotStep === step) dot.classList.add('active');
+            else if (dotStep < step) dot.classList.add('done');
+        });
+    }
+    </script>
 </body>
 </html>

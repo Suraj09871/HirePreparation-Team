@@ -1,90 +1,114 @@
-# HireSmart Architecture & Project Map
+# HirePrep — System Architecture & Codebase Map
 
-> **For AI Assistants:** Read this file first to quickly understand the project structure and where logic is handled. This will save tokens and provide immediate context for modifications.
+> **Comprehensive Architecture Guide & Project Map for Developers & Evaluators.**
+
+---
 
 ## 📊 High-Level Architecture
-HireSmart is a full-stack platform using a **Node.js/Express backend** with MongoDB, and a **Vanilla HTML/CSS/JS frontend**.
+
+HirePrep is a production-ready, full-stack recruitment & technical interview preparation platform deployed on **Render (Node.js/Express Backend)** and **Netlify (Vanilla JS/HTML5/CSS3 Frontend)** with **MongoDB Atlas**.
 
 ```mermaid
 graph TD
-    subgraph Frontend [Frontend (Vanilla HTML/JS/CSS)]
-        UI[HTML Pages]
-        Styles[CSS/style.css]
-        ClientJS[Client Logic /js/]
-        API_Wrapper[API Wrapper /js/api.js]
-        
-        UI --> Styles
-        UI --> ClientJS
-        ClientJS --> API_Wrapper
+    subgraph Netlify_Edge [Netlify Edge Frontend]
+        Landing[Landing Page index.html]
+        StudentUI[Student Portal /frontend/student/]
+        RecruiterUI[Recruiter Suite /frontend/recruiter/]
+        AdminUI[Admin Dashboard /frontend/admin/]
+        AceIDE[Interactive Ace Code IDE]
+        MCQQuiz[MCQ & Aptitude Solver + Retry]
+        ThemeEngine[Dark/Light Theme Engine]
+        APIClient[Universal API Client /js/api.js]
+        Proxy[_redirects /api/* Proxy]
     end
 
-    subgraph Backend [Backend (Node.js + Express + Mongoose)]
-        Server[server.js]
-        Routes[Express Routes /server/routes/]
-        Models[Mongoose Models /server/models/]
-        DB[(MongoDB Atlas)]
-        
-        API_Wrapper -->|HTTP/REST| Server
-        Server --> Routes
-        Routes --> Models
-        Models --> DB
+    subgraph Render_Backend [Render Cloud Backend (Node.js + Express)]
+        Server[server.js & CORS]
+        AuthGuard[JWT & Admin Secret Key Auth]
+        MatchEngine[AI Fuzzy Skill & Candidate Matcher]
+        Routes[API Routes: Auth, Jobs, Apps, Admin, Prep]
+        NotificationHub[Universal Notification Dispatcher]
+        Logger[Activity & Audit Logger]
     end
+
+    subgraph Database [MongoDB Atlas Cluster]
+        Users[(Users & Roles)]
+        Profiles[(StudentProfiles & Skills)]
+        Jobs[(Jobs & Requirements)]
+        Apps[(Applications & Match %)]
+        Companies[(Companies & Verification)]
+        Prep[(PreparationRoadmaps)]
+        Notifs[(Notifications & Logs)]
+    end
+
+    StudentUI --> APIClient
+    RecruiterUI --> APIClient
+    AdminUI --> APIClient
+    APIClient --> Proxy
+    Proxy -->|HTTPS| Server
+    Server --> AuthGuard
+    AuthGuard --> Routes
+    Routes --> MatchEngine
+    Routes --> NotificationHub
+    Routes --> Logger
+    Routes --> Users & Profiles & Jobs & Apps & Companies & Prep & Notifs
 ```
+
+---
+
+## 👥 Team & Module Ownership
+
+| Member | Role | Primary Modules & Contributions |
+| :--- | :--- | :--- |
+| **Reenu Yadav** | Recruiter Suite & Admin Lead | Recruiter Dashboard, Company Verification Flow, Interview Scheduling Desk (Google Meet), Applicant Pipeline, Admin Operations |
+| **Shikha Chaurasia** | Student Experience & UI Lead | Student Dashboard & Resume Banner, Profile & Skill Matrix, Interactive Resume Builder (PDF), Target Company Preparation Paths |
+| **Sunny Kumar** | Backend & Matching Lead | Fuzzy Skill Matching Engine (Exact, Partial, Alias), Weighted Applicant Ranking (60/20/20), JWT / Google OAuth Security, Notification Hub |
+| **Suraj Kumar** | System Architect & Fullstack Lead | Ace Code Editor Sandbox with Real-time Autosave, Interactive MCQ & Aptitude Quiz Engine with Dynamic Retry, Admin Content CMS, Render + Netlify Cloud Deployment |
 
 ---
 
 ## 📂 Directory Structure & File Map
 
-### 1. Frontend HTML (`/frontend/` & Root)
-Where the UI markup lives.
-- `index.html` - The public landing page.
-- `frontend/auth.html` - Login and Signup page.
-- `frontend/admin/admin-dashboard.html` - The central admin portal (Analytics, Users, Companies, Questions).
-- `frontend/student/` - Core user portal.
-  - `student-dashboard.html` - Main landing area post-login.
-  - `student-profile.html` - User settings, forms, and basic details (Accordion layout).
-  - `roadmap.html` - Step-by-step career tracking layout.
-  - `practice.html` & `preparation.html` - Question banks and company prep interfaces.
+### 1. Root Files
+- `index.html`: Main landing page with interactive practice overview, live stats, and dynamic role-based navigation.
+- `team.html`: Team profiles and module contribution showcase.
+- `docs.html`: System architecture, database schema, API reference, and algorithm documentation.
+- `netlify.toml` & `_redirects`: Netlify Edge proxy rules forwarding `/api/*` requests to the Render backend.
+- `render.yaml`: Render blueprint for automated zero-downtime backend deployment.
 
-### 2. Client-Side JavaScript (`/js/`)
-Where all browser-side logic, API calling, and DOM manipulation lives.
-- **`js/api.js`**: **CRITICAL FILE.** The central wrapper for all backend communication (`API.get()`, `API.post()`). Handles JWT tokens, authentication state, and error handling.
-- **`js/unified-auth.js`**: Handles login/signup forms, Google Auth (mocked currently), and role-based redirects.
-- **`js/admin.js`**: Controls the Admin Dashboard (tab switching, Chart.js rendering, user role management).
-- **`js/student-profile.js`**: Handles form population, UI pill selection, and saving data to the backend for the Settings page.
-- **`js/roadmap.js`**: Calculates user progress (0/5 steps) based on profile completion.
-- **`js/theme.js`**: Global dark/light mode toggle logic.
+### 2. Frontend Subsystems (`/frontend/`)
+- **`frontend/auth.html`**: Unified authentication with role selection (`student`, `recruiter`, `admin`), Google OAuth login, and Admin Secret Key verification.
+- **`frontend/student/`**:
+  - `student-dashboard.html`: Student home with in-progress practice resume banner and recommended jobs.
+  - `practice.html`: 630+ problem practice hub (Coding, Technical MCQs, Aptitude) with solved badges and filters.
+  - `question-detail.html`: Ace Code Editor IDE with real-time debounced autosave, multi-language support (Python, JS, Java, C++), and test runner.
+  - `mcq-detail.html`: Interactive MCQ solver with instant retry on wrong answers, status badge recalibration, and progress tracking.
+  - `student-profile.html`: Profile management with skills rating and experience history.
+  - `resume-builder.html`: Live interactive resume builder with PDF export.
+  - `preparation.html`: Company hiring roadmaps and pattern guides.
+- **`frontend/recruiter/`**:
+  - `recruiter-dashboard.html`: Recruiter portal with active job management and pipeline statistics.
+  - `post-job.html`: Job creation wizard with required skill tags and salary parameters.
+  - `applicant-list.html`: AI-ranked applicant table with match score pills.
+  - `interview-schedule.html`: Recruiter interview scheduler with Google Meet link generation.
+- **`frontend/admin/`**:
+  - `admin-dashboard.html`: Admin panel with analytics, company verification, user manager, full Question Content CMS CRUD, interactive platform settings toggles, and live backend connection tester.
 
-### 3. Backend Routes (`/server/routes/`)
-Where RESTful endpoints are defined.
-- `auth.js` - `/api/auth/register` and `/api/auth/login`. Issues JWTs.
-- `profile.js` - `/api/profile`. Handles fetching and updating the massive `StudentProfile` schema (including the dynamic `additionalDetails` field).
-- `admin.js` - `/api/admin/...`. Protected routes (Admin role only) for fetching system analytics and updating user roles.
-- `companies.js` - Manages preparation company data.
+### 3. Core JavaScript Logic (`/js/`)
+- `js/api.js`: Universal API client wrapper with token caching, custom backend URL overrides, and normalized response parsing.
+- `js/admin.js`: Full admin logic, Question CMS CRUD, and platform settings.
+- `js/practice.js`: Problem filtering, solved status tracking, and "Resume where you left off" handler.
+- `js/nav-auth.js`: Universal dynamic navbar updater based on JWT role.
+- `js/theme.js`: Dark/Light theme toggle engine with persistent state.
 
-### 4. Backend Models (`/server/models/`)
-Where MongoDB Mongoose schemas are defined.
-- `User.js` - Basic credentials: name, email, password, role (`student` or `admin`).
-- `StudentProfile.js` - Extended user data: education, skills, resume URL. Contains an `additionalDetails` Mixed-type object to dynamically store complex frontend form fields (DOB, Pronouns, Hobbies) without rigid schema migrations.
-
-### 5. Styling (`/css/`)
-- `style.css` - A unified, tailwind-like utility stylesheet. Contains root CSS variables (`--primary`, `--card-bg`) that power the theme engine.
-
----
-
-## 🔑 Key Workflows for Future Edits
-
-1. **Adding a new form field to the Student Profile:**
-   - **Edit:** `frontend/student/student-profile.html` (Add the HTML input).
-   - **Edit:** `js/student-profile.js` (Extract the value and push it to the `additionalDetails` object in the payload).
-   - *No backend changes needed* (The `additionalDetails` field automatically accepts arbitrary JSON).
-
-2. **Editing the Admin Dashboard Tabs:**
-   - **Edit:** `frontend/admin/admin-dashboard.html` (Add the empty container).
-   - **Edit:** `js/admin.js` (Add a `renderNewTab()` function and map it to the navigation click).
-
-3. **Updating API logic or Tokens:**
-   - **Edit:** `js/api.js` (Do not use raw `fetch()` anywhere else in the app; always route through `API.js`).
-
-4. **Changing Colors or Themes:**
-   - **Edit:** `css/style.css` (Modify the `:root` and `[data-theme="dark"]` CSS variables).
+### 4. Backend Services (`/server/`)
+- `server/server.js`: Express server setup, CORS configuration, and route registration.
+- `server/routes/`:
+  - `auth.js`: Registration, login, Google OAuth, and JWT generation.
+  - `jobs.js`: Job postings, search filters, and application submission with real-time match scoring.
+  - `applications.js`: Applicant retrieval, status advancement, and recruiter review.
+  - `admin.js`: System metrics, company verification, question bank CRUD, and CSV exports.
+  - `preparation.js`: Company prep paths and hiring roadmaps.
+  - `notifications.js`: In-app notification creation and mark-as-read endpoints.
+- `server/models/`:
+  - `User.js`, `StudentProfile.js`, `Job.js`, `Application.js`, `Company.js`, `PreparationPath.js`, `Notification.js`, `ActivityLog.js`.

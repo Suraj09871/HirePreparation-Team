@@ -1,2 +1,6 @@
-/* Redirects for Netlify SPA - serve index for all routes */
-/*    /api/*    /api/:splat    200
+# Netlify Redirects for HirePrep
+# Proxy API calls to Render backend
+/api/*  https://hireprep-backend.onrender.com/api/:splat  200
+
+# Client-side routing fallback if needed
+/*  /index.html  200

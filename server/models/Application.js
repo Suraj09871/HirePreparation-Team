@@ -43,8 +43,16 @@ const applicationSchema = new mongoose.Schema({
     },
     interviewType: {
         type: String,
-        enum: ['phone', 'video', 'onsite', ''],
+        enum: ['phone', 'video', 'onsite', 'technical', 'hr', ''],
         default: ''
+    },
+    meetingLink: {
+        type: String,
+        default: ''
+    },
+    roundName: {
+        type: String,
+        default: 'Technical Interview'
     },
     appliedAt: {
         type: Date,

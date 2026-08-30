@@ -3,12 +3,15 @@ let questions = [], current = 0, answers = {}, timerInterval = null, timeLeft = 
 const container = () => document.getElementById('testContainer');
 
 document.addEventListener('DOMContentLoaded', () => {
-    if (!API.isLoggedIn()) return window.location.href = '/frontend/auth.html';
+    if (!API.isLoggedIn()) {
+        var base = (/\/frontend\/(student|recruiter|admin)\//i.test(window.location.pathname)) ? '../../' : '';
+        return window.location.href = base + 'frontend/auth.html';
+    }
     showSetup();
 });
 
 function showSetup() {
-    const tests = JSON.parse(localStorage.getItem('hiresmart_mock_tests') || '[]');
+    const tests = JSON.parse(localStorage.getItem('hireprep_mock_tests') || '[]');
     container().innerHTML = `
         <div class="test-setup">
             <div style="text-align:center;margin-bottom:2rem;">
@@ -179,15 +182,15 @@ function submitTest() {
     const category = document.getElementById('testCategory')?.value || questions[0]?.category || 'Mixed';
 
     // Save result
-    const tests = JSON.parse(localStorage.getItem('hiresmart_mock_tests') || '[]');
+    const tests = JSON.parse(localStorage.getItem('hireprep_mock_tests') || '[]');
     tests.push({ category, count: questions.length, correct, score, date: new Date().toISOString() });
-    localStorage.setItem('hiresmart_mock_tests', JSON.stringify(tests));
+    localStorage.setItem('hireprep_mock_tests', JSON.stringify(tests));
 
     container().innerHTML = `
-        <div class="result-card">
+        <div class="result-card" style="padding:2rem;">
             <div style="font-size:3rem;margin-bottom:0.5rem;">${score >= 70 ? '🎉' : score >= 40 ? '👍' : '💪'}</div>
             <h2 style="font-size:1.25rem;margin-bottom:0;">Test Complete!</h2>
-            <div class="result-score">${score}%</div>
+            <div class="result-score" style="font-size:3rem;margin:0.5rem 0;font-weight:800;color:var(--primary);">${score}%</div>
             <p style="color:var(--text-muted);margin-bottom:0.5rem;">${correct} out of ${questions.length} correct</p>
             <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:2rem;">${score >= 70 ? 'Excellent work! You\'re well prepared.' : score >= 40 ? 'Good effort! Keep practicing.' : 'Keep going! Practice makes perfect.'}</p>
             <div style="display:flex;gap:0.75rem;justify-content:center;">
@@ -197,3 +200,12 @@ function submitTest() {
         </div>
     `;
 }
+
+// Window Bindings for Inline onclick Handlers
+window.showSetup = showSetup;
+window.startTest = startTest;
+window.selectAnswer = selectAnswer;
+window.nextQ = nextQ;
+window.prevQ = prevQ;
+window.goToQ = goToQ;
+window.submitTest = submitTest;

@@ -3,14 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Match Result - HireSmart</title>
+    <title>Match Result - HirePrep</title>
     <link rel="stylesheet" href="../../css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body style="background: #f8fafc;">
     <nav class="navbar">
-        <div class="logo"><span class="logo-icon"></span> HireSmart</div>
-        <div class="nav-links">
+        <div class="logo"><span class="logo-icon"></span> HirePrep</div>
+        <button class="hamburger" id="hamburgerBtn" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="navLinks">
+
+            <span class="bar"></span>
+
+            <span class="bar"></span>
+
+            <span class="bar"></span>
+
+        </button>
+
+        <div class="nav-links" id="navLinks">
             <a href="../../index.html">Home</a>
             <a href="jobs.html">Jobs</a>
             <a href="practice.html">Practice</a>
@@ -51,6 +61,8 @@
         </div>
     </main>
 
+    <script src="../../js/theme.js"></script>
+    <script src="../../js/sanitize.js"></script>
     <script src="../../js/api.js"></script>
     <script src="../../js/nav-auth.js"></script>
     <script src="../../js/match-result.js"></script>

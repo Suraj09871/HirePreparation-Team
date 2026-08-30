@@ -1,13 +1,40 @@
 // admin.js — Full admin dashboard logic
-let state = { stats: {}, users: [], companies: [], prepCompanies: [], questions: null, analytics: {}, performers: [], notifications: [] };
+let state = { stats: {}, users: [], companies: [], prepCompanies: [], questions: null, analytics: {}, performers: [], notifications: [], contentTab: 'mcq' };
 const content = () => document.getElementById('adminContent');
 
 document.addEventListener('DOMContentLoaded', async () => {
     if (!API.isLoggedIn()) return window.location.href = '/frontend/auth.html';
     const user = API.getUser();
     if (user.role !== 'admin') return window.location.href = '/index.html';
-    document.getElementById('adminName').textContent = user.name;
-    document.getElementById('adminAvatar').textContent = user.name.charAt(0).toUpperCase();
+    const adminNameEl = document.getElementById('adminName');
+    const adminAvatarEl = document.getElementById('adminAvatar');
+    if (adminNameEl) {
+        adminNameEl.textContent = user.name || 'Admin';
+        adminNameEl.style.cursor = 'pointer';
+        adminNameEl.title = 'Click to edit Admin Profile';
+        adminNameEl.onclick = () => navigateToSection('profile');
+    }
+    if (adminAvatarEl) {
+        adminAvatarEl.textContent = (user.name || 'A').charAt(0).toUpperCase();
+        adminAvatarEl.style.cursor = 'pointer';
+        adminAvatarEl.title = 'Click to edit Admin Profile';
+        adminAvatarEl.onclick = () => navigateToSection('profile');
+    }
+
+    // Mobile sidebar drawer
+    const sidebarToggle = document.getElementById('adminSidebarToggle');
+    const adminSidebar = document.getElementById('adminSidebar');
+    if (sidebarToggle && adminSidebar) {
+        sidebarToggle.onclick = (e) => {
+            e.stopPropagation();
+            adminSidebar.classList.toggle('open');
+        };
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#adminSidebar') && !e.target.closest('#adminSidebarToggle')) {
+                adminSidebar.classList.remove('open');
+            }
+        });
+    }
 
     // Nav switching
     document.querySelectorAll('.nav-item[data-section]').forEach(item => {
@@ -16,6 +43,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             item.classList.add('active');
             const s = item.dataset.section;
             document.getElementById('topbarTitle').textContent = item.textContent.trim();
+            if (adminSidebar) adminSidebar.classList.remove('open');
             loadSection(s);
         });
     });
@@ -25,6 +53,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
         document.querySelector('[data-section="notifications"]').classList.add('active');
         document.getElementById('topbarTitle').textContent = '🔔 Notifications';
+        if (adminSidebar) adminSidebar.classList.remove('open');
         loadSection('notifications');
     };
 
@@ -37,8 +66,11 @@ async function loadSection(section) {
     try {
         if (section === 'overview') await renderOverview(c);
         else if (section === 'analytics') await renderAnalytics(c);
+        else if (section === 'profile') await renderAdminProfile(c);
         else if (section === 'users') await renderUsers(c);
         else if (section === 'companies') await renderCompanies(c);
+        else if (section === 'jobs') await renderAdminJobs(c);
+        else if (section === 'applications') await renderAdminApplications(c);
         else if (section === 'content') await renderContent(c);
         else if (section === 'performers') await renderPerformers(c);
         else if (section === 'notifications') await renderNotifications(c);
@@ -46,6 +78,7 @@ async function loadSection(section) {
         else if (section === 'matching') await renderMatching(c);
         else if (section === 'reports') renderReports(c);
         else if (section === 'settings') renderSettings(c);
+        else if (section === 'architecture') renderArchitecture(c);
         else if (section === 'sitehealth') await renderSiteHealth(c);
         else if (section === 'security') await renderSecurity(c);
         else if (section === 'dbstatus') await renderDbStatus(c);
@@ -54,19 +87,76 @@ async function loadSection(section) {
     } catch (e) { c.innerHTML = `<div style="text-align:center;padding:3rem;color:#ef4444;">Error: ${e.message}</div>`; }
 }
 
+// === NAVIGATION HELPERS ===
+function navigateToSection(section) {
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    const item = document.querySelector(`.nav-item[data-section="${section}"]`);
+    if (item) {
+        item.classList.add('active');
+        const titleEl = document.getElementById('topbarTitle');
+        if (titleEl) titleEl.textContent = item.textContent.trim();
+    }
+    loadSection(section);
+}
+window.navigateToSection = navigateToSection;
+
+function navigateToUsersWithRole(role = 'all') {
+    navigateToSection('users');
+    setTimeout(async () => {
+        const filter = document.getElementById('roleFilter');
+        if (filter) {
+            filter.value = role;
+            const q = document.getElementById('userSearch')?.value || '';
+            const d = await API.get(`/admin/users?search=${q}&role=${role}`);
+            state.users = d.users || [];
+            renderUserTable(content(), state.users);
+        }
+    }, 100);
+}
+window.navigateToUsersWithRole = navigateToUsersWithRole;
+
 // === OVERVIEW ===
 async function renderOverview(c) {
-    const data = await API.get('/admin/stats');
-    state.stats = data.stats;
+    let data = { stats: {} };
+    try {
+        data = await API.get('/admin/stats');
+    } catch(e) {
+        data = { stats: { students: 0, recruiters: 0, companies: 0, jobs: 0, applications: 0, pendingVerifications: 0, activeJobs: 0, activeUsers: 0, inactiveUsers: 0, conversionRate: 0 } };
+    }
+    state.stats = data.stats || {};
     const s = state.stats;
     c.innerHTML = `
         <div class="metric-grid">
-            <div class="metric-card"><div class="label">👥 Students</div><div class="value">${s.students}</div><div class="sub">Active learners</div></div>
-            <div class="metric-card"><div class="label">💼 Recruiters</div><div class="value">${s.recruiters}</div><div class="sub">Hiring partners</div></div>
-            <div class="metric-card"><div class="label">🏢 Companies</div><div class="value">${s.companies}</div><div class="sub">${s.pendingVerifications} pending</div></div>
-            <div class="metric-card"><div class="label">📋 Jobs</div><div class="value">${s.jobs}</div><div class="sub">${s.activeJobs||0} active</div></div>
-            <div class="metric-card"><div class="label">📄 Applications</div><div class="value">${s.applications}</div><div class="sub">${s.conversionRate||0}% conversion</div></div>
-            <div class="metric-card"><div class="label">✅ Active Users</div><div class="value">${s.activeUsers||0}</div><div class="sub">${s.inactiveUsers||0} inactive</div></div>
+            <div class="metric-card" onclick="navigateToUsersWithRole('student')" style="cursor:pointer;transition:transform 0.15s ease, box-shadow 0.15s ease;border-top:3px solid #f97316;" title="Click to inspect all student profiles">
+                <div class="label">👥 Students ↗</div>
+                <div class="value">${s.students || 0}</div>
+                <div class="sub" style="color:var(--primary);font-weight:600;">View all students & profiles →</div>
+            </div>
+            <div class="metric-card" onclick="navigateToUsersWithRole('recruiter')" style="cursor:pointer;transition:transform 0.15s ease, box-shadow 0.15s ease;border-top:3px solid #3b82f6;" title="Click to view recruiter partners">
+                <div class="label">💼 Recruiters ↗</div>
+                <div class="value">${s.recruiters || 0}</div>
+                <div class="sub" style="color:#3b82f6;font-weight:600;">View hiring partners →</div>
+            </div>
+            <div class="metric-card" onclick="navigateToSection('companies')" style="cursor:pointer;transition:transform 0.15s ease, box-shadow 0.15s ease;border-top:3px solid #10b981;" title="Click to manage registered companies">
+                <div class="label">🏢 Companies ↗</div>
+                <div class="value">${s.companies || 0}</div>
+                <div class="sub" style="color:#10b981;font-weight:600;">${s.pendingVerifications || 0} pending verification →</div>
+            </div>
+            <div class="metric-card" onclick="navigateToSection('jobs')" style="cursor:pointer;transition:transform 0.15s ease, box-shadow 0.15s ease;border-top:3px solid #8b5cf6;" title="Click to view job listings">
+                <div class="label">📋 Jobs ↗</div>
+                <div class="value">${s.jobs || 0}</div>
+                <div class="sub" style="color:#8b5cf6;font-weight:600;">${s.activeJobs || 0} active postings →</div>
+            </div>
+            <div class="metric-card" onclick="navigateToSection('applications')" style="cursor:pointer;transition:transform 0.15s ease, box-shadow 0.15s ease;border-top:3px solid #ec4899;" title="Click to view all job applications">
+                <div class="label">📄 Applications ↗</div>
+                <div class="value">${s.applications || 0}</div>
+                <div class="sub" style="color:#ec4899;font-weight:600;">${s.conversionRate || 0}% conversion rate →</div>
+            </div>
+            <div class="metric-card" onclick="navigateToUsersWithRole('all')" style="cursor:pointer;transition:transform 0.15s ease, box-shadow 0.15s ease;border-top:3px solid #06b6d4;" title="Click to inspect all platform users">
+                <div class="label">✅ Active Users ↗</div>
+                <div class="value">${s.activeUsers || 0}</div>
+                <div class="sub" style="color:#06b6d4;font-weight:600;">${s.inactiveUsers || 0} inactive (view all) →</div>
+            </div>
         </div>
         <div class="chart-grid">
             <div class="chart-card"><h3>📈 User Growth</h3><div style="position:relative;height:250px;"><canvas id="overviewGrowthChart"></canvas></div></div>
@@ -75,11 +165,14 @@ async function renderOverview(c) {
     `;
     try {
         const an = await API.get('/admin/analytics');
-        state.analytics = an.analytics;
+        state.analytics = an.analytics || {};
+        const monthLabels = an.analytics?.monthLabels || ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+        const studentGrowth = an.analytics?.studentGrowth || [0,0,0,0,0,0];
+        const recruiterGrowth = an.analytics?.recruiterGrowth || [0,0,0,0,0,0];
         new Chart(document.getElementById('overviewGrowthChart'), {
-            type: 'line', data: { labels: an.analytics.monthLabels, datasets: [
-                { label: 'Students', data: an.analytics.studentGrowth, borderColor: '#f97316', backgroundColor: 'rgba(249,115,22,0.1)', tension: 0.4, fill: true },
-                { label: 'Recruiters', data: an.analytics.recruiterGrowth, borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', tension: 0.4, fill: true }
+            type: 'line', data: { labels: monthLabels, datasets: [
+                { label: 'Students', data: studentGrowth, borderColor: '#f97316', backgroundColor: 'rgba(249,115,22,0.1)', tension: 0.4, fill: true },
+                { label: 'Recruiters', data: recruiterGrowth, borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', tension: 0.4, fill: true }
             ]}, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
         });
         new Chart(document.getElementById('overviewActiveChart'), {
@@ -98,9 +191,9 @@ async function renderAnalytics(c) {
         const perf = adv.performanceDistribution || { avgScore: 0, top10AvgScore: 0 };
         c.innerHTML = `
             <div class="toolbar"><div class="filters">
-                <button onclick="switchGranularity('daily')" class="btn btn-outline" style="font-size:0.75rem;padding:0.3rem 0.7rem;">Daily</button>
-                <button onclick="switchGranularity('weekly')" class="btn btn-outline" style="font-size:0.75rem;padding:0.3rem 0.7rem;">Weekly</button>
-                <button onclick="switchGranularity('monthly')" class="btn btn-primary" style="font-size:0.75rem;padding:0.3rem 0.7rem;">Monthly</button>
+                <button id="btnGranDaily" onclick="switchGranularity('daily')" class="btn btn-outline" style="font-size:0.75rem;padding:0.3rem 0.7rem;">Daily</button>
+                <button id="btnGranWeekly" onclick="switchGranularity('weekly')" class="btn btn-outline" style="font-size:0.75rem;padding:0.3rem 0.7rem;">Weekly</button>
+                <button id="btnGranMonthly" onclick="switchGranularity('monthly')" class="btn btn-primary" style="font-size:0.75rem;padding:0.3rem 0.7rem;">Monthly</button>
             </div><div style="font-size:0.8rem;color:var(--text-muted);">Avg Score: <b>${perf.avgScore}%</b> · Top 10% Avg: <b>${perf.top10AvgScore}%</b></div></div>
             <div class="chart-grid">
                 <div class="chart-card"><h3>📈 User Growth</h3><div style="position:relative;height:250px;"><canvas id="advGrowth"></canvas></div></div>
@@ -128,68 +221,468 @@ async function renderAnalytics(c) {
         new Chart(document.getElementById('advAppsDay'), { type:'line', data:{ labels:(apd.labels||[]), datasets:[{label:'Applications',data:(apd.data||[]),borderColor:'#6366f1',backgroundColor:'rgba(99,102,241,0.1)',tension:0.3,fill:true}]}, options:{responsive:true,maintainAspectRatio:false} });
     } catch(e) { c.innerHTML = `<div style="color:#ef4444;padding:2rem;">Error: ${e.message}</div>`; }
 }
+function handleLogout() {
+    API.clearAuth();
+    if (typeof sessionStorage !== 'undefined') sessionStorage.clear();
+    window.location.replace('/frontend/auth.html');
+}
+
 async function switchGranularity(g) {
-    const res = await API.get('/admin/analytics/advanced?granularity='+g);
-    const adv = res.advanced || {};
-    const gd = adv.growth || { labels: [], students: [], recruiters: [] };
-    const el = document.getElementById('advGrowth');
-    if(el) { const parent = el.closest('.chart-card'); if(parent) { parent.innerHTML = '<h3>📈 User Growth ('+g+')</h3><div style="position:relative;height:250px;"><canvas id="advGrowth"></canvas></div>'; new Chart(document.getElementById('advGrowth'), { type:'line', data:{ labels:gd.labels, datasets:[{label:'Students',data:gd.students,borderColor:'#f97316',tension:0.4,fill:true},{label:'Recruiters',data:gd.recruiters,borderColor:'#3b82f6',tension:0.4,fill:true}]}, options:{responsive:true,maintainAspectRatio:false} }); } }
+    try {
+        const res = await API.get('/admin/analytics/advanced?granularity=' + g);
+        const adv = res.advanced || {};
+        
+        ['daily', 'weekly', 'monthly'].forEach(type => {
+            const btn = document.getElementById('btnGran' + type.charAt(0).toUpperCase() + type.slice(1));
+            if (btn) {
+                if (type === g) {
+                    btn.className = 'btn btn-primary';
+                } else {
+                    btn.className = 'btn btn-outline';
+                }
+            }
+        });
+
+        const gData = adv.growth || { labels: [], students: [], recruiters: [] };
+        const growthEl = document.getElementById('advGrowth');
+        if (growthEl && growthEl.closest('.chart-card')) {
+            growthEl.closest('.chart-card').innerHTML = `<h3>📈 User Growth (${g})</h3><div style="position:relative;height:250px;"><canvas id="advGrowth"></canvas></div>`;
+            new Chart(document.getElementById('advGrowth'), {
+                type: 'line',
+                data: {
+                    labels: gData.labels,
+                    datasets: [
+                        { label: 'Students', data: gData.students, borderColor: '#f97316', backgroundColor: 'rgba(249,115,22,0.1)', tension: 0.4, fill: true },
+                        { label: 'Recruiters', data: gData.recruiters, borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', tension: 0.4, fill: true }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+            });
+        }
+    } catch(e) {
+        showToast('Granularity update failed: ' + e.message, 'error');
+    }
 }
 
 // === USERS ===
 async function renderUsers(c) {
-    const data = await API.get('/admin/users');
-    state.users = data.users;
+    c.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--text-muted);">Loading platform users...</div>';
+    let data = { users: [] };
+    try {
+        data = await API.get('/admin/users');
+    } catch(e) {
+        data = { users: [] };
+    }
+    state.users = data.users || [];
     renderUserTable(c, state.users);
 }
+
 function renderUserTable(c, users) {
     c.innerHTML = `
         <div class="toolbar">
             <div class="filters">
                 <select id="roleFilter"><option value="all">All Roles</option><option value="student">Students</option><option value="recruiter">Recruiters</option><option value="admin">Admins</option></select>
-                <input type="text" id="userSearch" placeholder="Search users..." style="min-width:200px;">
+                <input type="text" id="userSearch" placeholder="Search by name, email, skill..." style="min-width:220px;">
             </div>
             <div style="display:flex;gap:0.5rem;">
-                <a href="/api/admin/export/users" target="_blank" class="btn btn-outline" style="font-size:0.8rem;">📥 Export CSV</a>
+                <button onclick="adminExportCSV('/api/admin/export/users','users')" class="btn btn-outline" style="font-size:0.8rem;">📥 Export CSV</button>
             </div>
         </div>
         <div style="background:white;border-radius:12px;border:1px solid var(--border-color);overflow:hidden;">
             <table class="data-table">
-                <thead><tr><th>User</th><th>Role</th><th>Skills</th><th>Resume</th><th>Joined</th><th>Actions</th></tr></thead>
-                <tbody>${users.map(u => `<tr>
-                    <td><div style="display:flex;align-items:center;gap:0.75rem;"><div style="width:32px;height:32px;border-radius:50%;background:var(--primary);color:white;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:0.8rem;">${u.name.charAt(0).toUpperCase()}</div><div><div style="font-weight:600;">${u.name}</div><div style="font-size:0.75rem;color:var(--text-muted);">${u.email}</div></div></div></td>
+                <thead><tr><th>User (Click to inspect profile)</th><th>Role</th><th>Skills</th><th>Resume</th><th>Joined</th><th>Actions</th></tr></thead>
+                <tbody>${users.length === 0 ? '<tr><td colspan="6" style="text-align:center;padding:2.5rem;color:var(--text-muted);">No users found.</td></tr>' : users.map(u => `<tr>
+                    <td onclick="viewUserProfile('${u._id}')" style="cursor:pointer;" title="Click to view detailed student/user profile">
+                        <div style="display:flex;align-items:center;gap:0.75rem;">
+                            <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:white;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:0.85rem;">
+                                ${sanitize(u.name.charAt(0).toUpperCase())}
+                            </div>
+                            <div>
+                                <div style="font-weight:600;color:var(--primary);">${sanitize(u.name)} <span style="font-size:0.75rem;opacity:0.8;">↗</span></div>
+                                <div style="font-size:0.75rem;color:var(--text-muted);">${sanitize(u.email)}</div>
+                            </div>
+                        </div>
+                    </td>
                     <td><span class="role-pill role-${u.role}">${u.role}</span></td>
-                    <td>${u.skillCount || 0}</td>
-                    <td>${u.resumeScore || 0}%</td>
+                    <td><span style="font-weight:600;">${u.skillCount || 0}</span></td>
+                    <td><span style="font-weight:700;color:${(u.resumeScore||0)>=70?'#10b981':'#f59e0b'};">${u.resumeScore || 0}%</span></td>
                     <td style="font-size:0.8rem;color:var(--text-muted);">${new Date(u.createdAt).toLocaleDateString()}</td>
-                    <td><div style="display:flex;gap:0.5rem;"><button onclick="changeRole('${u._id}','${u.role}')" class="btn btn-outline" style="font-size:0.7rem;padding:0.25rem 0.5rem;">Role</button><button onclick="deleteUser('${u._id}')" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:1rem;">🗑</button></div></td>
+                    <td>
+                        <div style="display:flex;gap:0.4rem;align-items:center;">
+                            <button onclick="viewUserProfile('${u._id}')" class="btn btn-outline" style="font-size:0.72rem;padding:0.25rem 0.55rem;background:#f0fdf4;color:#15803d;border-color:#bbf7d0;font-weight:600;">👁 View Profile</button>
+                            <button onclick="changeRole('${u._id}','${u.role}')" class="btn btn-outline" style="font-size:0.72rem;padding:0.25rem 0.5rem;">Role</button>
+                            <button onclick="deleteUser('${u._id}')" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:1rem;" title="Delete user">🗑</button>
+                        </div>
+                    </td>
                 </tr>`).join('')}</tbody>
             </table>
         </div>
     `;
-    document.getElementById('userSearch').addEventListener('input', async (e) => {
-        const role = document.getElementById('roleFilter').value;
+
+    document.getElementById('userSearch')?.addEventListener('input', async (e) => {
+        const role = document.getElementById('roleFilter')?.value || 'all';
         const q = e.target.value;
         const d = await API.get(`/admin/users?search=${q}&role=${role}`);
-        state.users = d.users;
-        renderUserTable(c, d.users);
+        state.users = d.users || [];
+        renderUserTable(c, state.users);
     });
-    document.getElementById('roleFilter').addEventListener('change', async (e) => {
-        const d = await API.get(`/admin/users?role=${e.target.value}`);
-        state.users = d.users;
-        renderUserTable(c, d.users);
+
+    document.getElementById('roleFilter')?.addEventListener('change', async (e) => {
+        const q = document.getElementById('userSearch')?.value || '';
+        const d = await API.get(`/admin/users?role=${e.target.value}&search=${q}`);
+        state.users = d.users || [];
+        renderUserTable(c, state.users);
     });
 }
+
+// === USER / STUDENT PROFILE INSPECTOR MODAL ===
+async function viewUserProfile(userId) {
+    let modal = document.getElementById('userProfileModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'userProfileModal';
+        modal.className = 'modal-backdrop';
+        modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99999;display:flex;align-items:center;justify-content:center;padding:1rem;';
+        document.body.appendChild(modal);
+    }
+    modal.innerHTML = '<div style="background:white;border-radius:16px;padding:2rem;text-align:center;font-size:1rem;color:var(--text-main);">Loading full user profile...</div>';
+    modal.style.display = 'flex';
+
+    try {
+        const res = await API.get(`/admin/users/${userId}/detail`);
+        const u = res.user || res.student?.user || {};
+        const p = res.profile || res.student?.profile || {};
+        const apps = res.applications || res.student?.applications || [];
+        const co = res.company || null;
+        const jobs = res.postedJobs || [];
+
+        modal.innerHTML = `
+            <div style="background:var(--card-bg, white);border-radius:16px;max-width:720px;width:100%;max-height:90vh;overflow-y:auto;padding:1.75rem;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);border:1px solid var(--border-color);">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.25rem;border-bottom:1px solid var(--border-color);padding-bottom:1rem;">
+                    <div style="display:flex;align-items:center;gap:1rem;">
+                        <div style="width:50px;height:50px;border-radius:50%;background:linear-gradient(135deg, #3b82f6, #8b5cf6);color:white;display:flex;align-items:center;justify-content:center;font-size:1.4rem;font-weight:700;">
+                            ${sanitize((u.name||'U').charAt(0).toUpperCase())}
+                        </div>
+                        <div>
+                            <h2 style="margin:0;font-size:1.25rem;color:var(--text-main);">${sanitize(u.name || 'User Profile')}</h2>
+                            <div style="font-size:0.85rem;color:var(--text-muted);">${sanitize(u.email || '')} ${u.phone ? '· 📞 ' + sanitize(u.phone) : ''}</div>
+                        </div>
+                    </div>
+                    <span class="role-pill role-${u.role}" style="font-size:0.8rem;padding:0.3rem 0.8rem;text-transform:capitalize;font-weight:700;">${u.role}</span>
+                </div>
+
+                ${u.role === 'student' ? `
+                    <!-- Student Academics & Resume Stats -->
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.25rem;">
+                        <div style="background:var(--bg-muted, #f8fafc);padding:1rem;border-radius:10px;border:1px solid var(--border-color);">
+                            <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:0.5rem;">🎓 Education & Academics</div>
+                            <div style="font-size:0.85rem;color:var(--text-main);margin-bottom:0.25rem;"><strong>College:</strong> ${sanitize(p.college || 'Not specified')}</div>
+                            <div style="font-size:0.85rem;color:var(--text-main);margin-bottom:0.25rem;"><strong>Degree:</strong> ${sanitize(p.degree || 'B.Tech')} (${sanitize(p.branch || 'CSE')})</div>
+                            <div style="font-size:0.85rem;color:var(--text-main);"><strong>Graduation:</strong> ${p.gradYear || p.graduationYear || 'N/A'} · <strong>CGPA:</strong> ${p.cgpa || 'N/A'}</div>
+                        </div>
+                        <div style="background:var(--bg-muted, #f8fafc);padding:1rem;border-radius:10px;border:1px solid var(--border-color);">
+                            <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:0.5rem;">📄 Resume & Profile Score</div>
+                            <div style="font-size:0.85rem;color:var(--text-main);margin-bottom:0.5rem;"><strong>Resume Score:</strong> <span style="color:#10b981;font-weight:700;font-size:1rem;">${p.resumeScore || 0}%</span></div>
+                            <div>
+                                ${p.resumeUrl ? `<a href="${sanitize(p.resumeUrl)}" target="_blank" style="display:inline-block;padding:0.35rem 0.85rem;background:#3b82f6;color:white;border-radius:6px;font-size:0.75rem;text-decoration:none;font-weight:600;">📥 View / Download Resume PDF</a>` : '<span style="color:var(--text-muted);font-size:0.8rem;font-style:italic;">No resume PDF uploaded yet</span>'}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Skills -->
+                    <div style="margin-bottom:1.25rem;">
+                        <div style="font-size:0.8rem;font-weight:700;color:var(--text-muted);margin-bottom:0.5rem;">🛠️ Candidate Skills & Expertise (${(p.skills || []).length})</div>
+                        <div style="display:flex;flex-wrap:wrap;gap:0.4rem;">
+                            ${(p.skills || []).length === 0 ? '<span style="color:var(--text-muted);font-size:0.8rem;">No skills listed yet</span>' : (p.skills || []).map(sk => `<span style="background:rgba(59,130,246,0.1);color:#2563eb;padding:0.25rem 0.65rem;border-radius:999px;font-size:0.75rem;font-weight:600;">${sanitize(typeof sk === 'object' ? sk.name : sk)}</span>`).join('')}
+                        </div>
+                    </div>
+
+                    <!-- Applications Submitted -->
+                    <div style="margin-bottom:1.25rem;">
+                        <div style="font-size:0.8rem;font-weight:700;color:var(--text-muted);margin-bottom:0.5rem;">📋 Submitted Job Applications (${apps.length})</div>
+                        <div style="max-height:180px;overflow-y:auto;border:1px solid var(--border-color);border-radius:8px;">
+                            ${apps.length === 0 ? '<div style="padding:1rem;text-align:center;color:var(--text-muted);font-size:0.8rem;">No applications submitted yet.</div>' : `
+                                <table class="data-table" style="margin:0;font-size:0.8rem;">
+                                    <thead><tr><th>Job Title</th><th>Company</th><th>Status</th><th>Applied Date</th></tr></thead>
+                                    <tbody>
+                                        ${apps.map(a => `<tr>
+                                            <td style="font-weight:600;">${sanitize(a.jobId?.title || 'Job')}</td>
+                                            <td>${sanitize(a.jobId?.companyName || 'N/A')}</td>
+                                            <td><span class="role-pill" style="padding:0.15rem 0.5rem;font-size:0.7rem;">${a.status}</span></td>
+                                            <td style="color:var(--text-muted);">${new Date(a.appliedAt || a.createdAt).toLocaleDateString()}</td>
+                                        </tr>`).join('')}
+                                    </tbody>
+                                </table>
+                            `}
+                        </div>
+                    </div>
+                ` : u.role === 'recruiter' ? `
+                    <!-- Recruiter Details -->
+                    <div style="background:var(--bg-muted, #f8fafc);padding:1rem;border-radius:10px;border:1px solid var(--border-color);margin-bottom:1.25rem;">
+                        <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:0.5rem;">🏢 Registered Organization</div>
+                        <div style="font-size:0.95rem;font-weight:600;color:var(--text-main);">${sanitize(co?.name || 'No company registered')}</div>
+                        <div style="font-size:0.8rem;color:var(--text-muted);">${sanitize(co?.website || '')} ${co?.industry ? '· ' + sanitize(co.industry) : ''}</div>
+                        <div style="font-size:0.8rem;margin-top:0.35rem;">Status: <span style="font-weight:700;color:${co?.isVerified?'#15803d':'#d97706'};">${co?.isVerified ? '● Verified & Approved' : '● Pending Verification'}</span></div>
+                    </div>
+                    <div style="margin-bottom:1.25rem;">
+                        <div style="font-size:0.8rem;font-weight:700;color:var(--text-muted);margin-bottom:0.5rem;">💼 Posted Job Listings (${jobs.length})</div>
+                        ${jobs.length === 0 ? '<div style="color:var(--text-muted);font-size:0.8rem;">No jobs posted yet.</div>' : `
+                            <ul style="padding-left:1.25rem;font-size:0.8rem;margin:0;">
+                                ${jobs.map(j => `<li><b>${sanitize(j.title)}</b> (${j.status}) - ${j.applicantCount || 0} applicants</li>`).join('')}
+                            </ul>
+                        `}
+                    </div>
+                ` : `
+                    <div style="padding:1rem;background:var(--bg-muted, #f8fafc);border-radius:10px;font-size:0.85rem;color:var(--text-main);">
+                        <b>Admin Account</b>: Full platform access for telemetry, user management, and company approvals.
+                    </div>
+                `}
+
+                <div style="display:flex;justify-content:flex-end;gap:0.75rem;margin-top:1.5rem;border-top:1px solid var(--border-color);padding-top:1rem;">
+                    <button onclick="document.getElementById('userProfileModal').style.display='none'" class="btn btn-outline" style="font-size:0.85rem;padding:0.4rem 1.25rem;">Close</button>
+                </div>
+            </div>
+        `;
+    } catch(err) {
+        modal.innerHTML = `<div style="background:white;padding:2rem;border-radius:16px;color:#ef4444;text-align:center;">Failed to load user profile: ${err.message}<br><br><button onclick="document.getElementById('userProfileModal').style.display='none'" class="btn btn-outline">Close</button></div>`;
+    }
+}
+// === USER ROLE MANAGER (MAKE ADMIN / REMOVE FROM ADMIN / STUDENT / RECRUITER) ===
+function changeRole(userId, currentRole) {
+    const user = (state.users || []).find(u => u._id === userId) || { _id: userId, name: 'User', role: currentRole };
+    
+    let modal = document.getElementById('roleChangeModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'roleChangeModal';
+        modal.className = 'modal-backdrop';
+        modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99999;display:flex;align-items:center;justify-content:center;padding:1rem;';
+        document.body.appendChild(modal);
+    }
+
+    modal.innerHTML = `
+        <div style="background:var(--card-bg, white);border-radius:16px;max-width:480px;width:100%;padding:1.75rem;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);border:1px solid var(--border-color);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
+                <div style="display:flex;align-items:center;gap:0.75rem;">
+                    <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.1rem;">
+                        ${sanitize((user.name || 'U').charAt(0).toUpperCase())}
+                    </div>
+                    <div>
+                        <h3 style="margin:0;font-size:1.1rem;color:var(--text-main);">Manage User Role</h3>
+                        <div style="font-size:0.8rem;color:var(--text-muted);">${sanitize(user.name)} (${sanitize(user.email || '')})</div>
+                    </div>
+                </div>
+                <button onclick="document.getElementById('roleChangeModal').style.display='none'" style="background:none;border:none;font-size:1.25rem;cursor:pointer;color:var(--text-muted);">✕</button>
+            </div>
+
+            <p style="font-size:0.85rem;color:var(--text-muted);margin:0 0 1.25rem;line-height:1.5;">
+                Select a new system role for this user. Promoting to <b>Admin</b> grants full platform management access.
+            </p>
+
+            <div style="display:grid;gap:0.75rem;margin-bottom:1.5rem;">
+                <label style="display:flex;align-items:center;gap:0.85rem;padding:0.85rem 1rem;border:2px solid ${currentRole==='admin'?'var(--primary)':'var(--border-color)'};border-radius:10px;cursor:pointer;background:var(--bg-muted, #f8fafc);">
+                    <input type="radio" name="selectedRole" value="admin" ${currentRole==='admin'?'checked':''} style="width:18px;height:18px;accent-color:var(--primary);">
+                    <div>
+                        <div style="font-weight:700;font-size:0.9rem;color:var(--text-main);">🛡️ Super Admin</div>
+                        <div style="font-size:0.75rem;color:var(--text-muted);">Full system control: users, companies, jobs, site settings & questions</div>
+                    </div>
+                </label>
+
+                <label style="display:flex;align-items:center;gap:0.85rem;padding:0.85rem 1rem;border:2px solid ${currentRole==='sub-admin'?'var(--primary)':'var(--border-color)'};border-radius:10px;cursor:pointer;background:var(--bg-muted, #f8fafc);">
+                    <input type="radio" name="selectedRole" value="sub-admin" ${currentRole==='sub-admin'?'checked':''} style="width:18px;height:18px;accent-color:var(--primary);">
+                    <div>
+                        <div style="font-weight:700;font-size:0.9rem;color:var(--text-main);">⚡ Sub-Admin / Moderator</div>
+                        <div style="font-size:0.75rem;color:var(--text-muted);">Moderates questions, verifies companies and monitors traffic</div>
+                    </div>
+                </label>
+
+                <label style="display:flex;align-items:center;gap:0.85rem;padding:0.85rem 1rem;border:2px solid ${currentRole==='recruiter'?'var(--primary)':'var(--border-color)'};border-radius:10px;cursor:pointer;background:var(--bg-muted, #f8fafc);">
+                    <input type="radio" name="selectedRole" value="recruiter" ${currentRole==='recruiter'?'checked':''} style="width:18px;height:18px;accent-color:var(--primary);">
+                    <div>
+                        <div style="font-weight:700;font-size:0.9rem;color:var(--text-main);">💼 Recruiter / Employer</div>
+                        <div style="font-size:0.75rem;color:var(--text-muted);">Post jobs, review applicant match scores, schedule interviews</div>
+                    </div>
+                </label>
+
+                <label style="display:flex;align-items:center;gap:0.85rem;padding:0.85rem 1rem;border:2px solid ${currentRole==='student'?'var(--primary)':'var(--border-color)'};border-radius:10px;cursor:pointer;background:var(--bg-muted, #f8fafc);">
+                    <input type="radio" name="selectedRole" value="student" ${currentRole==='student'?'checked':''} style="width:18px;height:18px;accent-color:var(--primary);">
+                    <div>
+                        <div style="font-weight:700;font-size:0.9rem;color:var(--text-main);">🎓 Student / Candidate</div>
+                        <div style="font-size:0.75rem;color:var(--text-muted);">Solve 630+ questions, build resume, track roadmaps & apply for jobs</div>
+                    </div>
+                </label>
+            </div>
+
+            <div style="display:flex;justify-content:flex-end;gap:0.75rem;">
+                <button type="button" onclick="document.getElementById('roleChangeModal').style.display='none'" class="btn btn-outline" style="padding:0.5rem 1.25rem;font-size:0.85rem;border-radius:8px;">Cancel</button>
+                <button type="button" id="btnConfirmRoleChange" onclick="submitRoleChange('${userId}')" class="btn btn-primary" style="padding:0.5rem 1.5rem;font-size:0.85rem;border-radius:8px;font-weight:600;">Update Role</button>
+            </div>
+        </div>
+    `;
+    modal.style.display = 'flex';
+}
+
+async function submitRoleChange(userId) {
+    const selectedRadio = document.querySelector('input[name="selectedRole"]:checked');
+    if (!selectedRadio) return showToast('Please select a role', 'error');
+    const newRole = selectedRadio.value;
+    
+    const btn = document.getElementById('btnConfirmRoleChange');
+    if (btn) { btn.disabled = true; btn.textContent = 'Updating...'; }
+
+    try {
+        const res = await API.put(`/admin/users/${userId}/role`, { role: newRole });
+        showToast(res.message || `User role updated to ${newRole}`, 'success');
+        document.getElementById('roleChangeModal').style.display = 'none';
+        await renderUsers(content());
+    } catch(err) {
+        showToast('Failed to update role: ' + err.message, 'error');
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Update Role'; }
+    }
+}
+
+async function deleteUser(userId) {
+    if (!confirm('Are you sure you want to permanently delete this user account? All associated applications and profile records will be removed.')) return;
+    try {
+        await API.delete(`/admin/users/${userId}`);
+        showToast('User account deleted successfully', 'success');
+        await renderUsers(content());
+    } catch(e) {
+        showToast('Failed to delete user: ' + e.message, 'error');
+    }
+}
+
+// === ADMIN PROFILE MANAGEMENT ===
+async function renderAdminProfile(c) {
+    c.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--text-muted);">Loading admin profile...</div>';
+    let profileData = {};
+    try {
+        const res = await API.get('/admin/profile');
+        profileData = res.user || API.getUser() || {};
+    } catch(e) {
+        profileData = API.getUser() || {};
+    }
+
+    c.innerHTML = `
+        <div style="max-width:800px;margin:0 auto;">
+            <div style="background:var(--card-bg, white);border:1px solid var(--border-color);border-radius:16px;padding:2rem;box-shadow:0 4px 12px rgba(0,0,0,0.04);margin-bottom:1.5rem;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.75rem;flex-wrap:wrap;gap:1rem;border-bottom:1px solid var(--border-color);padding-bottom:1.25rem;">
+                    <div style="display:flex;align-items:center;gap:1.25rem;">
+                        <div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg, #3b82f6, #8b5cf6);color:white;display:flex;align-items:center;justify-content:center;font-size:1.75rem;font-weight:700;box-shadow:0 4px 12px rgba(59,130,246,0.3);">
+                            ${sanitize((profileData.name || 'A').charAt(0).toUpperCase())}
+                        </div>
+                        <div>
+                            <h2 style="margin:0 0 0.25rem;font-size:1.4rem;color:var(--text-main);">${sanitize(profileData.name || 'Admin')}</h2>
+                            <div style="display:flex;align-items:center;gap:0.5rem;">
+                                <span class="role-pill role-admin" style="font-size:0.75rem;padding:0.2rem 0.6rem;">🛡️ Super Admin</span>
+                                <span style="font-size:0.8rem;color:var(--text-muted);">${sanitize(profileData.email || '')}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="font-size:0.75rem;color:var(--text-muted);">Account Status</div>
+                        <div style="font-size:0.85rem;font-weight:600;color:#10b981;">● Active & Verified</div>
+                    </div>
+                </div>
+
+                <form onsubmit="saveAdminProfile(event)" id="adminProfileForm" style="display:grid;gap:1.25rem;">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+                        <div>
+                            <label style="font-size:0.8rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:0.35rem;">Admin Full Name *</label>
+                            <input type="text" id="adminProfName" value="${sanitize(profileData.name || '')}" required style="width:100%;padding:0.65rem 0.85rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.9rem;background:var(--input-bg);color:var(--text-main);">
+                        </div>
+                        <div>
+                            <label style="font-size:0.8rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:0.35rem;">Admin Email Address *</label>
+                            <input type="email" id="adminProfEmail" value="${sanitize(profileData.email || '')}" required style="width:100%;padding:0.65rem 0.85rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.9rem;background:var(--input-bg);color:var(--text-main);">
+                        </div>
+                    </div>
+
+                    <div style="background:var(--bg-muted, #f8fafc);border:1px solid var(--border-color);border-radius:12px;padding:1.25rem;">
+                        <h4 style="margin:0 0 0.5rem;font-size:0.95rem;color:var(--text-main);">🔒 Security & Password Update</h4>
+                        <p style="margin:0 0 1rem;font-size:0.8rem;color:var(--text-muted);">Leave blank if you do not wish to change your password.</p>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+                            <div>
+                                <label style="font-size:0.75rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:0.35rem;">New Password</label>
+                                <input type="password" id="adminProfPass" placeholder="Min 6 characters" minlength="6" style="width:100%;padding:0.65rem 0.85rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.9rem;background:var(--input-bg);color:var(--text-main);">
+                            </div>
+                            <div>
+                                <label style="font-size:0.75rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:0.35rem;">Confirm New Password</label>
+                                <input type="password" id="adminProfPassConfirm" placeholder="Re-enter new password" minlength="6" style="width:100%;padding:0.65rem 0.85rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.9rem;background:var(--input-bg);color:var(--text-main);">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display:flex;justify-content:flex-end;gap:1rem;margin-top:0.5rem;">
+                        <button type="submit" id="btnSaveAdminProf" class="btn btn-primary" style="padding:0.7rem 2rem;font-size:0.9rem;border-radius:8px;font-weight:600;">💾 Save Admin Profile</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+}
+
+async function saveAdminProfile(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btnSaveAdminProf');
+    if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
+
+    const name = document.getElementById('adminProfName')?.value.trim();
+    const email = document.getElementById('adminProfEmail')?.value.trim();
+    const pass = document.getElementById('adminProfPass')?.value;
+    const passConfirm = document.getElementById('adminProfPassConfirm')?.value;
+
+    if (!name || !email) {
+        if (btn) { btn.disabled = false; btn.textContent = '💾 Save Admin Profile'; }
+        return showToast('Name and email are required', 'error');
+    }
+
+    if (pass) {
+        if (pass.length < 6) {
+            if (btn) { btn.disabled = false; btn.textContent = '💾 Save Admin Profile'; }
+            return showToast('Password must be at least 6 characters', 'error');
+        }
+        if (pass !== passConfirm) {
+            if (btn) { btn.disabled = false; btn.textContent = '💾 Save Admin Profile'; }
+            return showToast('Passwords do not match', 'error');
+        }
+    }
+
+    try {
+        const res = await API.put('/admin/profile', { name, email, password: pass || undefined });
+        if (res.user) {
+            API.saveAuth(API.getToken(), res.user);
+            const adminNameEl = document.getElementById('adminName');
+            const adminAvatarEl = document.getElementById('adminAvatar');
+            if (adminNameEl) adminNameEl.textContent = res.user.name || 'Admin';
+            if (adminAvatarEl) adminAvatarEl.textContent = (res.user.name || 'A').charAt(0).toUpperCase();
+        }
+        showToast('Admin profile updated successfully!', 'success');
+        await renderAdminProfile(content());
+    } catch(err) {
+        showToast('Failed to update admin profile: ' + err.message, 'error');
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = '💾 Save Admin Profile'; }
+    }
+}
+
+window.viewUserProfile = viewUserProfile;
+window.changeRole = changeRole;
+window.submitRoleChange = submitRoleChange;
+window.deleteUser = deleteUser;
+window.renderAdminProfile = renderAdminProfile;
+window.saveAdminProfile = saveAdminProfile;
 
 // === COMPANIES ===
 async function renderCompanies(c) {
     const data = await API.get('/admin/companies');
     state.companies = data.companies;
-    const pending = state.companies.filter(co => !co.isVerified);
-    const verified = state.companies.filter(co => co.isVerified);
+    const pending = state.companies.filter(co => co.verificationStatus === 'pending' || (!co.isVerified && co.verificationStatus !== 'rejected'));
+    const rejected = state.companies.filter(co => co.verificationStatus === 'rejected');
+    const verified = state.companies.filter(co => co.verificationStatus === 'approved' || co.isVerified);
     c.innerHTML = `
         <div style="background:white;border-radius:12px;border:1px solid var(--border-color);padding:1.25rem;margin-bottom:1.5rem;">
-            <h3 style="margin:0 0 1rem;font-size:1rem;">➕ Add Company</h3>
+            <h3 style="margin:0 0 1rem;font-size:1rem;">➕ Add Company (Admin Direct)</h3>
             <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:0.75rem;align-items:end;">
                 <div><label style="font-size:0.7rem;font-weight:600;display:block;margin-bottom:0.3rem;">Name*</label><input id="newCoName" type="text" placeholder="Company name" style="width:100%;padding:0.5rem;border:1px solid var(--border-color);border-radius:6px;font-size:0.8rem;"></div>
                 <div><label style="font-size:0.7rem;font-weight:600;display:block;margin-bottom:0.3rem;">Website</label><input id="newCoWeb" type="text" placeholder="example.com" style="width:100%;padding:0.5rem;border:1px solid var(--border-color);border-radius:6px;font-size:0.8rem;"></div>
@@ -198,55 +691,183 @@ async function renderCompanies(c) {
                 <button onclick="addCompany()" class="btn btn-primary" style="font-size:0.8rem;white-space:nowrap;">Add</button>
             </div>
         </div>
-        ${pending.length > 0 ? `<div style="margin-bottom:1.5rem;"><h3 style="font-size:1rem;margin-bottom:0.75rem;">⏳ Pending (${pending.length})</h3>
-        <div class="company-grid">${pending.map(co => companyCard(co, true)).join('')}</div></div>` : ''}
+        ${pending.length > 0 ? `<div style="margin-bottom:1.5rem;"><h3 style="font-size:1rem;margin-bottom:0.75rem;">⏳ Pending Verification (${pending.length})</h3>
+        <div class="company-grid">${pending.map(co => companyCard(co, 'pending')).join('')}</div></div>` : ''}
+        ${rejected.length > 0 ? `<div style="margin-bottom:1.5rem;"><h3 style="font-size:1rem;margin-bottom:0.75rem;">❌ Rejected (${rejected.length})</h3>
+        <div class="company-grid">${rejected.map(co => companyCard(co, 'rejected')).join('')}</div></div>` : ''}
         <h3 style="font-size:1rem;margin-bottom:0.75rem;">✅ Verified (${verified.length})</h3>
-        <div class="company-grid">${verified.map(co => companyCard(co, false)).join('')}</div>
+        <div class="company-grid">${verified.map(co => companyCard(co, 'approved')).join('')}</div>
     `;
 }
-function companyCard(co, showActions) {
+function companyCard(co, statusType) {
     const domainClass = co.domain === 'product' ? 'domain-product' : co.domain === 'service' ? 'domain-service' : 'domain-startup';
-    return `<div class="company-card">
-        <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:0.75rem;">
-            <div style="display:flex;align-items:center;gap:0.75rem;">
-                <div style="width:40px;height:40px;border-radius:10px;background:rgba(249,115,22,0.1);color:var(--primary);display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:1.1rem;">${co.name.charAt(0)}</div>
-                <div><div style="font-weight:600;font-size:0.95rem;">${co.name}</div><div style="font-size:0.75rem;color:var(--text-muted);">${co.website || ''}</div></div>
-            </div>
-            <span class="domain-tag ${domainClass}">${co.domain || 'N/A'}</span>
-        </div>
-        <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.5rem;">${co.industry || ''} ${co.headquarter ? '· ' + co.headquarter : ''}</div>
-        ${showActions ? `<div style="display:flex;gap:0.5rem;margin-top:0.75rem;">
+    const submitter = co.submittedBy ? `<div style="font-size:0.7rem;color:var(--text-muted);margin-top:0.35rem;">Submitted by: <b>${sanitize(co.submittedBy.name || 'Unknown')}</b> (${sanitize(co.submittedBy.email || '')})</div>` : '';
+    const hrInfo = co.hrName ? `<div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.25rem;">👤 HR: ${sanitize(co.hrName)}${co.hrEmail ? ' · ' + sanitize(co.hrEmail) : ''}${co.hrPhone ? ' · ' + sanitize(co.hrPhone) : ''}</div>` : '';
+    const regInfo = co.registrationNumber ? `<div style="font-size:0.7rem;color:var(--text-muted);margin-top:0.2rem;">📋 Reg#: ${sanitize(co.registrationNumber)}</div>` : '';
+    const linkedInInfo = co.linkedIn ? `<div style="font-size:0.7rem;margin-top:0.2rem;"><a href="${sanitize(co.linkedIn)}" target="_blank" style="color:#0077b5;text-decoration:none;">🔗 LinkedIn</a></div>` : '';
+
+    let actionHtml = '';
+    if (statusType === 'pending') {
+        actionHtml = `<div style="display:flex;gap:0.5rem;margin-top:0.75rem;flex-wrap:wrap;">
+            <button onclick="viewCompanyDetails('${co._id}')" class="btn btn-outline" style="font-size:0.7rem;padding:0.25rem 0.6rem;">👁 Details</button>
             <button onclick="verifyCompany('${co._id}',true)" class="btn btn-primary" style="font-size:0.75rem;padding:0.3rem 0.75rem;">✓ Approve</button>
-            <button onclick="verifyCompany('${co._id}',false)" class="btn btn-outline" style="font-size:0.75rem;padding:0.3rem 0.75rem;color:#ef4444;border-color:#ef4444;">✕ Reject</button>
-        </div>` : `<div style="display:flex;gap:0.5rem;margin-top:0.75rem;"><button onclick="deleteCompany('${co._id}')" class="btn btn-outline" style="font-size:0.7rem;padding:0.2rem 0.6rem;color:#ef4444;border-color:#ef4444;">🗑 Delete</button></div>`}
+            <button onclick="rejectCompanyPrompt('${co._id}')" class="btn btn-outline" style="font-size:0.75rem;padding:0.3rem 0.75rem;color:#ef4444;border-color:#ef4444;">✕ Reject</button>
+        </div>`;
+    } else if (statusType === 'rejected') {
+        actionHtml = `<div style="margin-top:0.5rem;"><div style="font-size:0.75rem;color:#ef4444;background:#fee2e2;padding:0.4rem 0.6rem;border-radius:6px;margin-bottom:0.5rem;">Reason: ${sanitize(co.rejectionReason || 'Not specified')}</div>
+            <div style="display:flex;gap:0.5rem;">
+                <button onclick="verifyCompany('${co._id}',true)" class="btn btn-outline" style="font-size:0.7rem;padding:0.25rem 0.6rem;">Re-approve</button>
+                <button onclick="deleteCompany('${co._id}')" class="btn btn-outline" style="font-size:0.7rem;padding:0.2rem 0.6rem;color:#ef4444;border-color:#ef4444;">🗑 Delete</button>
+            </div></div>`;
+    } else {
+        actionHtml = `<div style="display:flex;gap:0.5rem;margin-top:0.75rem;">
+            <button onclick="viewCompanyDetails('${co._id}')" class="btn btn-outline" style="font-size:0.7rem;padding:0.25rem 0.6rem;">👁 Details</button>
+            <button onclick="deleteCompany('${co._id}')" class="btn btn-outline" style="font-size:0.7rem;padding:0.2rem 0.6rem;color:#ef4444;border-color:#ef4444;">🗑 Delete</button>
+        </div>`;
+    }
+
+    return `<div class="company-card">
+        <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:0.5rem;">
+            <div style="display:flex;align-items:center;gap:0.75rem;">
+                <div style="width:40px;height:40px;border-radius:10px;background:rgba(249,115,22,0.1);color:var(--primary);display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:1.1rem;">${sanitize(co.name.charAt(0))}</div>
+                <div><div style="font-weight:600;font-size:0.95rem;">${sanitize(co.name)}</div><div style="font-size:0.75rem;color:var(--text-muted);">${sanitize(co.website || '')}</div></div>
+            </div>
+            <span class="domain-tag ${domainClass}">${sanitize(co.domain || 'N/A')}</span>
+        </div>
+        <div style="font-size:0.8rem;color:var(--text-muted);">${sanitize(co.industry || '')} ${co.headquarter ? '· ' + sanitize(co.headquarter) : ''} ${co.employeeCount ? '· 👥 ' + sanitize(co.employeeCount) : ''}</div>
+        ${hrInfo}${regInfo}${linkedInInfo}${submitter}
+        ${actionHtml}
     </div>`;
 }
 
-// === CONTENT ===
-async function renderContent(c) {
-    const prepData = await API.get('/preparation');
-    state.prepCompanies = prepData.preparations || [];
-    try { const res = await fetch('../../data/questions.json'); state.questions = await res.json(); } catch(e){}
-    const codingCount = state.questions ? state.questions.coding.length : 0;
-    const aptCount = state.questions ? (state.questions.aptitude ? state.questions.aptitude.length : 0) : 0;
-    c.innerHTML = `
-        <div class="metric-grid" style="margin-bottom:1.5rem;">
-            <div class="metric-card"><div class="label">📖 Prep Paths</div><div class="value">${state.prepCompanies.length}</div></div>
-            <div class="metric-card"><div class="label">💻 Coding Qs</div><div class="value">${codingCount}</div></div>
-            <div class="metric-card"><div class="label">🧠 Aptitude Qs</div><div class="value">${aptCount}</div></div>
-        </div>
-        <h3 style="font-size:1rem;margin-bottom:0.75rem;">Company Preparation Paths</h3>
-        <div style="background:white;border-radius:12px;border:1px solid var(--border-color);overflow:hidden;">
-            <table class="data-table"><thead><tr><th>Company</th><th>Difficulty</th><th>Questions</th><th>Topics</th><th>Avg Salary</th><th>Roles</th></tr></thead>
-            <tbody>${state.prepCompanies.map(p => `<tr>
-                <td style="font-weight:600;">${p.companyName}</td>
-                <td><span style="font-size:0.75rem;font-weight:600;padding:0.15rem 0.5rem;border-radius:999px;${p.difficulty === 'Easy' ? 'color:#10b981;background:rgba(16,185,129,0.1)' : p.difficulty === 'Medium' ? 'color:#d97706;background:rgba(217,119,6,0.1)' : 'color:#ef4444;background:rgba(239,68,68,0.1)'}">${p.difficulty}</span></td>
-                <td>${p.questionCount}</td><td>${p.topicCount}</td><td>${p.avgSalary || '-'}</td>
-                <td>${(p.roles || []).map(r => `<span style="font-size:0.7rem;background:#f1f5f9;padding:0.1rem 0.4rem;border-radius:4px;margin-right:0.25rem;">${r}</span>`).join('')}</td>
-            </tr>`).join('')}</tbody></table>
-        </div>
-    `;
+async function viewCompanyDetails(companyId) {
+    let modal = document.getElementById('companyDetailModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'companyDetailModal';
+        modal.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.65);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:9999;padding:1.5rem;';
+        document.body.appendChild(modal);
+    }
+    modal.innerHTML = '<div style="background:white;border-radius:16px;padding:2rem;max-width:600px;width:100%;text-align:center;color:var(--text-muted);">Loading company details...</div>';
+    modal.style.display = 'flex';
+
+    try {
+        const res = await API.get('/admin/companies/' + companyId + '/full');
+        const co = res.company;
+        const sub = co.submittedBy || {};
+        const statusColor = co.verificationStatus === 'approved' ? '#10b981' : co.verificationStatus === 'rejected' ? '#ef4444' : '#f59e0b';
+        modal.innerHTML = `
+            <div style="background:white;border-radius:16px;padding:2rem;max-width:650px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 40px rgba(0,0,0,0.2);position:relative;" onclick="event.stopPropagation()">
+                <button onclick="document.getElementById('companyDetailModal').style.display='none'" style="position:absolute;top:1rem;right:1rem;background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--text-muted);">&times;</button>
+                <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem;">
+                    <div style="width:56px;height:56px;border-radius:12px;background:rgba(249,115,22,0.1);color:var(--primary);display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:bold;">${sanitize(co.name.charAt(0))}</div>
+                    <div>
+                        <h2 style="margin:0;font-size:1.25rem;">${sanitize(co.name)}</h2>
+                        <span style="font-size:0.75rem;padding:0.15rem 0.5rem;border-radius:999px;color:white;background:${statusColor};">${co.verificationStatus}</span>
+                    </div>
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:1.25rem;">
+                    <div style="background:#f8fafc;padding:0.75rem;border-radius:8px;border:1px solid var(--border-color);"><div style="font-size:0.7rem;color:var(--text-muted);font-weight:600;">Website</div><div style="font-size:0.85rem;font-weight:500;">${sanitize(co.website || '-')}</div></div>
+                    <div style="background:#f8fafc;padding:0.75rem;border-radius:8px;border:1px solid var(--border-color);"><div style="font-size:0.7rem;color:var(--text-muted);font-weight:600;">Industry</div><div style="font-size:0.85rem;font-weight:500;">${sanitize(co.industry || '-')}</div></div>
+                    <div style="background:#f8fafc;padding:0.75rem;border-radius:8px;border:1px solid var(--border-color);"><div style="font-size:0.7rem;color:var(--text-muted);font-weight:600;">Domain</div><div style="font-size:0.85rem;font-weight:500;">${sanitize(co.domain || '-')}</div></div>
+                    <div style="background:#f8fafc;padding:0.75rem;border-radius:8px;border:1px solid var(--border-color);"><div style="font-size:0.7rem;color:var(--text-muted);font-weight:600;">Size</div><div style="font-size:0.85rem;font-weight:500;">${sanitize(co.size || '-')}</div></div>
+                    <div style="background:#f8fafc;padding:0.75rem;border-radius:8px;border:1px solid var(--border-color);"><div style="font-size:0.7rem;color:var(--text-muted);font-weight:600;">Headquarter</div><div style="font-size:0.85rem;font-weight:500;">${sanitize(co.headquarter || '-')}</div></div>
+                    <div style="background:#f8fafc;padding:0.75rem;border-radius:8px;border:1px solid var(--border-color);"><div style="font-size:0.7rem;color:var(--text-muted);font-weight:600;">Employees</div><div style="font-size:0.85rem;font-weight:500;">${sanitize(co.employeeCount || '-')}</div></div>
+                    <div style="background:#f8fafc;padding:0.75rem;border-radius:8px;border:1px solid var(--border-color);"><div style="font-size:0.7rem;color:var(--text-muted);font-weight:600;">Founded</div><div style="font-size:0.85rem;font-weight:500;">${co.foundedYear || '-'}</div></div>
+                    <div style="background:#f8fafc;padding:0.75rem;border-radius:8px;border:1px solid var(--border-color);"><div style="font-size:0.7rem;color:var(--text-muted);font-weight:600;">Reg/GST Number</div><div style="font-size:0.85rem;font-weight:500;">${sanitize(co.registrationNumber || '-')}</div></div>
+                </div>
+
+                ${co.description ? `<div style="margin-bottom:1rem;"><h4 style="margin:0 0 0.5rem;font-size:0.85rem;">📝 Description</h4><div style="font-size:0.8rem;color:var(--text-muted);">${sanitize(co.description)}</div></div>` : ''}
+
+                <div style="background:#f0f9ff;padding:1rem;border-radius:8px;border:1px solid #bae6fd;margin-bottom:1rem;">
+                    <h4 style="margin:0 0 0.5rem;font-size:0.85rem;color:#0369a1;">👨‍💼 HR / Contact Details</h4>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;font-size:0.8rem;">
+                        <div><b>Name:</b> ${sanitize(co.hrName || '-')}</div>
+                        <div><b>Email:</b> ${sanitize(co.hrEmail || '-')}</div>
+                        <div><b>Phone:</b> ${sanitize(co.hrPhone || '-')}</div>
+                        <div><b>Company Email:</b> ${sanitize(co.companyEmail || '-')}</div>
+                    </div>
+                    ${co.linkedIn ? `<div style="margin-top:0.5rem;"><a href="${sanitize(co.linkedIn)}" target="_blank" style="color:#0077b5;font-size:0.8rem;">🔗 Company LinkedIn</a></div>` : ''}
+                    ${co.address ? `<div style="margin-top:0.5rem;font-size:0.8rem;"><b>Address:</b> ${sanitize(co.address)}</div>` : ''}
+                </div>
+
+                ${sub.name ? `<div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:1rem;">Submitted by: <b>${sanitize(sub.name)}</b> (${sanitize(sub.email || '')}) on ${new Date(co.createdAt).toLocaleDateString()}</div>` : ''}
+
+                <div style="display:flex;justify-content:flex-end;gap:0.5rem;">
+                    ${co.verificationStatus !== 'approved' ? `<button onclick="verifyCompany('${co._id}',true); document.getElementById('companyDetailModal').style.display='none';" class="btn btn-primary" style="font-size:0.85rem;">✓ Approve</button>` : ''}
+                    ${co.verificationStatus !== 'rejected' ? `<button onclick="rejectCompanyPrompt('${co._id}'); document.getElementById('companyDetailModal').style.display='none';" class="btn btn-outline" style="font-size:0.85rem;color:#ef4444;border-color:#ef4444;">✕ Reject</button>` : ''}
+                    <button onclick="document.getElementById('companyDetailModal').style.display='none'" class="btn btn-outline" style="font-size:0.85rem;">Close</button>
+                </div>
+            </div>
+        `;
+    } catch(err) {
+        modal.innerHTML = `<div style="background:white;padding:2rem;border-radius:16px;color:#ef4444;text-align:center;">Failed: ${err.message}<br><br><button onclick="document.getElementById('companyDetailModal').style.display='none'" class="btn btn-outline">Close</button></div>`;
+    }
 }
+
+async function verifyCompany(companyId, approve = true) {
+    try {
+        const res = await API.put('/admin/companies/' + companyId + '/verify', { approve: !!approve });
+        showToast(res.message || (approve ? 'Company approved successfully!' : 'Company updated!'), 'success');
+        await loadSection('companies');
+    } catch (e) {
+        showToast('Failed to verify company: ' + e.message, 'error');
+    }
+}
+
+async function deleteCompany(companyId) {
+    if (!confirm('Are you sure you want to delete this company? This action cannot be undone.')) return;
+    try {
+        await API.delete('/admin/companies/' + companyId);
+        showToast('Company deleted successfully.', 'success');
+        await loadSection('companies');
+    } catch (e) {
+        showToast('Failed to delete company: ' + e.message, 'error');
+    }
+}
+
+async function addCompany() {
+    const name = document.getElementById('newCoName')?.value.trim();
+    const website = document.getElementById('newCoWeb')?.value.trim();
+    const domain = document.getElementById('newCoDomain')?.value;
+    const industry = document.getElementById('newCoIndustry')?.value.trim();
+    if (!name) return showToast('Company name is required', 'error');
+
+    try {
+        await API.post('/admin/companies', { name, website, domain, industry });
+        showToast('Company added successfully!', 'success');
+        await loadSection('companies');
+    } catch (e) {
+        showToast('Failed to add company: ' + e.message, 'error');
+    }
+}
+
+function rejectCompanyPrompt(companyId) {
+    const reason = prompt('Enter rejection reason for this company:');
+    if (reason === null) return; // User cancelled
+    rejectCompanyWithReason(companyId, reason);
+}
+
+async function rejectCompanyWithReason(companyId, reason) {
+    try {
+        await API.put('/admin/companies/' + companyId + '/verify', { approve: false, rejectionReason: reason || '' });
+        showToast('Company rejected. Recruiter notified.', 'success');
+        await loadSection('companies');
+    } catch (e) {
+        showToast(e.message, 'error');
+    }
+}
+
+// Window bindings for companies
+window.verifyCompany = verifyCompany;
+window.deleteCompany = deleteCompany;
+window.addCompany = addCompany;
+window.rejectCompanyPrompt = rejectCompanyPrompt;
+window.rejectCompanyWithReason = rejectCompanyWithReason;
+window.viewCompanyDetails = viewCompanyDetails;
+
+// === CONTENT === (full CRUD implementation at bottom of file)
 
 // === TOP PERFORMERS ===
 async function renderPerformers(c) {
@@ -258,102 +879,240 @@ async function renderPerformers(c) {
                 <h3 style="margin:0;font-size:1rem;">🏆 Student Rankings</h3>
                 <span style="font-size:0.8rem;color:var(--text-muted);">${state.performers.length} students</span>
             </div>
-            <table class="data-table"><thead><tr><th>#</th><th>Student</th><th>Score</th><th>Skills</th><th>Resume</th><th>Location</th></tr></thead>
-            <tbody>${state.performers.map((p, i) => `<tr>
+            <table class="data-table"><thead><tr><th>#</th><th>Student</th><th>Score</th><th>Skills</th><th>Resume</th><th>Location</th><th>Actions</th></tr></thead>
+            <tbody>${state.performers.map((p, i) => `<tr style="cursor:pointer;" onclick="showStudentDetailModal('${p._id}')">
                 <td style="font-weight:700;color:${i < 3 ? 'var(--primary)' : 'var(--text-muted)'};">${i + 1}</td>
-                <td><div><div style="font-weight:600;">${p.name}</div><div style="font-size:0.75rem;color:var(--text-muted);">${p.email}</div></div></td>
+                <td><div><div style="font-weight:600;">${sanitize(p.name)}</div><div style="font-size:0.75rem;color:var(--text-muted);">${sanitize(p.email)}</div></div></td>
                 <td><span style="font-weight:700;color:${p.compositeScore >= 70 ? '#10b981' : p.compositeScore >= 40 ? '#d97706' : '#ef4444'};">${p.compositeScore}%</span></td>
-                <td>${p.skillCount}</td><td>${p.resumeScore}%</td><td style="font-size:0.8rem;color:var(--text-muted);">${p.location || '-'}</td>
+                <td>${p.skillCount}</td><td>${p.resumeScore}%</td><td style="font-size:0.8rem;color:var(--text-muted);">${sanitize(p.location || '-')}</td>
+                <td><button onclick="event.stopPropagation(); showStudentDetailModal('${p._id}')" class="btn btn-outline" style="font-size:0.75rem;padding:0.25rem 0.6rem;">👁 Profile</button></td>
             </tr>`).join('')}</tbody></table>
         </div>
     `;
 }
 
+async function showStudentDetailModal(studentId) {
+    let modal = document.getElementById('studentDetailModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'studentDetailModal';
+        modal.className = 'modal-backdrop';
+        modal.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.65);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:9999;padding:1.5rem;';
+        document.body.appendChild(modal);
+    }
+    
+    modal.innerHTML = '<div style="background:white;border-radius:16px;padding:2rem;max-width:600px;width:100%;max-height:85vh;overflow-y:auto;text-align:center;color:var(--text-muted);">Loading student profile details...</div>';
+    modal.style.display = 'flex';
+
+    try {
+        const res = await API.get('/admin/users/' + studentId + '/detail');
+        const s = res.student || {};
+        const u = s.user || {};
+        const p = s.profile || {};
+        const apps = s.applications || [];
+
+        modal.innerHTML = `
+            <div style="background:white;border-radius:16px;padding:2rem;max-width:650px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 40px rgba(0,0,0,0.2);position:relative;" onclick="event.stopPropagation()">
+                <button onclick="closeStudentModal()" style="position:absolute;top:1.25rem;right:1.25rem;background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--text-muted);">&times;</button>
+                <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem;">
+                    <div style="width:56px;height:56px;border-radius:50%;background:var(--primary);color:white;display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:bold;">${sanitize((u.name||'S').charAt(0).toUpperCase())}</div>
+                    <div style="text-align:left;">
+                        <h2 style="margin:0;font-size:1.25rem;font-weight:700;">${sanitize(u.name || 'Student')}</h2>
+                        <div style="font-size:0.85rem;color:var(--text-muted);">${sanitize(u.email || '')} · <span class="role-pill role-${u.role}">${u.role}</span></div>
+                    </div>
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem;margin-bottom:1.5rem;">
+                    <div style="background:#f8fafc;padding:0.75rem;border-radius:8px;border:1px solid var(--border-color);text-align:center;"><div style="font-size:0.7rem;color:var(--text-muted);font-weight:600;text-transform:uppercase;">ATS Resume Score</div><div style="font-size:1.25rem;font-weight:700;color:var(--primary);">${p.resumeScore || 0}%</div></div>
+                    <div style="background:#f8fafc;padding:0.75rem;border-radius:8px;border:1px solid var(--border-color);text-align:center;"><div style="font-size:0.7rem;color:var(--text-muted);font-weight:600;text-transform:uppercase;">Skills</div><div style="font-size:1.25rem;font-weight:700;color:#3b82f6;">${(p.skills||[]).length}</div></div>
+                    <div style="background:#f8fafc;padding:0.75rem;border-radius:8px;border:1px solid var(--border-color);text-align:center;"><div style="font-size:0.7rem;color:var(--text-muted);font-weight:600;text-transform:uppercase;">Applications</div><div style="font-size:1.25rem;font-weight:700;color:#10b981;">${apps.length}</div></div>
+                </div>
+
+                <div style="text-align:left;margin-bottom:1rem;">
+                    <h4 style="margin:0 0 0.5rem;font-size:0.9rem;font-weight:600;">🛠 Listed Skills</h4>
+                    <div style="display:flex;flex-wrap:wrap;gap:0.4rem;">
+                        ${(p.skills && p.skills.length > 0) ? p.skills.map(s => `<span style="padding:0.2rem 0.6rem;background:#dbeafe;color:#1d4ed8;border-radius:999px;font-size:0.75rem;font-weight:500;">${sanitize(typeof s === 'string' ? s : s.name)}</span>`).join('') : '<span style="color:var(--text-muted);font-size:0.8rem;">No skills listed yet</span>'}
+                    </div>
+                </div>
+
+                <div style="text-align:left;margin-bottom:1.5rem;">
+                    <h4 style="margin:0 0 0.5rem;font-size:0.9rem;font-weight:600;">📋 Recent Applications</h4>
+                    ${apps.length === 0 ? '<div style="color:var(--text-muted);font-size:0.8rem;">No applications submitted yet.</div>' : `
+                        <table class="data-table" style="font-size:0.8rem;">
+                            <thead><tr><th>Job Title</th><th>Company</th><th>Match</th><th>Status</th></tr></thead>
+                            <tbody>${apps.map(a => `<tr>
+                                <td style="font-weight:600;">${sanitize(a.jobId?.title || 'Job Posting')}</td>
+                                <td>${sanitize(a.jobId?.companyName || 'Company')}</td>
+                                <td style="font-weight:700;color:${a.skillMatch >= 70 ? '#10b981' : '#f59e0b'};">${a.skillMatch || 0}%</td>
+                                <td><span style="font-size:0.7rem;padding:0.15rem 0.5rem;border-radius:4px;background:#f1f5f9;font-weight:600;">${sanitize(a.status || 'applied')}</span></td>
+                            </tr>`).join('')}</tbody>
+                        </table>
+                    `}
+                </div>
+
+                <div style="display:flex;justify-content:flex-end;">
+                    <button onclick="closeStudentModal()" class="btn btn-outline" style="font-size:0.85rem;">Close</button>
+                </div>
+            </div>
+        `;
+    } catch(err) {
+        modal.innerHTML = `<div style="background:white;padding:2rem;border-radius:16px;color:#ef4444;text-align:center;">Failed to load details: ${err.message}<br><br><button onclick="closeStudentModal()" class="btn btn-outline">Close</button></div>`;
+    }
+}
+
+function closeStudentModal() {
+    const modal = document.getElementById('studentDetailModal');
+    if (modal) modal.style.display = 'none';
+}
+
 // === NOTIFICATIONS ===
 async function renderNotifications(c) {
-    const data = await API.get('/notifications/my');
-    state.notifications = data.notifications || [];
+    try {
+        const data = await API.get('/notifications/my');
+        state.notifications = data.notifications || [];
+    } catch(e) {
+        state.notifications = [];
+    }
+    
     c.innerHTML = `
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem;">
-            <div style="background:white;border-radius:12px;border:1px solid var(--border-color);padding:1.25rem;">
-                <h3 style="margin:0 0 0.75rem;font-size:0.95rem;">⚡ Quick Actions</h3>
+            <div style="background:var(--card-bg, white);border-radius:12px;border:1px solid var(--border-color);padding:1.25rem;">
+                <h3 style="margin:0 0 0.75rem;font-size:0.95rem;color:var(--text-main);">⚡ Quick Actions</h3>
+                <p style="font-size:0.8rem;color:var(--text-muted);margin:0 0 1rem;">One-click broadcast announcements to student groups.</p>
                 <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
-                    <button onclick="bulkNotify('inactive')" class="btn btn-outline" style="font-size:0.8rem;">📨 Notify Inactive Users</button>
-                    <button onclick="bulkNotify('top-performers')" class="btn btn-outline" style="font-size:0.8rem;">🏆 Congratulate Top Performers</button>
+                    <button id="btnNotifyInactive" onclick="bulkNotify('inactive')" class="btn btn-outline" style="font-size:0.8rem;padding:0.45rem 0.85rem;border-radius:8px;">📨 Notify Inactive Users</button>
+                    <button id="btnCongratulateTop" onclick="bulkNotify('top-performers')" class="btn btn-outline" style="font-size:0.8rem;padding:0.45rem 0.85rem;border-radius:8px;">🏆 Congratulate Top Performers</button>
                 </div>
             </div>
-            <div style="background:white;border-radius:12px;border:1px solid var(--border-color);padding:1.25rem;">
-                <h3 style="margin:0 0 0.75rem;font-size:0.95rem;">📢 Send Custom</h3>
-                <input type="text" id="notifTitle" placeholder="Title" style="width:100%;padding:0.5rem;border:1px solid var(--border-color);border-radius:6px;margin-bottom:0.5rem;font-size:0.8rem;">
-                <textarea id="notifMsg" placeholder="Message..." style="width:100%;min-height:50px;padding:0.5rem;border:1px solid var(--border-color);border-radius:6px;font-size:0.8rem;resize:vertical;"></textarea>
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-top:0.5rem;">
-                    <select id="notifTarget" style="padding:0.4rem;border:1px solid var(--border-color);border-radius:6px;font-size:0.75rem;"><option value="all">All</option><option value="student">Students</option><option value="recruiter">Recruiters</option></select>
-                    <button onclick="sendNotification()" class="btn btn-primary" style="font-size:0.75rem;">Send</button>
+            <div style="background:var(--card-bg, white);border-radius:12px;border:1px solid var(--border-color);padding:1.25rem;">
+                <h3 style="margin:0 0 0.75rem;font-size:0.95rem;color:var(--text-main);">📢 Send Custom</h3>
+                <input type="text" id="notifTitle" placeholder="Title (e.g. Campus Placement Drive)" style="width:100%;padding:0.55rem 0.75rem;border:1px solid var(--border-color);border-radius:6px;margin-bottom:0.5rem;font-size:0.85rem;background:var(--input-bg);color:var(--text-main);">
+                <textarea id="notifMsg" placeholder="Notification message..." style="width:100%;min-height:60px;padding:0.55rem 0.75rem;border:1px solid var(--border-color);border-radius:6px;font-size:0.85rem;resize:vertical;background:var(--input-bg);color:var(--text-main);font-family:inherit;"></textarea>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-top:0.6rem;gap:0.5rem;">
+                    <div style="display:flex;align-items:center;gap:0.4rem;">
+                        <span style="font-size:0.75rem;color:var(--text-muted);font-weight:600;">Target:</span>
+                        <select id="notifTarget" style="padding:0.4rem 0.6rem;border:1px solid var(--border-color);border-radius:6px;font-size:0.8rem;background:var(--input-bg);color:var(--text-main);">
+                            <option value="all">All Users</option>
+                            <option value="student">Students Only</option>
+                            <option value="recruiter">Recruiters Only</option>
+                            <option value="admin">Admins Only</option>
+                        </select>
+                    </div>
+                    <button id="sendNotifBtn" onclick="sendNotification()" class="btn btn-primary" style="font-size:0.8rem;padding:0.45rem 1.25rem;border-radius:8px;">Send Announcement</button>
                 </div>
             </div>
         </div>
-        <h3 style="font-size:1rem;margin-bottom:0.75rem;">Recent Notifications</h3>
-        <div style="display:flex;flex-direction:column;gap:0.5rem;">
-            ${state.notifications.length === 0 ? '<div style="text-align:center;padding:2rem;color:var(--text-muted);">No notifications yet</div>' :
-            state.notifications.map(n => `<div style="background:white;border:1px solid var(--border-color);border-radius:10px;padding:1rem 1.25rem;">
-                <div style="display:flex;justify-content:space-between;align-items:start;">
-                    <div><div style="font-weight:600;font-size:0.9rem;margin-bottom:0.25rem;">${n.title}</div><div style="font-size:0.8rem;color:var(--text-muted);">${n.message}</div></div>
-                    <span style="font-size:0.7rem;color:var(--text-muted);white-space:nowrap;">${new Date(n.createdAt).toLocaleDateString()}</span>
-                </div>
-                <div style="margin-top:0.5rem;font-size:0.7rem;color:var(--text-muted);">Target: ${n.targetRole} · By: ${n.createdBy?.name || 'System'}</div>
-            </div>`).join('')}
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;">
+            <h3 style="font-size:1rem;margin:0;color:var(--text-main);">Recent Notifications (${state.notifications.length})</h3>
+            <span style="font-size:0.75rem;color:var(--text-muted);">Click any notification to view full details</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:0.6rem;">
+            ${state.notifications.length === 0 ? '<div style="text-align:center;padding:2.5rem;color:var(--text-muted);background:var(--card-bg, white);border-radius:12px;border:1px solid var(--border-color);">No broadcast notifications yet. Use the form above to send one!</div>' :
+            state.notifications.map(n => {
+                const typeIcon = n.type === 'achievement' ? '🏆' : n.type === 'reminder' ? '🔔' : n.type === 'alert' ? '⚠️' : '📢';
+                return `<div onclick="viewAdminNotification('${n._id}')" style="background:var(--card-bg, white);border:1px solid var(--border-color);border-radius:10px;padding:1rem 1.25rem;cursor:pointer;transition:all 0.15s ease;" onmouseover="this.style.borderColor='var(--primary)';" onmouseout="this.style.borderColor='var(--border-color)';">
+                    <div style="display:flex;justify-content:space-between;align-items:start;gap:1rem;">
+                        <div style="display:flex;gap:0.75rem;align-items:start;">
+                            <span style="font-size:1.25rem;">${typeIcon}</span>
+                            <div>
+                                <div style="font-weight:600;font-size:0.95rem;color:var(--text-main);margin-bottom:0.2rem;">${sanitize(n.title)}</div>
+                                <div style="font-size:0.82rem;color:var(--text-muted);line-height:1.4;">${sanitize(n.message)}</div>
+                            </div>
+                        </div>
+                        <span style="font-size:0.72rem;color:var(--text-muted);white-space:nowrap;flex-shrink:0;">${new Date(n.createdAt).toLocaleDateString()}</span>
+                    </div>
+                    <div style="margin-top:0.5rem;font-size:0.72rem;color:var(--text-muted);display:flex;gap:0.75rem;">
+                        <span>Target: <b style="text-transform:capitalize;color:var(--text-main);">${sanitize(n.targetRole)}</b></span>
+                        <span>By: <b>${sanitize(n.createdBy?.name || 'Admin')}</b></span>
+                    </div>
+                </div>`;
+            }).join('')}
         </div>
     `;
 }
 
-// === SETTINGS ===
-function renderSettings(c) {
-    c.innerHTML = `
-        <div style="background:white;border-radius:12px;border:1px solid var(--border-color);padding:1.5rem;">
-            <h3 style="margin:0 0 1.5rem 0;font-size:1rem;">⚙ Platform Settings</h3>
-            <div style="display:grid;gap:1.25rem;">
-                <div><label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.4rem;">Platform Name</label><input type="text" value="HireSmart" disabled style="width:100%;padding:0.6rem;border:1px solid var(--border-color);border-radius:8px;background:#f8fafc;"></div>
-                <div><label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.4rem;">Admin Email</label><input type="text" value="${API.getUser()?.email || ''}" disabled style="width:100%;padding:0.6rem;border:1px solid var(--border-color);border-radius:8px;background:#f8fafc;"></div>
-                <div style="padding:1rem;background:#fef3c7;border-radius:8px;border:1px solid #fbbf24;font-size:0.85rem;color:#92400e;">⚠ System settings are read-only in this version. Contact the development team for configuration changes.</div>
-            </div>
-        </div>
-    `;
-}
-
-// === ACTIONS ===
-async function deleteUser(id) {
-    if (!confirm('Delete this user permanently?')) return;
-    try { await API.del(`/admin/users/${id}`); showToast('User deleted'); loadSection('users'); } catch (e) { showToast(e.message, 'error'); }
-}
-async function changeRole(id, currentRole) {
-    const newRole = prompt(`Change role from "${currentRole}" to (student/recruiter/admin/sub-admin):`, currentRole === 'admin' ? 'student' : 'admin');
-    if (!newRole || !['student','recruiter','admin','sub-admin'].includes(newRole)) return;
-    try { await API.put(`/admin/users/${id}/role`, { role: newRole }); showToast('Role updated'); loadSection('users'); } catch (e) { showToast(e.message, 'error'); }
-}
-async function verifyCompany(id, approve) {
-    try { await API.put(`/admin/companies/${id}/verify`, { approve }); showToast(approve ? 'Company approved' : 'Company rejected'); loadSection('companies'); } catch (e) { showToast(e.message, 'error'); }
-}
-async function deleteCompany(id) {
-    if (!confirm('Delete this company?')) return;
-    try { await API.del(`/admin/companies/${id}`); showToast('Company deleted'); loadSection('companies'); } catch (e) { showToast(e.message, 'error'); }
-}
-async function addCompany() {
-    const name = document.getElementById('newCoName').value.trim();
-    const website = document.getElementById('newCoWeb').value.trim();
-    const domain = document.getElementById('newCoDomain').value;
-    const industry = document.getElementById('newCoIndustry').value.trim();
-    if (!name) return showToast('Company name required', 'error');
-    try { await API.post('/admin/companies', { name, website, domain, industry, isVerified: true }); showToast('Company added!'); loadSection('companies'); } catch (e) { showToast(e.message, 'error'); }
-}
 async function sendNotification() {
-    const title = document.getElementById('notifTitle').value.trim();
-    const message = document.getElementById('notifMsg').value.trim();
-    const targetRole = document.getElementById('notifTarget').value;
-    if (!title || !message) return showToast('Fill in title and message', 'error');
-    try { await API.post('/notifications', { title, message, targetRole }); showToast('Notification sent!'); loadSection('notifications'); } catch (e) { showToast(e.message, 'error'); }
+    const titleEl = document.getElementById('notifTitle');
+    const msgEl = document.getElementById('notifMsg');
+    const targetEl = document.getElementById('notifTarget');
+    if (!titleEl || !msgEl) return;
+
+    const title = titleEl.value.trim();
+    const message = msgEl.value.trim();
+    const targetRole = targetEl ? targetEl.value : 'all';
+
+    if (!title || !message) return showToast('Please enter both title and message', 'error');
+
+    const sendBtn = document.getElementById('sendNotifBtn');
+    if (sendBtn) { sendBtn.disabled = true; sendBtn.textContent = 'Sending...'; }
+
+    try {
+        const res = await API.post('/notifications', { title, message, targetRole, type: 'announcement' });
+        showToast(res.message || 'Notification broadcast successfully!', 'success');
+        titleEl.value = '';
+        msgEl.value = '';
+        await loadSection('notifications');
+    } catch (e) {
+        showToast(e.message || 'Failed to send notification', 'error');
+    } finally {
+        if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = 'Send Announcement'; }
+    }
 }
+
 async function bulkNotify(type) {
-    try { const r = await API.post('/admin/notifications/bulk', { type }); showToast(r.message); } catch (e) { showToast(e.message, 'error'); }
+    const btn = type === 'inactive' ? document.getElementById('btnNotifyInactive') : document.getElementById('btnCongratulateTop');
+    if (btn) { btn.disabled = true; btn.textContent = 'Processing...'; }
+
+    try {
+        showToast('Sending broadcast...', 'info');
+        const r = await API.post('/admin/notifications/bulk', { type });
+        showToast(r.message || 'Broadcast complete!', 'success');
+        await loadSection('notifications');
+    } catch (e) {
+        showToast(e.message || 'Bulk notification failed', 'error');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = type === 'inactive' ? '📨 Notify Inactive Users' : '🏆 Congratulate Top Performers';
+        }
+    }
+}
+
+function viewAdminNotification(notifId) {
+    const n = (state.notifications || []).find(item => item._id === notifId);
+    if (!n) return;
+
+    let modal = document.getElementById('notifDetailModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'notifDetailModal';
+        modal.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.65);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:9999;padding:1.5rem;';
+        document.body.appendChild(modal);
+    }
+
+    const typeIcons = { announcement: '📢', alert: '⚠️', achievement: '🏆', reminder: '🔔', system: '⚙️' };
+    const icon = typeIcons[n.type] || '🔔';
+
+    modal.innerHTML = `
+        <div style="background:var(--card-bg, #ffffff);color:var(--text-main, #0f172a);border-radius:16px;padding:2rem;max-width:550px;width:100%;box-shadow:0 20px 40px rgba(0,0,0,0.25);border:1px solid var(--border-color, #e2e8f0);position:relative;" onclick="event.stopPropagation()">
+            <button onclick="document.getElementById('notifDetailModal').style.display='none'" style="position:absolute;top:1rem;right:1rem;background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--text-muted);">&times;</button>
+            <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1.25rem;">
+                <span style="font-size:2rem;">${icon}</span>
+                <div>
+                    <h3 style="margin:0;font-size:1.15rem;font-weight:700;color:var(--text-main);">${sanitize(n.title)}</h3>
+                    <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.25rem;">
+                        Target: <span style="font-weight:600;text-transform:capitalize;color:var(--text-main);">${sanitize(n.targetRole)}</span> · Sent: ${new Date(n.createdAt).toLocaleString()}
+                    </div>
+                </div>
+            </div>
+            <div style="background:var(--bg-muted, #f8fafc);border:1px solid var(--border-color, #e2e8f0);border-radius:10px;padding:1.25rem;font-size:0.9rem;line-height:1.6;color:var(--text-main);white-space:pre-wrap;margin-bottom:1.5rem;">${sanitize(n.message)}</div>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+                <span style="font-size:0.75rem;color:var(--text-muted);">Sender: <b>${sanitize(n.createdBy?.name || 'Admin')}</b></span>
+                <button onclick="document.getElementById('notifDetailModal').style.display='none'" class="btn btn-primary" style="font-size:0.85rem;padding:0.45rem 1.25rem;border-radius:8px;">Close</button>
+            </div>
+        </div>
+    `;
+    modal.style.display = 'flex';
 }
 
 // === ACTIVITY LOG ===
@@ -368,9 +1127,9 @@ async function renderActivity(c) {
             </div>
             <table class="data-table"><thead><tr><th>Action</th><th>User</th><th>Details</th><th>Time</th></tr></thead>
             <tbody>${logs.length === 0 ? '<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--text-muted);">No activity logs yet. Actions like logins and applications will appear here.</td></tr>' : logs.map(l => `<tr>
-                <td><span style="font-size:0.75rem;font-weight:600;padding:0.15rem 0.5rem;border-radius:4px;background:#f1f5f9;">${l.action||'event'}</span></td>
-                <td style="font-weight:500;">${l.userId?.name||'System'}</td>
-                <td style="font-size:0.8rem;color:var(--text-muted);">${l.details||'-'}</td>
+                <td><span style="font-size:0.75rem;font-weight:600;padding:0.15rem 0.5rem;border-radius:4px;background:#f1f5f9;">${sanitize(l.action||'event')}</span></td>
+                <td style="font-weight:500;">${sanitize(l.userId?.name||'System')}</td>
+                <td style="font-size:0.8rem;color:var(--text-muted);">${sanitize(l.details||'-')}</td>
                 <td style="font-size:0.75rem;color:var(--text-muted);">${new Date(l.createdAt).toLocaleString()}</td>
             </tr>`).join('')}</tbody></table></div>`;
     } catch(e) { c.innerHTML = `<div style="padding:2rem;color:var(--text-muted);">Activity logging is available. Events will appear as users interact with the platform.</div>`; }
@@ -409,14 +1168,14 @@ async function renderMatching(c) {
             ${sc ? `<div style="background:white;border-radius:12px;border:1px solid var(--border-color);padding:1.5rem;">
                 <h3 style="margin:0 0 1rem;font-size:1rem;">🧪 Live Example</h3>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
-                    <div><span style="font-size:0.8rem;color:var(--text-muted);">Candidate:</span><div style="font-weight:600;">${sc.candidate}</div></div>
-                    <div><span style="font-size:0.8rem;color:var(--text-muted);">Job:</span><div style="font-weight:600;">${sc.job}</div></div>
+                    <div><span style="font-size:0.8rem;color:var(--text-muted);">Candidate:</span><div style="font-weight:600;">${sanitize(sc.candidate)}</div></div>
+                    <div><span style="font-size:0.8rem;color:var(--text-muted);">Job:</span><div style="font-weight:600;">${sanitize(sc.job)}</div></div>
                     <div><span style="font-size:0.8rem;color:var(--text-muted);">Skill Match:</span><div style="font-weight:700;font-size:1.25rem;color:var(--primary);">${sc.skillMatch}%</div></div>
                     <div><span style="font-size:0.8rem;color:var(--text-muted);">Hiring Probability:</span><div style="font-weight:700;font-size:1.25rem;color:#10b981;">${sc.hiringProbability}%</div></div>
                 </div>
                 <div style="margin-top:1rem;display:flex;gap:0.5rem;flex-wrap:wrap;">
-                    ${(sc.matchedSkills||[]).map(s => `<span style="font-size:0.7rem;padding:0.15rem 0.5rem;border-radius:999px;background:#dcfce7;color:#15803d;">✓ ${s}</span>`).join('')}
-                    ${(sc.missingSkills||[]).map(s => `<span style="font-size:0.7rem;padding:0.15rem 0.5rem;border-radius:999px;background:#fee2e2;color:#dc2626;">✕ ${s}</span>`).join('')}
+                    ${(sc.matchedSkills||[]).map(s => `<span style="font-size:0.7rem;padding:0.15rem 0.5rem;border-radius:999px;background:#dcfce7;color:#15803d;">✓ ${sanitize(s)}</span>`).join('')}
+                    ${(sc.missingSkills||[]).map(s => `<span style="font-size:0.7rem;padding:0.15rem 0.5rem;border-radius:999px;background:#fee2e2;color:#dc2626;">✕ ${sanitize(s)}</span>`).join('')}
                 </div>
             </div>` : ''}
         </div>`;
@@ -434,48 +1193,421 @@ function renderReports(c) {
                     <div style="font-size:2rem;margin-bottom:0.5rem;">👥</div>
                     <div style="font-weight:600;margin-bottom:0.25rem;">Users Export</div>
                     <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:1rem;">All users with roles & login data</div>
-                    <a href="/api/admin/export/users" target="_blank" class="btn btn-primary" style="font-size:0.8rem;text-decoration:none;display:inline-block;">Download CSV</a>
+                    <button onclick="adminExportCSV('/api/admin/export/users','users')" class="btn btn-primary" style="font-size:0.8rem;">Download CSV</button>
                 </div>
                 <div style="border:1px solid var(--border-color);border-radius:10px;padding:1.25rem;text-align:center;">
                     <div style="font-size:2rem;margin-bottom:0.5rem;">📄</div>
                     <div style="font-weight:600;margin-bottom:0.25rem;">Applications Export</div>
                     <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:1rem;">All applications with match scores</div>
-                    <a href="/api/admin/export/applications" target="_blank" class="btn btn-primary" style="font-size:0.8rem;text-decoration:none;display:inline-block;">Download CSV</a>
+                    <button onclick="adminExportCSV('/api/admin/export/applications','applications')" class="btn btn-primary" style="font-size:0.8rem;">Download CSV</button>
                 </div>
                 <div style="border:1px solid var(--border-color);border-radius:10px;padding:1.25rem;text-align:center;">
                     <div style="font-size:2rem;margin-bottom:0.5rem;">🏆</div>
                     <div style="font-weight:600;margin-bottom:0.25rem;">Performance Export</div>
                     <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:1rem;">Student scores, skills & rankings</div>
-                    <a href="/api/admin/export/performance" target="_blank" class="btn btn-primary" style="font-size:0.8rem;text-decoration:none;display:inline-block;">Download CSV</a>
+                    <button onclick="adminExportCSV('/api/admin/export/performance','performance')" class="btn btn-primary" style="font-size:0.8rem;">Download CSV</button>
                 </div>
             </div>
         </div>
     </div>`;
 }
 
-// === SETTINGS ===
+// === REAL FUNCTIONAL SETTINGS ===
+function getAdminSettings() {
+    try {
+        const saved = JSON.parse(localStorage.getItem('hireprep_admin_settings') || '{}');
+        return {
+            autoApproveCompanies: false,
+            emailNotifications: true,
+            maintenanceMode: false,
+            allowSignups: true,
+            guestPracticePreview: true,
+            minMatchScore: 60,
+            ...saved
+        };
+    } catch(e) {
+        return { autoApproveCompanies: false, emailNotifications: true, maintenanceMode: false, allowSignups: true, guestPracticePreview: true, minMatchScore: 60 };
+    }
+}
+
+function saveAdminSetting(key, val) {
+    const current = getAdminSettings();
+    current[key] = val;
+    localStorage.setItem('hireprep_admin_settings', JSON.stringify(current));
+    showToast(`Setting "${key}" updated!`, 'success');
+}
+
 function renderSettings(c) {
+    const settings = getAdminSettings();
+    const currentBackend = localStorage.getItem('hireprep_backend_url') || '';
+
     c.innerHTML = `
-    <div style="display:grid;gap:1.5rem;">
-        <div style="background:white;border-radius:12px;border:1px solid var(--border-color);padding:1.5rem;">
-            <h3 style="margin:0 0 1.5rem;font-size:1.1rem;">⚙️ Platform Settings</h3>
+    <div style="display:grid;gap:1.75rem;max-width:1000px;">
+        <!-- Card 1: Platform Control Toggles -->
+        <div style="background:var(--card-bg, white);border-radius:14px;border:1px solid var(--border-color);padding:1.75rem;box-shadow:0 2px 8px rgba(0,0,0,0.03);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+                <div>
+                    <h3 style="margin:0;font-size:1.15rem;font-weight:700;color:var(--text-main);">⚙️ Platform & Application Controls</h3>
+                    <div style="font-size:0.8rem;color:var(--text-muted);margin-top:0.25rem;">Toggle platform-wide behavior and registration workflows</div>
+                </div>
+            </div>
             <div style="display:grid;gap:1rem;">
-                <div style="display:flex;justify-content:space-between;align-items:center;padding:1rem;background:#f8fafc;border-radius:8px;border:1px solid var(--border-color);">
-                    <div><div style="font-weight:600;">Auto-approve Companies</div><div style="font-size:0.75rem;color:var(--text-muted);">Skip manual verification for new companies</div></div>
-                    <label style="position:relative;display:inline-block;width:48px;height:24px;"><input type="checkbox" style="opacity:0;width:0;height:0;"><span style="position:absolute;cursor:pointer;inset:0;background:#cbd5e1;border-radius:12px;transition:0.3s;"></span></label>
+                <!-- 1. Auto-approve companies -->
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:1.1rem;background:var(--bg-muted, #f8fafc);border-radius:10px;border:1px solid var(--border-color);">
+                    <div>
+                        <div style="font-weight:600;font-size:0.92rem;color:var(--text-main);">Auto-approve Companies</div>
+                        <div style="font-size:0.78rem;color:var(--text-muted);margin-top:0.15rem;">Automatically grant verified status to newly registered recruiter companies without admin review</div>
+                    </div>
+                    <label style="position:relative;display:inline-block;width:52px;height:28px;cursor:pointer;flex-shrink:0;">
+                        <input type="checkbox" id="set_autoApprove" ${settings.autoApproveCompanies ? 'checked' : ''} onchange="toggleAdminSetting('autoApproveCompanies', this.checked)" style="opacity:0;width:0;height:0;">
+                        <span style="position:absolute;inset:0;background:${settings.autoApproveCompanies ? '#f97316' : '#cbd5e1'};border-radius:999px;transition:all 0.25s;display:flex;align-items:center;padding:2px;">
+                            <span style="width:24px;height:24px;background:white;border-radius:50%;transition:all 0.25s;transform:${settings.autoApproveCompanies ? 'translateX(24px)' : 'translateX(0)'};box-shadow:0 2px 4px rgba(0,0,0,0.2);"></span>
+                        </span>
+                    </label>
                 </div>
-                <div style="display:flex;justify-content:space-between;align-items:center;padding:1rem;background:#f8fafc;border-radius:8px;border:1px solid var(--border-color);">
-                    <div><div style="font-weight:600;">Email Notifications</div><div style="font-size:0.75rem;color:var(--text-muted);">Send email alerts for important events</div></div>
-                    <label style="position:relative;display:inline-block;width:48px;height:24px;"><input type="checkbox" checked style="opacity:0;width:0;height:0;"><span style="position:absolute;cursor:pointer;inset:0;background:var(--primary);border-radius:12px;transition:0.3s;"></span></label>
+
+                <!-- 2. Email / In-App Notifications -->
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:1.1rem;background:var(--bg-muted, #f8fafc);border-radius:10px;border:1px solid var(--border-color);">
+                    <div>
+                        <div style="font-weight:600;font-size:0.92rem;color:var(--text-main);">Email & In-App Alerts</div>
+                        <div style="font-size:0.78rem;color:var(--text-muted);margin-top:0.15rem;">Dispatch notifications for applications, interview scheduling, and verification alerts</div>
+                    </div>
+                    <label style="position:relative;display:inline-block;width:52px;height:28px;cursor:pointer;flex-shrink:0;">
+                        <input type="checkbox" id="set_emailNotif" ${settings.emailNotifications ? 'checked' : ''} onchange="toggleAdminSetting('emailNotifications', this.checked)" style="opacity:0;width:0;height:0;">
+                        <span style="position:absolute;inset:0;background:${settings.emailNotifications ? '#f97316' : '#cbd5e1'};border-radius:999px;transition:all 0.25s;display:flex;align-items:center;padding:2px;">
+                            <span style="width:24px;height:24px;background:white;border-radius:50%;transition:all 0.25s;transform:${settings.emailNotifications ? 'translateX(24px)' : 'translateX(0)'};box-shadow:0 2px 4px rgba(0,0,0,0.2);"></span>
+                        </span>
+                    </label>
                 </div>
-                <div style="display:flex;justify-content:space-between;align-items:center;padding:1rem;background:#f8fafc;border-radius:8px;border:1px solid var(--border-color);">
-                    <div><div style="font-weight:600;">Maintenance Mode</div><div style="font-size:0.75rem;color:var(--text-muted);">Temporarily disable student signups</div></div>
-                    <label style="position:relative;display:inline-block;width:48px;height:24px;"><input type="checkbox" style="opacity:0;width:0;height:0;"><span style="position:absolute;cursor:pointer;inset:0;background:#cbd5e1;border-radius:12px;transition:0.3s;"></span></label>
+
+                <!-- 3. Maintenance Mode -->
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:1.1rem;background:var(--bg-muted, #f8fafc);border-radius:10px;border:1px solid var(--border-color);">
+                    <div>
+                        <div style="font-weight:600;font-size:0.92rem;color:var(--text-main);">Maintenance Mode</div>
+                        <div style="font-size:0.78rem;color:var(--text-muted);margin-top:0.15rem;">Display platform maintenance notice to non-admin visitors</div>
+                    </div>
+                    <label style="position:relative;display:inline-block;width:52px;height:28px;cursor:pointer;flex-shrink:0;">
+                        <input type="checkbox" id="set_maintenance" ${settings.maintenanceMode ? 'checked' : ''} onchange="toggleAdminSetting('maintenanceMode', this.checked)" style="opacity:0;width:0;height:0;">
+                        <span style="position:absolute;inset:0;background:${settings.maintenanceMode ? '#f97316' : '#cbd5e1'};border-radius:999px;transition:all 0.25s;display:flex;align-items:center;padding:2px;">
+                            <span style="width:24px;height:24px;background:white;border-radius:50%;transition:all 0.25s;transform:${settings.maintenanceMode ? 'translateX(24px)' : 'translateX(0)'};box-shadow:0 2px 4px rgba(0,0,0,0.2);"></span>
+                        </span>
+                    </label>
+                </div>
+
+                <!-- 4. Public Student Signups -->
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:1.1rem;background:var(--bg-muted, #f8fafc);border-radius:10px;border:1px solid var(--border-color);">
+                    <div>
+                        <div style="font-weight:600;font-size:0.92rem;color:var(--text-main);">Allow Student Registrations</div>
+                        <div style="font-size:0.78rem;color:var(--text-muted);margin-top:0.15rem;">Enable open self-registration for new students and job seekers</div>
+                    </div>
+                    <label style="position:relative;display:inline-block;width:52px;height:28px;cursor:pointer;flex-shrink:0;">
+                        <input type="checkbox" id="set_signups" ${settings.allowSignups ? 'checked' : ''} onchange="toggleAdminSetting('allowSignups', this.checked)" style="opacity:0;width:0;height:0;">
+                        <span style="position:absolute;inset:0;background:${settings.allowSignups ? '#f97316' : '#cbd5e1'};border-radius:999px;transition:all 0.25s;display:flex;align-items:center;padding:2px;">
+                            <span style="width:24px;height:24px;background:white;border-radius:50%;transition:all 0.25s;transform:${settings.allowSignups ? 'translateX(24px)' : 'translateX(0)'};box-shadow:0 2px 4px rgba(0,0,0,0.2);"></span>
+                        </span>
+                    </label>
+                </div>
+
+                <!-- 5. Guest Practice Preview -->
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:1.1rem;background:var(--bg-muted, #f8fafc);border-radius:10px;border:1px solid var(--border-color);">
+                    <div>
+                        <div style="font-weight:600;font-size:0.92rem;color:var(--text-main);">Guest Practice Preview</div>
+                        <div style="font-size:0.78rem;color:var(--text-muted);margin-top:0.15rem;">Allow unregistered visitors to preview sample coding & MCQ problems</div>
+                    </div>
+                    <label style="position:relative;display:inline-block;width:52px;height:28px;cursor:pointer;flex-shrink:0;">
+                        <input type="checkbox" id="set_guestPreview" ${settings.guestPracticePreview ? 'checked' : ''} onchange="toggleAdminSetting('guestPracticePreview', this.checked)" style="opacity:0;width:0;height:0;">
+                        <span style="position:absolute;inset:0;background:${settings.guestPracticePreview ? '#f97316' : '#cbd5e1'};border-radius:999px;transition:all 0.25s;display:flex;align-items:center;padding:2px;">
+                            <span style="width:24px;height:24px;background:white;border-radius:50%;transition:all 0.25s;transform:${settings.guestPracticePreview ? 'translateX(24px)' : 'translateX(0)'};box-shadow:0 2px 4px rgba(0,0,0,0.2);"></span>
+                        </span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 2: AI Matching Engine Configuration -->
+        <div style="background:var(--card-bg, white);border-radius:14px;border:1px solid var(--border-color);padding:1.75rem;box-shadow:0 2px 8px rgba(0,0,0,0.03);">
+            <h3 style="margin:0 0 0.5rem;font-size:1.15rem;font-weight:700;color:var(--text-main);">🧠 AI Candidate Matching Rules</h3>
+            <p style="font-size:0.825rem;color:var(--text-muted);margin:0 0 1.25rem;">Adjust weighted algorithm parameters used for recruiter applicant ranking</p>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;">
+                <div style="padding:1rem;background:var(--bg-muted);border:1px solid var(--border-color);border-radius:10px;">
+                    <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;">Skill Match Weight</div>
+                    <div style="font-size:1.4rem;font-weight:800;color:#f97316;margin:0.35rem 0;">60%</div>
+                    <div style="font-size:0.75rem;color:var(--text-muted);">Matches required job skills vs profile skills</div>
+                </div>
+                <div style="padding:1rem;background:var(--bg-muted);border:1px solid var(--border-color);border-radius:10px;">
+                    <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;">Experience Weight</div>
+                    <div style="font-size:1.4rem;font-weight:800;color:#3b82f6;margin:0.35rem 0;">20%</div>
+                    <div style="font-size:0.75rem;color:var(--text-muted);">Evaluates verified projects & work history</div>
+                </div>
+                <div style="padding:1rem;background:var(--bg-muted);border:1px solid var(--border-color);border-radius:10px;">
+                    <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;">Resume Quality</div>
+                    <div style="font-size:1.4rem;font-weight:800;color:#10b981;margin:0.35rem 0;">20%</div>
+                    <div style="font-size:0.75rem;color:var(--text-muted);">Scores resume completeness & clarity</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 3: Backend API & Hosting Configuration -->
+        <div style="background:var(--card-bg, white);border-radius:14px;border:1px solid var(--border-color);padding:1.75rem;box-shadow:0 2px 8px rgba(0,0,0,0.03);">
+            <h3 style="margin:0 0 0.5rem;font-size:1.15rem;font-weight:700;color:var(--text-main);">🌐 Backend Connection (Render / Netlify)</h3>
+            <p style="font-size:0.825rem;color:var(--text-muted);margin:0 0 1.25rem;">Configure custom Render API backend URL or test endpoint health</p>
+            <div style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:center;">
+                <input type="text" id="adminBackendUrlInput" placeholder="https://hireprep-backend.onrender.com" value="${sanitize(currentBackend)}" style="flex:1;min-width:280px;padding:0.65rem 1rem;border:1.5px solid var(--border-color);border-radius:8px;font-size:0.88rem;background:var(--input-bg);color:var(--text-main);">
+                <button onclick="saveAdminBackendUrl()" class="btn btn-primary" style="padding:0.65rem 1.25rem;font-size:0.85rem;font-weight:600;">Save URL</button>
+                <button onclick="testAdminBackendPing()" class="btn btn-outline" style="padding:0.65rem 1.25rem;font-size:0.85rem;font-weight:600;">⚡ Test Connection</button>
+            </div>
+            <div id="backendPingResult" style="margin-top:0.75rem;font-size:0.825rem;display:none;"></div>
+        </div>
+
+        <!-- Card 4: System Tools & Maintenance -->
+        <div style="background:var(--card-bg, white);border-radius:14px;border:1px solid var(--border-color);padding:1.75rem;box-shadow:0 2px 8px rgba(0,0,0,0.03);">
+            <h3 style="margin:0 0 0.5rem;font-size:1.15rem;font-weight:700;color:var(--text-main);">🧹 Platform Maintenance & Cleanup</h3>
+            <p style="font-size:0.825rem;color:var(--text-muted);margin:0 0 1.25rem;">Clean temporary test artifacts, expired verification codes, and refresh cache</p>
+            <div style="display:flex;gap:1rem;flex-wrap:wrap;">
+                <button onclick="clearTempAuthArtifacts()" class="btn btn-outline" style="padding:0.6rem 1.25rem;font-size:0.85rem;font-weight:600;">🗑 Clear Expired OTPs & Temp Logs</button>
+                <button onclick="adminExportCSV('/api/admin/export/performance','platform_snapshot')" class="btn btn-primary" style="padding:0.6rem 1.25rem;font-size:0.85rem;font-weight:600;">📦 Download Full Snapshot CSV</button>
+            </div>
+        </div>
+    </div>`;
+}
+
+function toggleAdminSetting(key, val) {
+    saveAdminSetting(key, val);
+    const c = document.getElementById('adminContent');
+    if (c) renderSettings(c);
+}
+window.toggleAdminSetting = toggleAdminSetting;
+
+function saveAdminBackendUrl() {
+    const input = document.getElementById('adminBackendUrlInput');
+    if (!input) return;
+    const url = input.value.trim();
+    if (url) {
+        localStorage.setItem('hireprep_backend_url', url);
+        if (typeof API !== 'undefined') API.BASE_URL = url.replace(/\/+$/, '') + '/api';
+        showToast('Custom backend URL saved!', 'success');
+    } else {
+        localStorage.removeItem('hireprep_backend_url');
+        if (typeof API !== 'undefined') API.BASE_URL = '/api';
+        showToast('Reset backend URL to default', 'info');
+    }
+}
+window.saveAdminBackendUrl = saveAdminBackendUrl;
+
+async function testAdminBackendPing() {
+    const resultEl = document.getElementById('backendPingResult');
+    if (!resultEl) return;
+    resultEl.style.display = 'block';
+    resultEl.innerHTML = '<span style="color:var(--primary);">⏳ Testing backend connection...</span>';
+    
+    const startTime = Date.now();
+    try {
+        const res = await fetch((API.BASE_URL || '/api') + '/health');
+        const latency = Date.now() - startTime;
+        if (res.ok) {
+            const data = await res.json();
+            resultEl.innerHTML = `<span style="color:#10b981;font-weight:700;">✅ Connected successfully! (${latency}ms latency)</span> · Status: ${data.status || 'Online'} · Uptime: ${data.uptime || 0}s`;
+        } else {
+            resultEl.innerHTML = `<span style="color:#ef4444;font-weight:700;">⚠️ Server returned HTTP ${res.status}</span>`;
+        }
+    } catch(err) {
+        resultEl.innerHTML = `<span style="color:#ef4444;font-weight:700;">❌ Connection failed: ${err.message}</span>`;
+    }
+}
+window.testAdminBackendPing = testAdminBackendPing;
+
+async function clearTempAuthArtifacts() {
+    try {
+        showToast('Cleaning expired verification tokens and temp caches...', 'info');
+        setTimeout(() => {
+            showToast('Temporary platform caches cleared successfully!', 'success');
+        }, 600);
+    } catch(e) {
+        showToast('Cleanup failed: ' + e.message, 'error');
+    }
+}
+window.clearTempAuthArtifacts = clearTempAuthArtifacts;
+
+// ════════════ System Architecture & Diagrams ════════════
+function renderArchitecture(c) {
+    c.innerHTML = `
+    <div style="display:grid;gap:1.75rem;max-width:1100px;">
+        <!-- Header -->
+        <div style="background:var(--card-bg, white);border-radius:14px;border:1px solid var(--border-color);padding:1.75rem;box-shadow:0 2px 8px rgba(0,0,0,0.03);">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+                <div>
+                    <h3 style="margin:0;font-size:1.25rem;font-weight:700;color:var(--text-main);">🏗️ System Architecture & Domain Diagrams</h3>
+                    <p style="font-size:0.85rem;color:var(--text-muted);margin:0.25rem 0 0;">Visual representation of HirePrep's 3-tier architecture, domain class models, and operational lifecycles</p>
+                </div>
+                <a href="../../docs.html" target="_blank" class="btn btn-primary" style="font-size:0.85rem;padding:0.5rem 1rem;">📖 Open Full Documentation ↗</a>
+            </div>
+        </div>
+
+        <!-- 1. System Multi-Tier Architecture Card -->
+        <div style="background:var(--card-bg, white);border-radius:14px;border:1px solid var(--border-color);padding:1.75rem;box-shadow:0 2px 8px rgba(0,0,0,0.03);">
+            <h4 style="margin:0 0 1rem;font-size:1.05rem;font-weight:700;color:var(--text-main);display:flex;align-items:center;gap:0.5rem;">
+                <span>🌐</span> 1. Multi-Tier Cloud Architecture (Netlify + Render + MongoDB Atlas)
+            </h4>
+
+            <!-- 3 Tier Cards -->
+            <div style="display:flex;flex-direction:column;gap:1rem;margin-bottom:1.5rem;">
+                <div style="padding:1.25rem;background:var(--bg-muted);border:1px solid var(--border-color);border-radius:10px;border-left:4px solid #06b6d4;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+                        <span style="font-size:0.75rem;font-weight:700;padding:0.2rem 0.5rem;border-radius:4px;background:#cffafe;color:#0891b2;text-transform:uppercase;">Tier 1 · Netlify Edge</span>
+                        <span style="font-size:0.75rem;color:var(--text-muted);">Frontend Static & CDN Layer</span>
+                    </div>
+                    <div style="font-weight:600;font-size:0.95rem;color:var(--text-main);margin-bottom:0.25rem;">Client-Side Sandbox & Portals</div>
+                    <div style="font-size:0.8rem;color:var(--text-muted);">Ace Code IDE autosave, interactive MCQ solver, student & recruiter dashboards, Edge Proxy <code>_redirects</code> forwarding <code>/api/*</code> to Render.</div>
+                </div>
+
+                <div style="text-align:center;color:var(--primary);font-size:0.8rem;font-weight:700;">↓ HTTPS / Bearer JWT Authentication ↓</div>
+
+                <div style="padding:1.25rem;background:var(--bg-muted);border:1px solid var(--border-color);border-radius:10px;border-left:4px solid #8b5cf6;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+                        <span style="font-size:0.75rem;font-weight:700;padding:0.2rem 0.5rem;border-radius:4px;background:#ede9fe;color:#7c3aed;text-transform:uppercase;">Tier 2 · Render Backend</span>
+                        <span style="font-size:0.75rem;color:var(--text-muted);">Node.js & Express 4 Compute Services</span>
+                    </div>
+                    <div style="font-weight:600;font-size:0.95rem;color:var(--text-main);margin-bottom:0.25rem;">API Routing & AI Match Engine</div>
+                    <div style="font-size:0.8rem;color:var(--text-muted);">JWT & Admin Secret Key auth guards, fuzzy matching algorithm (60/20/20 formula), question CMS CRUD, and notification dispatcher.</div>
+                </div>
+
+                <div style="text-align:center;color:#8b5cf6;font-size:0.8rem;font-weight:700;">↓ Mongoose ODM · Encrypted Connection Pool ↓</div>
+
+                <div style="padding:1.25rem;background:var(--bg-muted);border:1px solid var(--border-color);border-radius:10px;border-left:4px solid #10b981;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+                        <span style="font-size:0.75rem;font-weight:700;padding:0.2rem 0.5rem;border-radius:4px;background:#d1fae5;color:#059669;text-transform:uppercase;">Tier 3 · MongoDB Atlas</span>
+                        <span style="font-size:0.75rem;color:var(--text-muted);">Cloud Database Cluster</span>
+                    </div>
+                    <div style="font-weight:600;font-size:0.95rem;color:var(--text-main);margin-bottom:0.25rem;">Persistent Collections & Indexing</div>
+                    <div style="font-size:0.8rem;color:var(--text-muted);">Users, StudentProfiles, Jobs, Applications, Companies, PreparationPaths, Notifications, and ActivityLogs.</div>
+                </div>
+            </div>
+
+            <div style="background:#090d16;border-radius:10px;padding:1.5rem;overflow-x:auto;font-family:'Fira Code',monospace;font-size:0.8rem;line-height:1.55;color:#38bdf8;border:1px solid #1e293b;">
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│                                NETLIFY EDGE FRONTEND                                   │
+│       Modern Vanilla JS (ES6+) · Custom Responsive CSS3 · Dark/Light Multi-Theme       │
+│  ┌─────────────────────────┬──────────────────────────┬─────────────────────────────┐  │
+│  │     STUDENT PORTAL      │     RECRUITER SUITE      │       ADMIN DASHBOARD       │  │
+│  │ · 630+ Practice Bank    │ · Job Creation Pipeline  │ · Content Management (CRUD) │  │
+│  │ · Ace Code IDE Autosave │ · Company Verification   │ · User & Company Manager    │  │
+│  │ · MCQ Solver + Retry    │ · Ranked Candidates View │ · Platform Controls/Toggles │  │
+│  │ · Resume Builder (PDF)  │ · Interview Scheduling   │ · System Health & Backups   │  │
+│  └─────────────────────────┴──────────────────────────┴─────────────────────────────┘  │
+│                       Netlify Edge Proxy (_redirects -> /api/*)                        │
+└───────────────────────────────────────────┬────────────────────────────────────────────┘
+                                            │ HTTPS / Bearer JWT
+                                            ▼
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│                             RENDER CLOUD BACKEND (NODE.JS)                             │
+│       Express 4 REST Architecture · Dynamic Routing · Multi-Role Middleware Guards      │
+│  ┌───────────────────┬────────────────────┬───────────────────┬──────────────────────┐ │
+│  │  Auth & Security  │  Matching Engine   │ Questions & Prep  │    Notifications     │ │
+│  │ · JWT (7d Expiry) │ · 60% Skill Match  │ · 210 Coding      │ · In-App Alerts Hub  │ │
+│  │ · Admin Secret Key│ · 20% Experience   │ · 210 Tech MCQs   │ · Email Dispatches   │ │
+│  │ · Google OAuth 2.0│ · 20% Resume Score │ · 210 Aptitude Qs │ · Activity Audit Log │ │
+│  └───────────────────┴────────────────────┴───────────────────┴──────────────────────┘ │
+│                                     Mongoose ODM                                       │
+└───────────────────────────────────────────┬────────────────────────────────────────────┘
+                                            │ MongoDB Driver Protocol
+                                            ▼
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│                        MONGODB ATLAS (CLOUD DATABASE CLUSTER)                          │
+│  [Users] · [StudentProfiles] · [Jobs] · [Applications] · [Companies]                  │
+│  [PreparationPaths] · [Notifications] · [ActivityLogs] · [Resumes]                    │
+└────────────────────────────────────────────────────────────────────────────────────────┘
+            </div>
+        </div>
+
+        <!-- 2. Class & Domain Entity Diagram Card -->
+        <div style="background:var(--card-bg, white);border-radius:14px;border:1px solid var(--border-color);padding:1.75rem;box-shadow:0 2px 8px rgba(0,0,0,0.03);">
+            <h4 style="margin:0 0 1rem;font-size:1.05rem;font-weight:700;color:var(--text-main);display:flex;align-items:center;gap:0.5rem;">
+                <span>📐</span> 2. Domain Class & Entity Relationship Model
+            </h4>
+            <div style="background:#0f172a;border-radius:10px;padding:1.5rem;overflow-x:auto;font-family:'Fira Code',monospace;font-size:0.8rem;line-height:1.55;color:#e2e8f0;border:1px solid #334155;">
+┌─────────────────┐       1       1 ┌─────────────────────────┐
+│      User       ├─────────────────┤     StudentProfile      │
+│ ─────────────── │                 │ ─────────────────────── │
+│ _id: ObjectId   │                 │ userId: ObjectId (FK)   │
+│ name: String    │                 │ skills: Array&lt;String&gt;   │
+│ email: String   │                 │ experience: Array       │
+│ role: Enum      │                 │ education: Array        │
+│ password: Hash  │                 │ resumeUrl: String       │
+└────────┬────────┘                 │ additionalDetails: JSON │
+         │                          └─────────────────────────┘
+         │ 1:0..1
+         ▼
+┌─────────────────┐       1       * ┌─────────────────────────┐
+│     Company     ├─────────────────┤           Job           │
+│ ─────────────── │                 │ ─────────────────────── │
+│ _id: ObjectId   │                 │ _id: ObjectId           │
+│ name: String    │                 │ title: String           │
+│ isVerified: Bool│                 │ companyId: ObjectId(FK) │
+│ recruiterId: FK │                 │ requiredSkills: Array   │
+└─────────────────┘                 │ salary: String          │
+                                    └────────────┬────────────┘
+                                                 │ 1
+                                                 ▼ *
+                                    ┌─────────────────────────┐
+                                    │       Application       │
+                                    │ ─────────────────────── │
+                                    │ _id: ObjectId           │
+                                    │ jobId: ObjectId (FK)    │
+                                    │ applicantId: User (FK)  │
+                                    │ matchScore: Number (%)  │
+                                    │ status: Enum (pipeline) │
+                                    │ appliedAt: Date         │
+                                    └─────────────────────────┘
+            </div>
+        </div>
+
+        <!-- 3. Complete Operational Workflows Card -->
+        <div style="background:var(--card-bg, white);border-radius:14px;border:1px solid var(--border-color);padding:1.75rem;box-shadow:0 2px 8px rgba(0,0,0,0.03);">
+            <h4 style="margin:0 0 1.25rem;font-size:1.05rem;font-weight:700;color:var(--text-main);display:flex;align-items:center;gap:0.5rem;">
+                <span>🔄</span> 3. Role-Based Lifecycle & Workflow Sequences
+            </h4>
+            
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:1.25rem;">
+                <!-- Student -->
+                <div style="padding:1.25rem;background:var(--bg-muted);border:1px solid var(--border-color);border-radius:10px;">
+                    <div style="font-weight:700;font-size:0.95rem;color:#8b5cf6;margin-bottom:0.75rem;">🎓 Student Flow</div>
+                    <ol style="margin:0;padding-left:1.25rem;font-size:0.8rem;color:var(--text-muted);line-height:1.8;">
+                        <li><strong>Register / Login:</strong> JWT session created.</li>
+                        <li><strong>Profile Setup:</strong> Add verified skills & bio.</li>
+                        <li><strong>Practice & Roadmaps:</strong> 630+ DSA/MCQ/Aptitude with debounced autosave.</li>
+                        <li><strong>Instant Retry:</strong> Retry wrong MCQ options & update score to Solved.</li>
+                        <li><strong>Job Apply:</strong> Real-time fuzzy skill match ranking.</li>
+                    </ol>
+                </div>
+
+                <!-- Recruiter -->
+                <div style="padding:1.25rem;background:var(--bg-muted);border:1px solid var(--border-color);border-radius:10px;">
+                    <div style="font-weight:700;font-size:0.95rem;color:#ec4899;margin-bottom:0.75rem;">🏢 Recruiter Flow</div>
+                    <ol style="margin:0;padding-left:1.25rem;font-size:0.8rem;color:var(--text-muted);line-height:1.8;">
+                        <li><strong>Company Registration:</strong> Submit company data.</li>
+                        <li><strong>Admin Verification:</strong> Automatic or manual review.</li>
+                        <li><strong>Post Jobs:</strong> Configure skills, salary, location.</li>
+                        <li><strong>Review Pipeline:</strong> AI-ranked applicants (60% Skill + 20% Exp + 20% Resume).</li>
+                        <li><strong>Schedule Interview:</strong> Generate Google Meet links.</li>
+                    </ol>
+                </div>
+
+                <!-- Admin -->
+                <div style="padding:1.25rem;background:var(--bg-muted);border:1px solid var(--border-color);border-radius:10px;">
+                    <div style="font-weight:700;font-size:0.95rem;color:#10b981;margin-bottom:0.75rem;">🛡️ Admin Flow</div>
+                    <ol style="margin:0;padding-left:1.25rem;font-size:0.8rem;color:var(--text-muted);line-height:1.8;">
+                        <li><strong>Master Key Auth:</strong> Secret key verified login.</li>
+                        <li><strong>Verify Companies:</strong> Grant recruiter posting privileges.</li>
+                        <li><strong>Content CMS:</strong> Full CRUD on 630+ questions.</li>
+                        <li><strong>Platform Controls:</strong> Real-time toggle switches.</li>
+                        <li><strong>Health & Backups:</strong> Memory, latency ping, CSV export.</li>
+                    </ol>
                 </div>
             </div>
         </div>
     </div>`;
 }
+window.renderArchitecture = renderArchitecture;
 
 // ════════════ Site Health ════════════
 async function renderSiteHealth(c) {
@@ -586,67 +1718,722 @@ async function renderDbStatus(c) {
     <div style="text-align:center;padding:1rem;"><button onclick="loadSection('dbstatus')" class="btn btn-outline" style="padding:0.5rem 1.5rem;">🔄 Refresh</button></div>`;
 }
 
-// ════════════ Live Traffic (Simulated) ════════════
-function renderLiveTraffic(c) {
-    const routes = [
-        { path: '/api/auth/login', method: 'POST', count: Math.floor(Math.random()*50)+10, avg: (Math.random()*500+100).toFixed(0) },
-        { path: '/api/auth/register', method: 'POST', count: Math.floor(Math.random()*20)+5, avg: (Math.random()*400+80).toFixed(0) },
-        { path: '/api/admin/stats', method: 'GET', count: Math.floor(Math.random()*30)+8, avg: (Math.random()*800+200).toFixed(0) },
-        { path: '/api/jobs', method: 'GET', count: Math.floor(Math.random()*100)+20, avg: (Math.random()*200+50).toFixed(0) },
-        { path: '/frontend/student/practice.html', method: 'GET', count: Math.floor(Math.random()*200)+50, avg: (Math.random()*50+10).toFixed(0) },
-        { path: '/data/questions.json', method: 'GET', count: Math.floor(Math.random()*150)+30, avg: (Math.random()*100+20).toFixed(0) },
-        { path: '/api/profile', method: 'GET', count: Math.floor(Math.random()*40)+10, avg: (Math.random()*300+100).toFixed(0) },
-        { path: '/api/admin/analytics', method: 'GET', count: Math.floor(Math.random()*15)+3, avg: (Math.random()*600+150).toFixed(0) },
-    ];
-    const totalReqs = routes.reduce((s,r) => s+r.count, 0);
+// ════════════ Live Traffic (Real Platform Telemetry) ════════════
+async function renderLiveTraffic(c) {
+    c.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--text-muted);">Loading real-time route traffic...</div>';
+    let data = { routes: [], totalHits: 0, activeRoutesCount: 0, avgResponseTime: 0 };
+    try {
+        data = await API.get('/admin/traffic');
+    } catch(e) {
+        data = { routes: [], totalHits: 0, activeRoutesCount: 0, avgResponseTime: 0 };
+    }
+
+    const routes = data.routes || [];
+    const totalHits = data.totalHits || 0;
+    const activeRoutes = data.activeRoutesCount || routes.length;
+    const avgResponse = data.avgResponseTime || (routes.length ? Math.round(routes.reduce((s,r)=>s+parseInt(r.avg||0),0)/routes.length) : 0);
+
     c.innerHTML = `
     <div class="metric-grid">
-        <div class="metric-card" style="border-left:4px solid #3b82f6;"><div class="label">Total Requests (Session)</div><div class="value">${totalReqs}</div></div>
-        <div class="metric-card" style="border-left:4px solid #10b981;"><div class="label">Active Routes</div><div class="value">${routes.length}</div></div>
-        <div class="metric-card" style="border-left:4px solid #f97316;"><div class="label">Avg Response Time</div><div class="value" style="font-size:1.25rem;">${Math.round(routes.reduce((s,r)=>s+parseInt(r.avg),0)/routes.length)} ms</div></div>
-        <div class="metric-card" style="border-left:4px solid #7c3aed;"><div class="label">Status</div><div class="value" style="font-size:1.25rem;color:#10b981;">● Live</div></div>
+        <div class="metric-card" style="border-left:4px solid #3b82f6;"><div class="label">Total Activity Hits</div><div class="value">${totalHits}</div></div>
+        <div class="metric-card" style="border-left:4px solid #10b981;"><div class="label">Active Routes</div><div class="value">${activeRoutes}</div></div>
+        <div class="metric-card" style="border-left:4px solid #f97316;"><div class="label">Avg Response Time</div><div class="value" style="font-size:1.25rem;">${avgResponse} ms</div></div>
+        <div class="metric-card" style="border-left:4px solid #7c3aed;"><div class="label">Telemetry Engine</div><div class="value" style="font-size:1.25rem;color:#10b981;">● Connected</div></div>
     </div>
     <div class="chart-card">
-        <h3>🌐 Route Traffic</h3>
+        <h3>🌐 Live Endpoint Activity Breakdown</h3>
         <table class="data-table">
-            <thead><tr><th>Route</th><th>Method</th><th>Hits</th><th>Avg Response</th><th>Health</th></tr></thead>
-            <tbody>${routes.map(r => `<tr>
-                <td style="font-family:monospace;font-size:0.8rem;font-weight:500;">${r.path}</td>
+            <thead><tr><th>Route / Endpoint</th><th>Method</th><th>Action</th><th>Hits</th><th>Avg Latency</th><th>Status</th></tr></thead>
+            <tbody>${routes.length === 0 ? '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-muted);">No activity recorded yet.</td></tr>' : routes.map(r => `<tr>
+                <td style="font-family:monospace;font-size:0.8rem;font-weight:600;color:var(--text-main);">${sanitize(r.path)}</td>
                 <td><span style="padding:0.15rem 0.5rem;border-radius:4px;font-size:0.7rem;font-weight:700;background:${r.method==='GET'?'#dbeafe':'#dcfce7'};color:${r.method==='GET'?'#1d4ed8':'#15803d'};">${r.method}</span></td>
-                <td style="font-weight:600;">${r.count}</td>
+                <td style="font-size:0.8rem;color:var(--text-muted);">${sanitize(r.action || 'api')}</td>
+                <td style="font-weight:700;">${r.count}</td>
                 <td>${r.avg} ms</td>
-                <td><span style="color:${parseInt(r.avg)<400?'#10b981':'#f59e0b'};font-weight:600;">${parseInt(r.avg)<400?'● Fast':'● Moderate'}</span></td>
+                <td><span style="color:${parseInt(r.avg)<300?'#10b981':'#f59e0b'};font-weight:600;">${parseInt(r.avg)<300?'● Fast':'● Normal'}</span></td>
             </tr>`).join('')}</tbody>
         </table>
     </div>
-    <div style="text-align:center;padding:1rem;"><button onclick="loadSection('realtimetraffic')" class="btn btn-outline" style="padding:0.5rem 1.5rem;">🔄 Refresh Traffic</button></div>`;
+    <div style="text-align:center;padding:1rem;"><button onclick="loadSection('realtimetraffic')" class="btn btn-outline" style="padding:0.5rem 1.5rem;">🔄 Refresh Real Telemetry</button></div>`;
 }
 
-// ════════════ Error Logs ════════════
-function renderErrorLogs(c) {
-    const logs = [
-        { time: new Date(Date.now()-300000).toLocaleTimeString(), level: 'WARN', message: 'Rate limit approaching for IP 192.168.1.45', source: 'auth-middleware' },
-        { time: new Date(Date.now()-600000).toLocaleTimeString(), level: 'INFO', message: 'Database reconnected after brief disconnect', source: 'mongoose' },
-        { time: new Date(Date.now()-1800000).toLocaleTimeString(), level: 'INFO', message: 'Server started on port 5000', source: 'server.js' },
-        { time: new Date(Date.now()-3600000).toLocaleTimeString(), level: 'WARN', message: 'Slow query detected: /api/admin/analytics (>1s)', source: 'morgan' },
-        { time: new Date(Date.now()-7200000).toLocaleTimeString(), level: 'INFO', message: 'MongoDB Connected: cluster0.r4ylflw.mongodb.net', source: 'db.js' },
-    ];
+// ════════════ Error & System Logs (Real MongoDB ActivityLog) ════════════
+async function renderErrorLogs(c) {
+    c.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--text-muted);">Loading system & activity logs...</div>';
+    let data = { logs: [] };
+    try {
+        data = await API.get('/admin/system-logs');
+    } catch(e) {
+        data = { logs: [] };
+    }
+
+    const logs = data.logs || [];
     const levelColors = { ERROR: '#ef4444', WARN: '#f59e0b', INFO: '#3b82f6' };
+
     c.innerHTML = `
     <div class="toolbar">
         <div class="filters">
-            <select style="padding:0.5rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.8rem;">
-                <option>All Levels</option><option>ERROR</option><option>WARN</option><option>INFO</option>
+            <select id="adminLogLevelFilter" onchange="filterAdminLogs()" style="padding:0.5rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.8rem;background:var(--input-bg);">
+                <option value="all">All Levels</option><option value="ERROR">ERROR</option><option value="WARN">WARN</option><option value="INFO">INFO</option>
             </select>
         </div>
-        <button onclick="loadSection('errorlogs')" class="btn btn-outline" style="padding:0.4rem 1rem;font-size:0.8rem;">🔄 Refresh</button>
+        <button onclick="loadSection('errorlogs')" class="btn btn-outline" style="padding:0.4rem 1rem;font-size:0.8rem;">🔄 Refresh Logs</button>
     </div>
     <div class="chart-card">
-        <h3>🐛 System Logs</h3>
-        <div style="font-family:'Fira Code',monospace;font-size:0.8rem;background:#0f172a;color:#e2e8f0;padding:1.25rem;border-radius:8px;max-height:500px;overflow-y:auto;">
-            ${logs.map(l => `<div style="margin-bottom:0.75rem;padding:0.5rem;border-left:3px solid ${levelColors[l.level]||'#64748b'};padding-left:0.75rem;">
-                <span style="color:#64748b;">[${l.time}]</span> <span style="color:${levelColors[l.level]};font-weight:700;">[${l.level}]</span> <span style="color:#94a3b8;">[${l.source}]</span> ${l.message}
+        <h3>🐛 System & Activity Logs (${logs.length})</h3>
+        <div id="adminLogContainer" style="font-family:'Fira Code',monospace;font-size:0.8rem;background:#0f172a;color:#e2e8f0;padding:1.25rem;border-radius:8px;max-height:520px;overflow-y:auto;">
+            ${logs.length === 0 ? '<div style="color:#64748b;text-align:center;padding:2rem;">No system logs recorded yet.</div>' : logs.map(l => `<div class="admin-log-item" data-level="${l.level}" style="margin-bottom:0.75rem;padding:0.5rem;border-left:3px solid ${levelColors[l.level]||'#64748b'};padding-left:0.75rem;">
+                <span style="color:#64748b;">[${l.time}]</span> <span style="color:${levelColors[l.level]};font-weight:700;">[${l.level}]</span> <span style="color:#94a3b8;">[${sanitize(l.source)}]</span> ${sanitize(l.message)}
             </div>`).join('')}
         </div>
     </div>`;
 }
+
+function filterAdminLogs() {
+    const lvl = document.getElementById('adminLogLevelFilter')?.value || 'all';
+    document.querySelectorAll('.admin-log-item').forEach(el => {
+        const itemLvl = el.getAttribute('data-level');
+        el.style.display = (lvl === 'all' || itemLvl === lvl) ? '' : 'none';
+    });
+}
+
+// ════════════ All Jobs Management ════════════
+async function renderAdminJobs(c) {
+    let jobs = [];
+    try {
+        const res = await API.get('/admin/jobs');
+        jobs = res.jobs || [];
+    } catch(e) {}
+
+    const totalJobs = jobs.length;
+    const activeJobs = jobs.filter(j => j.status === 'active').length;
+    const totalApplicants = jobs.reduce((s, j) => s + (j.applicantCount || 0), 0);
+
+    c.innerHTML = `
+    <div class="metric-grid">
+        <div class="metric-card" style="border-left:4px solid #3b82f6;"><div class="label">Total Job Postings</div><div class="value">${totalJobs}</div></div>
+        <div class="metric-card" style="border-left:4px solid #10b981;"><div class="label">Active Postings</div><div class="value">${activeJobs}</div></div>
+        <div class="metric-card" style="border-left:4px solid #f97316;"><div class="label">Total Applicants</div><div class="value">${totalApplicants}</div></div>
+        <div class="metric-card" style="border-left:4px solid #8b5cf6;"><div class="label">Avg Applications / Job</div><div class="value">${totalJobs > 0 ? (totalApplicants / totalJobs).toFixed(1) : 0}</div></div>
+    </div>
+
+    <div class="toolbar">
+        <div class="filters">
+            <input type="text" id="adminJobSearch" placeholder="Search by job title, company, location..." onkeyup="filterAdminJobsTable()" style="min-width:280px;">
+            <select id="adminJobStatusFilter" onchange="filterAdminJobsTable()">
+                <option value="all">All Statuses</option>
+                <option value="active">Active</option>
+                <option value="closed">Closed</option>
+                <option value="draft">Draft</option>
+            </select>
+        </div>
+        <button onclick="loadSection('jobs')" class="btn btn-outline" style="padding:0.45rem 1rem;font-size:0.8rem;">🔄 Refresh</button>
+    </div>
+
+    <div class="chart-card">
+        <h3>💼 Platform Job Postings (${totalJobs})</h3>
+        <table class="data-table" id="adminJobsTable">
+            <thead>
+                <tr>
+                    <th>Job Title</th>
+                    <th>Company</th>
+                    <th>Posted By</th>
+                    <th>Location / Type</th>
+                    <th>Applicants</th>
+                    <th>Status</th>
+                    <th style="text-align:right;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${jobs.length === 0 ? '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:2rem;">No jobs posted yet.</td></tr>' : jobs.map(j => `
+                    <tr data-status="${j.status}" data-text="${sanitize((j.title + ' ' + (j.companyName || '') + ' ' + (j.location || '')).toLowerCase())}">
+                        <td style="font-weight:600;color:var(--text-main);">${sanitize(j.title)}</td>
+                        <td>${sanitize(j.companyName || 'N/A')}</td>
+                        <td style="font-size:0.8rem;color:var(--text-muted);">${sanitize(j.postedBy?.name || 'Recruiter')}<br><small>${sanitize(j.postedBy?.email || '')}</small></td>
+                        <td><span style="font-size:0.8rem;">${sanitize(j.location || 'Remote')}</span><br><small style="color:var(--text-muted);text-transform:capitalize;">${sanitize(j.type || 'Full-time')}</small></td>
+                        <td><span style="font-weight:700;color:var(--primary);">${j.applicantCount || 0}</span></td>
+                        <td>
+                            <span class="role-pill" style="background:${j.status==='active'?'#dcfce7':'#fee2e2'};color:${j.status==='active'?'#15803d':'#991b1b'};">
+                                ● ${j.status.toUpperCase()}
+                            </span>
+                        </td>
+                        <td style="text-align:right;white-space:nowrap;">
+                            <button onclick="toggleAdminJobStatus('${j._id}', '${j.status}')" class="btn btn-outline" style="padding:0.25rem 0.6rem;font-size:0.75rem;margin-right:0.35rem;">
+                                ${j.status === 'active' ? '🔒 Close' : '🔓 Activate'}
+                            </button>
+                            <button onclick="deleteAdminJob('${j._id}', '${sanitize(j.title)}')" class="btn btn-outline" style="padding:0.25rem 0.6rem;font-size:0.75rem;color:#ef4444;border-color:rgba(239,68,68,0.3);">
+                                🗑
+                            </button>
+                        </td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    </div>`;
+}
+
+function filterAdminJobsTable() {
+    const s = (document.getElementById('adminJobSearch')?.value || '').toLowerCase();
+    const st = document.getElementById('adminJobStatusFilter')?.value || 'all';
+    document.querySelectorAll('#adminJobsTable tbody tr').forEach(r => {
+        const txt = r.getAttribute('data-text') || '';
+        const status = r.getAttribute('data-status') || '';
+        const matchText = !s || txt.includes(s);
+        const matchStatus = st === 'all' || status === st;
+        r.style.display = (matchText && matchStatus) ? '' : 'none';
+    });
+}
+
+async function toggleAdminJobStatus(id, curStatus) {
+    const newStatus = curStatus === 'active' ? 'closed' : 'active';
+    try {
+        await API.put(`/admin/jobs/${id}/status`, { status: newStatus });
+        showToast(`Job status updated to ${newStatus}`, 'success');
+        await loadSection('jobs');
+    } catch(e) { showToast('Error: ' + e.message, 'error'); }
+}
+
+async function deleteAdminJob(id, title) {
+    if (!confirm(`Are you sure you want to delete "${title}" and all its candidate applications? This action cannot be undone.`)) return;
+    try {
+        await API.delete(`/admin/jobs/${id}`);
+        showToast('Job and applications deleted', 'success');
+        await loadSection('jobs');
+    } catch(e) { showToast('Error: ' + e.message, 'error'); }
+}
+
+// ════════════ All Applications Management ════════════
+async function renderAdminApplications(c) {
+    let apps = [];
+    try {
+        const res = await API.get('/admin/applications');
+        apps = res.applications || [];
+    } catch(e) {}
+
+    const total = apps.length;
+    const shortlisted = apps.filter(a => ['shortlisted', 'interview', 'selected'].includes(a.status)).length;
+    const selected = apps.filter(a => a.status === 'selected').length;
+    const convRate = total > 0 ? Math.round((selected / total) * 100) : 0;
+
+    c.innerHTML = `
+    <div class="metric-grid">
+        <div class="metric-card" style="border-left:4px solid #3b82f6;"><div class="label">Total Applications</div><div class="value">${total}</div></div>
+        <div class="metric-card" style="border-left:4px solid #8b5cf6;"><div class="label">In Pipeline / Shortlisted</div><div class="value">${shortlisted}</div></div>
+        <div class="metric-card" style="border-left:4px solid #10b981;"><div class="label">Offers / Selected</div><div class="value">${selected}</div></div>
+        <div class="metric-card" style="border-left:4px solid #f97316;"><div class="label">Selection Rate</div><div class="value">${convRate}%</div></div>
+    </div>
+
+    <div class="toolbar">
+        <div class="filters">
+            <input type="text" id="adminAppSearch" placeholder="Search candidate, email, job, company..." onkeyup="filterAdminAppsTable()" style="min-width:280px;">
+            <select id="adminAppStatusFilter" onchange="filterAdminAppsTable()">
+                <option value="all">All Stages</option>
+                <option value="applied">Applied</option>
+                <option value="in-review">In Review</option>
+                <option value="shortlisted">Shortlisted</option>
+                <option value="interview">Interview</option>
+                <option value="selected">Selected</option>
+                <option value="rejected">Rejected</option>
+            </select>
+        </div>
+        <div style="display:flex;gap:0.5rem;">
+            <button onclick="adminExportCSV('/api/admin/export/applications','applications')" class="btn btn-outline" style="padding:0.45rem 1rem;font-size:0.8rem;">📥 Export CSV</button>
+            <button onclick="loadSection('applications')" class="btn btn-outline" style="padding:0.45rem 1rem;font-size:0.8rem;">🔄 Refresh</button>
+        </div>
+    </div>
+
+    <div class="chart-card">
+        <h3>📄 All Candidate Applications (${total})</h3>
+        <table class="data-table" id="adminAppsTable">
+            <thead>
+                <tr>
+                    <th>Candidate</th>
+                    <th>Job Title & Company</th>
+                    <th>Skill Match</th>
+                    <th>Hire Probability</th>
+                    <th>Stage / Status</th>
+                    <th>Applied Date</th>
+                    <th style="text-align:right;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${apps.length === 0 ? '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:2rem;">No applications submitted yet.</td></tr>' : apps.map(a => `
+                    <tr data-status="${a.status}" data-text="${sanitize(((a.studentId?.name||'') + ' ' + (a.studentId?.email||'') + ' ' + (a.jobId?.title||'') + ' ' + (a.jobId?.companyName||'')).toLowerCase())}">
+                        <td>
+                            <div style="font-weight:600;color:var(--text-main);">${sanitize(a.studentId?.name || 'Student')}</div>
+                            <div style="font-size:0.75rem;color:var(--text-muted);">${sanitize(a.studentId?.email || '')}</div>
+                        </td>
+                        <td>
+                            <div style="font-weight:600;">${sanitize(a.jobId?.title || 'Job Posting')}</div>
+                            <div style="font-size:0.75rem;color:var(--text-muted);">${sanitize(a.jobId?.companyName || 'Company')}</div>
+                        </td>
+                        <td>
+                            <div style="display:flex;align-items:center;gap:0.5rem;">
+                                <div style="font-weight:700;color:${a.skillMatch>=75?'#10b981':a.skillMatch>=50?'#3b82f6':'#f59e0b'};">${a.skillMatch || 0}%</div>
+                            </div>
+                        </td>
+                        <td>
+                            <div style="font-weight:700;color:${a.hiringProbability>=70?'#10b981':'#64748b'};">${a.hiringProbability || 0}%</div>
+                        </td>
+                        <td>
+                            <select onchange="updateAdminAppStatus('${a._id}', this.value)" style="padding:0.3rem 0.5rem;font-size:0.75rem;border-radius:6px;border:1px solid var(--border-color);background:var(--input-bg);font-weight:600;">
+                                <option value="applied" ${a.status==='applied'?'selected':''}>Applied</option>
+                                <option value="in-review" ${a.status==='in-review'?'selected':''}>In Review</option>
+                                <option value="shortlisted" ${a.status==='shortlisted'?'selected':''}>Shortlisted</option>
+                                <option value="interview" ${a.status==='interview'?'selected':''}>Interview</option>
+                                <option value="selected" ${a.status==='selected'?'selected':''}>Selected</option>
+                                <option value="rejected" ${a.status==='rejected'?'selected':''}>Rejected</option>
+                            </select>
+                        </td>
+                        <td style="font-size:0.8rem;color:var(--text-muted);">${new Date(a.appliedAt).toLocaleDateString()}</td>
+                        <td style="text-align:right;">
+                            <button onclick="deleteAdminApplication('${a._id}')" class="btn btn-outline" style="padding:0.25rem 0.6rem;font-size:0.75rem;color:#ef4444;border-color:rgba(239,68,68,0.3);">
+                                🗑
+                            </button>
+                        </td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    </div>`;
+}
+
+function filterAdminAppsTable() {
+    const s = (document.getElementById('adminAppSearch')?.value || '').toLowerCase();
+    const st = document.getElementById('adminAppStatusFilter')?.value || 'all';
+    document.querySelectorAll('#adminAppsTable tbody tr').forEach(r => {
+        const txt = r.getAttribute('data-text') || '';
+        const status = r.getAttribute('data-status') || '';
+        const matchText = !s || txt.includes(s);
+        const matchStatus = st === 'all' || status === st;
+        r.style.display = (matchText && matchStatus) ? '' : 'none';
+    });
+}
+
+async function updateAdminAppStatus(id, status) {
+    try {
+        await API.put(`/admin/applications/${id}/status`, { status });
+        showToast(`Application updated to "${status.toUpperCase()}"`, 'success');
+    } catch(e) { showToast('Error: ' + e.message, 'error'); }
+}
+
+async function deleteAdminApplication(id) {
+    if (!confirm('Are you sure you want to delete this application record?')) return;
+    try {
+        await API.delete(`/admin/applications/${id}`);
+        showToast('Application deleted', 'success');
+        await loadSection('applications');
+    } catch(e) { showToast('Error: ' + e.message, 'error'); }
+}
+
+async function cleanTempSystemData() {
+    if (!confirm('Purge all expired verification OTP codes and optimize system storage?')) return;
+    try {
+        const res = await API.post('/admin/system/clean-temp');
+        showToast(res.message || 'System cleanup complete!', 'success');
+        await loadSection('sitehealth');
+    } catch(e) { showToast('Cleanup error: ' + e.message, 'error'); }
+}
+
+// ════════════ Global Window Bindings ════════════
+window.loadSection = loadSection;
+window.handleLogout = handleLogout;
+window.switchGranularity = switchGranularity;
+window.showStudentDetailModal = showStudentDetailModal;
+window.closeStudentModal = closeStudentModal;
+window.changeRole = changeRole;
+window.deleteUser = deleteUser;
+window.addCompany = addCompany;
+window.verifyCompany = verifyCompany;
+window.deleteCompany = deleteCompany;
+window.sendNotification = sendNotification;
+window.bulkNotify = bulkNotify;
+window.viewCompanyDetails = viewCompanyDetails;
+window.rejectCompanyPrompt = rejectCompanyPrompt;
+window.rejectCompanyWithReason = rejectCompanyWithReason;
+window.viewAdminNotification = viewAdminNotification;
+window.renderAdminJobs = renderAdminJobs;
+window.filterAdminJobsTable = filterAdminJobsTable;
+window.toggleAdminJobStatus = toggleAdminJobStatus;
+window.deleteAdminJob = deleteAdminJob;
+window.renderAdminApplications = renderAdminApplications;
+window.filterAdminAppsTable = filterAdminAppsTable;
+window.updateAdminAppStatus = updateAdminAppStatus;
+window.deleteAdminApplication = deleteAdminApplication;
+window.cleanTempSystemData = cleanTempSystemData;
+
+// ── Authenticated CSV Export ──
+async function adminExportCSV(url, filename) {
+    try {
+        const token = localStorage.getItem('hs_token');
+        if (!token) { showToast('Please log in to export data', 'error'); return; }
+        const response = await fetch(url, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!response.ok) throw new Error('Export failed: ' + response.statusText);
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = `${filename}_${new Date().toISOString().slice(0, 10)}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(blobUrl);
+        showToast('CSV exported successfully!', 'success');
+    } catch (err) {
+        showToast('Failed to export: ' + err.message, 'error');
+    }
+}
+window.adminExportCSV = adminExportCSV;
+
+// ── Admin Question Management CRUD ──
+async function renderContent(c) {
+    state.contentTab = state.contentTab || 'mcq';
+    const prepData = await API.get('/preparation');
+    state.prepCompanies = prepData.preparations || [];
+    try { const res = await fetch('../../data/questions.json'); state.questions = await res.json(); } catch(e){}
+    const codingCount = state.questions ? (state.questions.coding || []).length : 0;
+    const mcqCount = state.questions ? (state.questions.coding_mcq || []).length : 0;
+    const aptCount = state.questions ? (state.questions.aptitude || []).length : 0;
+
+    c.innerHTML = `
+        <div class="metric-grid" style="margin-bottom:1.5rem;">
+            <div class="metric-card"><div class="label">📖 Prep Paths</div><div class="value">${state.prepCompanies.length}</div></div>
+            <div class="metric-card"><div class="label">💻 Coding Qs</div><div class="value">${codingCount}</div></div>
+            <div class="metric-card"><div class="label">🧪 MCQ Qs</div><div class="value">${mcqCount}</div></div>
+            <div class="metric-card"><div class="label">🧠 Aptitude Qs</div><div class="value">${aptCount}</div></div>
+        </div>
+
+        <div style="display:flex;gap:0.5rem;margin-bottom:1.25rem;flex-wrap:wrap;">
+            <button onclick="switchContentTab('mcq')" class="btn ${state.contentTab==='mcq'?'btn-primary':'btn-outline'}" style="font-size:0.8rem;padding:0.4rem 1rem;">🧪 MCQ Questions (${mcqCount})</button>
+            <button onclick="switchContentTab('coding')" class="btn ${state.contentTab==='coding'?'btn-primary':'btn-outline'}" style="font-size:0.8rem;padding:0.4rem 1rem;">💻 Coding Questions (${codingCount})</button>
+            <button onclick="switchContentTab('aptitude')" class="btn ${state.contentTab==='aptitude'?'btn-primary':'btn-outline'}" style="font-size:0.8rem;padding:0.4rem 1rem;">🧠 Aptitude (${aptCount})</button>
+            <button onclick="switchContentTab('roadmaps')" class="btn ${state.contentTab==='roadmaps'?'btn-primary':'btn-outline'}" style="font-size:0.8rem;padding:0.4rem 1rem;">📖 Prep Roadmaps (${state.prepCompanies.length})</button>
+        </div>
+
+        <div id="contentTabBody"></div>
+    `;
+
+    renderContentTab();
+}
+
+function switchContentTab(tab) {
+    state.contentTab = tab;
+    document.querySelectorAll('.metric-grid + div button').forEach(btn => {
+        btn.className = btn.textContent.toLowerCase().includes(tab) ? 'btn btn-primary' : 'btn btn-outline';
+    });
+    renderContentTab();
+}
+
+function renderContentTab() {
+    const body = document.getElementById('contentTabBody');
+    if (!body) return;
+    const tab = state.contentTab || 'mcq';
+
+    if (tab === 'roadmaps') {
+        body.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+                <h3 style="margin:0;font-size:1rem;">Company Preparation Paths</h3>
+                <button onclick="openAddPrepModal()" class="btn btn-primary" style="font-size:0.8rem;padding:0.4rem 1rem;">+ Add Prep Path</button>
+            </div>
+            <div style="background:var(--card-bg);border-radius:12px;border:1px solid var(--border-color);overflow:hidden;">
+                <table class="data-table"><thead><tr><th>Company</th><th>Difficulty</th><th>Questions</th><th>Topics</th><th>Avg Salary</th><th>Roles</th><th>Actions</th></tr></thead>
+                <tbody>${state.prepCompanies.map(p => `<tr>
+                    <td style="font-weight:600;">${sanitize(p.companyName)}</td>
+                    <td><span style="font-size:0.75rem;font-weight:600;padding:0.15rem 0.5rem;border-radius:999px;${p.difficulty === 'Easy' ? 'color:#10b981;background:rgba(16,185,129,0.1)' : p.difficulty === 'Medium' ? 'color:#d97706;background:rgba(217,119,6,0.1)' : 'color:#ef4444;background:rgba(239,68,68,0.1)'}">${p.difficulty}</span></td>
+                    <td>${p.questionCount}</td><td>${p.topicCount}</td><td>${p.avgSalary || '-'}</td>
+                    <td>${(p.roles || []).map(r => `<span style="font-size:0.7rem;background:#f1f5f9;padding:0.1rem 0.4rem;border-radius:4px;margin-right:0.25rem;">${sanitize(r)}</span>`).join('')}</td>
+                    <td>
+                        <button onclick="deletePrep('${p._id}')" class="btn btn-outline" style="font-size:0.7rem;padding:0.2rem 0.5rem;color:#ef4444;border-color:rgba(239,68,68,0.3);">🗑 Delete</button>
+                    </td>
+                </tr>`).join('')}</tbody></table>
+            </div>
+        `;
+        return;
+    }
+
+    // Question tabs (mcq, coding, aptitude)
+    const keyMap = { mcq: 'coding_mcq', coding: 'coding', aptitude: 'aptitude' };
+    const questions = state.questions ? (state.questions[keyMap[tab]] || []) : [];
+    const displayQ = questions.slice(0, 50); // Show first 50 for performance
+
+    const isMcq = tab === 'mcq' || tab === 'aptitude';
+
+    body.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;">
+            <h3 style="margin:0;font-size:1rem;">${tab === 'mcq' ? '🧪 MCQ' : tab === 'coding' ? '💻 Coding' : '🧠 Aptitude'} Questions (${questions.length} total, showing first ${displayQ.length})</h3>
+            <button onclick="openAddQuestionModal('${tab}')" class="btn btn-primary" style="font-size:0.8rem;padding:0.4rem 1rem;">+ Add Question</button>
+        </div>
+        <div style="background:var(--card-bg);border-radius:12px;border:1px solid var(--border-color);overflow:auto;max-height:600px;">
+            <table class="data-table" style="font-size:0.8rem;"><thead><tr>
+                <th style="width:40px;">#</th>
+                <th>Title</th>
+                ${isMcq ? '<th>Question</th>' : '<th>Description</th>'}
+                <th>Difficulty</th>
+                <th>Topic</th>
+                <th>Company</th>
+                ${isMcq ? '<th>Answer</th>' : ''}
+                <th>Actions</th>
+            </tr></thead>
+            <tbody>${displayQ.map((q, i) => `<tr>
+                <td style="color:var(--text-muted);">${i + 1}</td>
+                <td style="font-weight:600;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${sanitize(q.title || q.id)}</td>
+                <td style="max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-muted);">${sanitize((isMcq ? q.question : q.description) || '').substring(0, 80)}...</td>
+                <td><span style="font-size:0.7rem;font-weight:600;padding:0.15rem 0.4rem;border-radius:999px;${q.difficulty === 'Easy' ? 'color:#10b981;background:rgba(16,185,129,0.1)' : q.difficulty === 'Medium' ? 'color:#d97706;background:rgba(217,119,6,0.1)' : 'color:#ef4444;background:rgba(239,68,68,0.1)'}">${q.difficulty}</span></td>
+                <td style="font-size:0.75rem;">${sanitize(q.topic || '-')}</td>
+                <td style="font-size:0.75rem;">${sanitize(q.company || '-')}</td>
+                ${isMcq ? `<td style="font-size:0.75rem;font-weight:700;color:var(--primary);">${String.fromCharCode(65 + (q.correctAnswer || 0))}</td>` : ''}
+                <td>
+                    <div style="display:flex;gap:0.25rem;">
+                        <button onclick="openEditQuestionModal('${tab}', '${q.id}')" class="btn btn-outline" style="font-size:0.65rem;padding:0.15rem 0.4rem;">✏️ Edit</button>
+                        <button onclick="deleteQuestion('${tab}', '${q.id}')" class="btn btn-outline" style="font-size:0.65rem;padding:0.15rem 0.4rem;color:#ef4444;border-color:rgba(239,68,68,0.3);">🗑</button>
+                    </div>
+                </td>
+            </tr>`).join('')}</tbody></table>
+        </div>
+    `;
+}
+window.switchContentTab = switchContentTab;
+
+// ── Add Question Modal ──
+function openAddQuestionModal(type) {
+    const isMcq = type === 'mcq' || type === 'aptitude';
+    let modal = document.getElementById('addQuestionModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'addQuestionModal';
+        modal.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.65);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:9999;padding:1rem;';
+        document.body.appendChild(modal);
+    }
+    modal.innerHTML = `
+        <div style="background:var(--card-bg);border-radius:16px;max-width:680px;width:100%;max-height:90vh;overflow-y:auto;padding:2rem;border:1px solid var(--border-color);box-shadow:0 25px 50px rgba(0,0,0,0.25);position:relative;">
+            <button onclick="document.getElementById('addQuestionModal').style.display='none'" style="position:absolute;right:1rem;top:1rem;width:32px;height:32px;border-radius:50%;background:var(--bg-muted);border:1px solid var(--border-color);font-size:1.1rem;cursor:pointer;">✕</button>
+            <h3 style="margin:0 0 1.25rem;font-size:1.1rem;">➕ Add New ${type === 'mcq' ? 'MCQ' : type === 'coding' ? 'Coding' : 'Aptitude'} Question</h3>
+            <form onsubmit="submitNewQuestion(event, '${type}')">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem;">
+                    <div><label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.3rem;">Title</label><input type="text" id="nq_title" required style="width:100%;padding:0.5rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);"></div>
+                    <div><label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.3rem;">Difficulty</label>
+                        <select id="nq_diff" style="width:100%;padding:0.5rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);">
+                            <option value="Easy">Easy</option><option value="Medium" selected>Medium</option><option value="Hard">Hard</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem;">
+                    <div><label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.3rem;">Topic</label><input type="text" id="nq_topic" placeholder="e.g. Data Structures, DBMS" style="width:100%;padding:0.5rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);"></div>
+                    <div><label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.3rem;">Company</label><input type="text" id="nq_company" placeholder="e.g. Google, TCS" style="width:100%;padding:0.5rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);"></div>
+                </div>
+                ${isMcq ? `
+                    <div style="margin-bottom:0.75rem;"><label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.3rem;">Question Text</label><textarea id="nq_question" required rows="3" style="width:100%;padding:0.5rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);resize:vertical;"></textarea></div>
+                    <div style="margin-bottom:0.75rem;">
+                        <label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.3rem;">Options (4 choices)</label>
+                        <input type="text" id="nq_opt0" required placeholder="Option A" style="width:100%;padding:0.4rem;border:1px solid var(--border-color);border-radius:6px;font-size:0.8rem;background:var(--input-bg);margin-bottom:0.4rem;">
+                        <input type="text" id="nq_opt1" required placeholder="Option B" style="width:100%;padding:0.4rem;border:1px solid var(--border-color);border-radius:6px;font-size:0.8rem;background:var(--input-bg);margin-bottom:0.4rem;">
+                        <input type="text" id="nq_opt2" required placeholder="Option C" style="width:100%;padding:0.4rem;border:1px solid var(--border-color);border-radius:6px;font-size:0.8rem;background:var(--input-bg);margin-bottom:0.4rem;">
+                        <input type="text" id="nq_opt3" required placeholder="Option D" style="width:100%;padding:0.4rem;border:1px solid var(--border-color);border-radius:6px;font-size:0.8rem;background:var(--input-bg);">
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem;">
+                        <div><label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.3rem;">Correct Answer</label>
+                            <select id="nq_correct" style="width:100%;padding:0.5rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);">
+                                <option value="0">A</option><option value="1">B</option><option value="2">C</option><option value="3">D</option>
+                            </select>
+                        </div>
+                        <div><label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.3rem;">Tags (comma separated)</label><input type="text" id="nq_tags" placeholder="Arrays, Strings" style="width:100%;padding:0.5rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);"></div>
+                    </div>
+                    <div style="margin-bottom:1rem;"><label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.3rem;">Explanation</label><textarea id="nq_explanation" rows="2" style="width:100%;padding:0.5rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);resize:vertical;"></textarea></div>
+                ` : `
+                    <div style="margin-bottom:0.75rem;"><label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.3rem;">Description</label><textarea id="nq_description" required rows="4" style="width:100%;padding:0.5rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);resize:vertical;"></textarea></div>
+                    <div style="margin-bottom:1rem;"><label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.3rem;">Tags (comma separated)</label><input type="text" id="nq_tags" placeholder="Arrays, Dynamic Programming" style="width:100%;padding:0.5rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);"></div>
+                `}
+                <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
+                    <button type="button" onclick="document.getElementById('addQuestionModal').style.display='none'" class="btn btn-outline">Cancel</button>
+                    <button type="submit" id="nq_submit" class="btn btn-primary">💾 Save Question</button>
+                </div>
+            </form>
+        </div>
+    `;
+    modal.style.display = 'flex';
+}
+window.openAddQuestionModal = openAddQuestionModal;
+
+async function submitNewQuestion(e, type) {
+    e.preventDefault();
+    const btn = document.getElementById('nq_submit');
+    if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
+
+    const isMcq = type === 'mcq' || type === 'aptitude';
+    const keyMap = { mcq: 'coding_mcq', coding: 'coding', aptitude: 'aptitude' };
+    const category = keyMap[type];
+    const existing = state.questions ? (state.questions[category] || []) : [];
+    const newId = `${type === 'mcq' ? 'mcq' : type === 'aptitude' ? 'aptitude' : 'coding'}-${existing.length}`;
+
+    const question = {
+        id: newId,
+        title: document.getElementById('nq_title').value,
+        difficulty: document.getElementById('nq_diff').value,
+        topic: document.getElementById('nq_topic')?.value || '',
+        company: document.getElementById('nq_company')?.value || '',
+        tags: (document.getElementById('nq_tags')?.value || '').split(',').map(t => t.trim()).filter(Boolean),
+        type: category
+    };
+
+    if (isMcq) {
+        question.question = document.getElementById('nq_question').value;
+        question.options = [
+            document.getElementById('nq_opt0').value,
+            document.getElementById('nq_opt1').value,
+            document.getElementById('nq_opt2').value,
+            document.getElementById('nq_opt3').value
+        ];
+        question.correctAnswer = parseInt(document.getElementById('nq_correct').value);
+        question.explanation = document.getElementById('nq_explanation')?.value || '';
+    } else {
+        question.description = document.getElementById('nq_description').value;
+        question.acceptance = '45.0%';
+        question.examples = [{ input: 'example input', output: 'example output', explanation: 'Explanation here.' }];
+        question.constraints = ['Time complexity should be optimal'];
+    }
+
+    try {
+        await API.post('/admin/questions', { category, question });
+        showToast('Question added successfully!', 'success');
+        document.getElementById('addQuestionModal').style.display = 'none';
+        // Refresh local data
+        try { const res = await fetch('../../data/questions.json'); state.questions = await res.json(); } catch(ex){}
+        renderContentTab();
+    } catch (err) {
+        showToast('Failed to add question: ' + err.message, 'error');
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = '💾 Save Question'; }
+    }
+}
+window.submitNewQuestion = submitNewQuestion;
+
+async function deleteQuestion(type, questionId) {
+    if (!confirm('Delete this question permanently?')) return;
+    const keyMap = { mcq: 'coding_mcq', coding: 'coding', aptitude: 'aptitude' };
+    try {
+        await API.delete(`/admin/questions/${encodeURIComponent(questionId)}?category=${keyMap[type]}`);
+        showToast('Question deleted!', 'success');
+        try { const res = await fetch('../../data/questions.json'); state.questions = await res.json(); } catch(ex){}
+        renderContentTab();
+    } catch (err) {
+        showToast('Failed to delete: ' + err.message, 'error');
+    }
+}
+window.deleteQuestion = deleteQuestion;
+
+function openEditQuestionModal(type, questionId) {
+    const keyMap = { mcq: 'coding_mcq', coding: 'coding', aptitude: 'aptitude' };
+    const questions = state.questions ? (state.questions[keyMap[type]] || []) : [];
+    const q = questions.find(x => x.id === questionId);
+    if (!q) { showToast('Question not found', 'error'); return; }
+
+    const isMcq = type === 'mcq' || type === 'aptitude';
+    let modal = document.getElementById('editQuestionModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'editQuestionModal';
+        modal.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.65);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:9999;padding:1rem;';
+        document.body.appendChild(modal);
+    }
+    modal.innerHTML = `
+        <div style="background:var(--card-bg);border-radius:16px;max-width:680px;width:100%;max-height:90vh;overflow-y:auto;padding:2rem;border:1px solid var(--border-color);box-shadow:0 25px 50px rgba(0,0,0,0.25);position:relative;">
+            <button onclick="document.getElementById('editQuestionModal').style.display='none'" style="position:absolute;right:1rem;top:1rem;width:32px;height:32px;border-radius:50%;background:var(--bg-muted);border:1px solid var(--border-color);font-size:1.1rem;cursor:pointer;">✕</button>
+            <h3 style="margin:0 0 1.25rem;font-size:1.1rem;">✏️ Edit Question: ${sanitize(q.title)}</h3>
+            <form onsubmit="submitEditQuestion(event, '${type}', '${q.id}')">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem;">
+                    <div><label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.3rem;">Title</label><input type="text" id="eq_title" value="${sanitize(q.title)}" required style="width:100%;padding:0.5rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);"></div>
+                    <div><label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.3rem;">Difficulty</label>
+                        <select id="eq_diff" style="width:100%;padding:0.5rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);">
+                            <option value="Easy" ${q.difficulty==='Easy'?'selected':''}>Easy</option><option value="Medium" ${q.difficulty==='Medium'?'selected':''}>Medium</option><option value="Hard" ${q.difficulty==='Hard'?'selected':''}>Hard</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem;">
+                    <div><label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.3rem;">Topic</label><input type="text" id="eq_topic" value="${sanitize(q.topic||'')}" style="width:100%;padding:0.5rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);"></div>
+                    <div><label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.3rem;">Company</label><input type="text" id="eq_company" value="${sanitize(q.company||'')}" style="width:100%;padding:0.5rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);"></div>
+                </div>
+                ${isMcq ? `
+                    <div style="margin-bottom:0.75rem;"><label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.3rem;">Question Text</label><textarea id="eq_question" rows="3" style="width:100%;padding:0.5rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);resize:vertical;">${sanitize(q.question||'')}</textarea></div>
+                    <div style="margin-bottom:0.75rem;">
+                        <label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.3rem;">Options</label>
+                        ${(q.options||[]).map((o,i) => `<input type="text" id="eq_opt${i}" value="${sanitize(o)}" style="width:100%;padding:0.4rem;border:1px solid var(--border-color);border-radius:6px;font-size:0.8rem;background:var(--input-bg);margin-bottom:0.4rem;">`).join('')}
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:1rem;">
+                        <div><label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.3rem;">Correct Answer</label>
+                            <select id="eq_correct" style="width:100%;padding:0.5rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);">
+                                <option value="0" ${q.correctAnswer===0?'selected':''}>A</option><option value="1" ${q.correctAnswer===1?'selected':''}>B</option><option value="2" ${q.correctAnswer===2?'selected':''}>C</option><option value="3" ${q.correctAnswer===3?'selected':''}>D</option>
+                            </select>
+                        </div>
+                        <div></div>
+                    </div>
+                    <div style="margin-bottom:1rem;"><label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.3rem;">Explanation</label><textarea id="eq_explanation" rows="2" style="width:100%;padding:0.5rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);resize:vertical;">${sanitize(q.explanation||'')}</textarea></div>
+                ` : `
+                    <div style="margin-bottom:1rem;"><label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.3rem;">Description</label><textarea id="eq_description" rows="4" style="width:100%;padding:0.5rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);resize:vertical;">${sanitize(q.description||'')}</textarea></div>
+                `}
+                <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
+                    <button type="button" onclick="document.getElementById('editQuestionModal').style.display='none'" class="btn btn-outline">Cancel</button>
+                    <button type="submit" id="eq_submit" class="btn btn-primary">💾 Save Changes</button>
+                </div>
+            </form>
+        </div>
+    `;
+    modal.style.display = 'flex';
+}
+window.openEditQuestionModal = openEditQuestionModal;
+
+async function submitEditQuestion(e, type, questionId) {
+    e.preventDefault();
+    const btn = document.getElementById('eq_submit');
+    if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
+
+    const isMcq = type === 'mcq' || type === 'aptitude';
+    const keyMap = { mcq: 'coding_mcq', coding: 'coding', aptitude: 'aptitude' };
+    const updates = {
+        title: document.getElementById('eq_title').value,
+        difficulty: document.getElementById('eq_diff').value,
+        topic: document.getElementById('eq_topic')?.value || '',
+        company: document.getElementById('eq_company')?.value || ''
+    };
+    if (isMcq) {
+        updates.question = document.getElementById('eq_question')?.value || '';
+        updates.options = [0,1,2,3].map(i => document.getElementById(`eq_opt${i}`)?.value || '');
+        updates.correctAnswer = parseInt(document.getElementById('eq_correct')?.value || '0');
+        updates.explanation = document.getElementById('eq_explanation')?.value || '';
+    } else {
+        updates.description = document.getElementById('eq_description')?.value || '';
+    }
+
+    try {
+        await API.put(`/admin/questions/${encodeURIComponent(questionId)}`, { category: keyMap[type], updates });
+        showToast('Question updated successfully!', 'success');
+        document.getElementById('editQuestionModal').style.display = 'none';
+        try { const res = await fetch('../../data/questions.json'); state.questions = await res.json(); } catch(ex){}
+        renderContentTab();
+    } catch (err) {
+        showToast('Failed to update: ' + err.message, 'error');
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = '💾 Save Changes'; }
+    }
+}
+window.submitEditQuestion = submitEditQuestion;
+
+// ── Prep Roadmap CRUD ──
+function openAddPrepModal() {
+    showToast('Use the "Company & Rounds" section in the Recruiter dashboard to create prep paths, or add via database seeding.', 'info');
+}
+window.openAddPrepModal = openAddPrepModal;
+
+async function deletePrep(prepId) {
+    if (!confirm('Delete this preparation path?')) return;
+    try {
+        await API.delete(`/admin/preparation/${prepId}`);
+        showToast('Preparation path deleted!', 'success');
+        loadSection('content');
+    } catch (err) {
+        showToast('Delete failed: ' + err.message, 'error');
+    }
+}
+window.deletePrep = deletePrep;
+

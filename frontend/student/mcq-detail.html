@@ -3,42 +3,290 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Question Detail - HireSmart</title>
+    <title>Practice Quiz - HirePrep</title>
     <link rel="stylesheet" href="../../css/style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
     <script src="../../js/theme.js"></script>
     <style>
-        body { background: var(--bg-muted); }
-        .mcq-container { max-width: 800px; margin: 3rem auto; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); overflow: hidden; }
-        .mcq-header { padding: 1.5rem 2rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: flex-start; }
+        body { background: var(--bg-muted, #f8fafc); font-family: 'Inter', sans-serif; color: var(--text-main, #0f172a); }
+        .mcq-layout { display: flex; gap: 1.5rem; max-width: 1180px; margin: 1.75rem auto; padding: 0 1.25rem; align-items: flex-start; }
+        .mcq-main { flex: 1; min-width: 0; }
+        .mcq-sidebar { width: 280px; flex-shrink: 0; position: sticky; top: 1.5rem; }
+        
+        .mcq-container {
+            background: var(--card-bg, #ffffff);
+            border: 1px solid var(--border-color, #e2e8f0);
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+            overflow: hidden;
+            transition: all 0.2s ease;
+        }
+        
+        .mcq-header {
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--border-color, #e2e8f0);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            background: var(--card-bg, #ffffff);
+        }
         .mcq-body { padding: 2rem; }
-        .mcq-footer { padding: 1.5rem 2rem; background: var(--bg-muted); border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
-        .tag-pill { display: inline-flex; align-items: center; background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.2); padding: 0.2rem 0.6rem; border-radius: 6px; font-size: 0.75rem; color: #6366f1; font-weight: 500; margin-right: 0.5rem; margin-bottom: 0.5rem; }
-        .company-pill { display: inline-flex; align-items: center; background: #e0f2fe; color: #0284c7; padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.75rem; font-weight: 500; margin-right: 0.5rem; }
+        .mcq-footer {
+            padding: 1.25rem 2rem;
+            background: var(--bg-muted, #f8fafc);
+            border-top: 1px solid var(--border-color, #e2e8f0);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        
+        .tag-pill {
+            display: inline-flex;
+            align-items: center;
+            background: rgba(249, 115, 22, 0.08);
+            border: 1px solid rgba(249, 115, 22, 0.2);
+            padding: 0.25rem 0.65rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            color: #ea580c;
+            font-weight: 600;
+            margin-right: 0.5rem;
+            margin-bottom: 0.4rem;
+        }
+        .topic-pill {
+            display: inline-flex;
+            align-items: center;
+            background: rgba(99, 102, 241, 0.08);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            padding: 0.25rem 0.65rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            color: #6366f1;
+            font-weight: 600;
+            margin-right: 0.5rem;
+            margin-bottom: 0.4rem;
+        }
+        .company-pill {
+            display: inline-flex;
+            align-items: center;
+            background: #e0f2fe;
+            color: #0284c7;
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
         [data-theme="dark"] .company-pill { background: rgba(2, 132, 199, 0.2); color: #38bdf8; }
-        .difficulty-badge { font-size: 0.75rem; padding: 0.2rem 0.6rem; border-radius: 999px; font-weight: 600; }
+        .difficulty-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            font-weight: 700;
+            display: inline-block;
+        }
+
+        .question-statement-box {
+            font-size: 1.08rem;
+            line-height: 1.75;
+            color: var(--text-main, #0f172a);
+            margin-bottom: 1.75rem;
+            padding: 1.35rem 1.65rem;
+            background: var(--bg-muted, #f8fafc);
+            border-radius: 12px;
+            border: 1px solid var(--border-color, #e2e8f0);
+            font-weight: 500;
+        }
         
-        .option-list { display: flex; flex-direction: column; gap: 1rem; margin-top: 2rem; }
-        .option-btn { padding: 1rem 1.5rem; border: 2px solid var(--border-color); border-radius: 12px; background: var(--card-bg); cursor: pointer; font-size: 1rem; transition: all 0.2s; text-align: left; display: flex; align-items: center; gap: 1rem; color: var(--text-main); }
-        .option-btn:hover { border-color: var(--primary); background: rgba(249, 115, 22, 0.03); }
-        .option-btn.selected { border-color: var(--primary); background: rgba(249, 115, 22, 0.08); font-weight: 600; }
-        .option-btn.correct { border-color: #10b981; background: rgba(16, 185, 129, 0.1); }
-        .option-btn.wrong { border-color: #ef4444; background: rgba(239, 68, 68, 0.1); }
+        .option-list { display: flex; flex-direction: column; gap: 0.85rem; margin-top: 1.5rem; }
+        .option-btn {
+            padding: 1.1rem 1.5rem;
+            border: 2px solid var(--border-color, #e2e8f0);
+            border-radius: 12px;
+            background: var(--card-bg, #ffffff);
+            cursor: pointer;
+            font-size: 0.98rem;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            color: var(--text-main, #0f172a);
+            position: relative;
+            user-select: none;
+        }
+        .option-btn:hover:not(.disabled) {
+            border-color: #f97316;
+            background: rgba(249, 115, 22, 0.03);
+            transform: translateX(4px);
+        }
+        .option-btn.selected {
+            border-color: #f97316;
+            background: rgba(249, 115, 22, 0.08);
+            font-weight: 600;
+            box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
+        }
+        .option-btn.correct {
+            border-color: #10b981 !important;
+            background: rgba(16, 185, 129, 0.12) !important;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+            font-weight: 600;
+        }
+        .option-btn.wrong {
+            border-color: #ef4444 !important;
+            background: rgba(239, 68, 68, 0.1) !important;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+            font-weight: 600;
+        }
         
-        .opt-letter { width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--border-color); display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 600; flex-shrink: 0; transition: all 0.2s; color: var(--text-muted); }
-        .option-btn.selected .opt-letter { background: var(--primary); color: white; border-color: var(--primary); }
+        .opt-letter {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            border: 2px solid var(--border-color, #cbd5e1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            font-weight: 700;
+            flex-shrink: 0;
+            transition: all 0.2s;
+            color: var(--text-muted, #64748b);
+            background: var(--bg-muted, #f8fafc);
+        }
+        .option-btn.selected .opt-letter { background: #f97316; color: white; border-color: #f97316; }
         .option-btn.correct .opt-letter { background: #10b981; color: white; border-color: #10b981; }
         .option-btn.wrong .opt-letter { background: #ef4444; color: white; border-color: #ef4444; }
         
-        #result-message { margin-top: 1.5rem; padding: 1rem; border-radius: 8px; font-weight: 500; display: none; }
-        #result-message.success { background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2); }
-        #result-message.error { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); }
+        #result-message {
+            margin-top: 1.75rem;
+            padding: 1.35rem 1.65rem;
+            border-radius: 12px;
+            font-weight: 500;
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+        #result-message.success {
+            background: rgba(16, 185, 129, 0.08);
+            color: #065f46;
+            border: 1.5px solid rgba(16, 185, 129, 0.3);
+        }
+        [data-theme="dark"] #result-message.success { color: #34d399; }
+        #result-message.error {
+            background: rgba(239, 68, 68, 0.08);
+            color: #991b1b;
+            border: 1.5px solid rgba(239, 68, 68, 0.3);
+        }
+        [data-theme="dark"] #result-message.error { color: #f87171; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Question Navigator Sidebar */
+        .q-nav-card {
+            background: var(--card-bg, #ffffff);
+            border: 1px solid var(--border-color, #e2e8f0);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+        }
+        .q-nav-stats { display: flex; gap: 0.6rem; margin-bottom: 1rem; flex-wrap: wrap; }
+        .q-nav-stat {
+            font-size: 0.78rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.25rem 0.55rem;
+            border-radius: 6px;
+            background: var(--bg-muted, #f8fafc);
+        }
+        .q-nav-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            max-height: 380px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+        .q-nav-grid::-webkit-scrollbar { width: 5px; }
+        .q-nav-grid::-webkit-scrollbar-thumb { background: var(--border-color, #cbd5e1); border-radius: 4px; }
+        .q-nav-btn {
+            width: 100%;
+            aspect-ratio: 1;
+            border: 1.5px solid var(--border-color, #e2e8f0);
+            border-radius: 8px;
+            background: var(--card-bg, #ffffff);
+            cursor: pointer;
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--text-muted, #64748b);
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .q-nav-btn:hover { border-color: #f97316; background: rgba(249,115,22,0.06); transform: scale(1.05); }
+        .q-nav-btn.current {
+            border-color: #f97316;
+            background: rgba(249,115,22,0.15);
+            color: #f97316;
+            box-shadow: 0 0 0 2px rgba(249,115,22,0.3);
+            font-weight: 800;
+        }
+        .q-nav-btn.solved-correct {
+            border-color: #10b981;
+            background: rgba(16,185,129,0.15);
+            color: #10b981;
+            font-weight: 800;
+        }
+        .q-nav-btn.solved-wrong {
+            border-color: #ef4444;
+            background: rgba(239,68,68,0.12);
+            color: #ef4444;
+            font-weight: 800;
+        }
+
+        .btn-retry {
+            background: transparent;
+            color: #f97316;
+            border: 1.5px solid #f97316;
+            padding: 0.5rem 1.25rem;
+            font-size: 0.88rem;
+            font-weight: 700;
+            border-radius: 8px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            transition: all 0.2s ease;
+        }
+        .btn-retry:hover {
+            background: #f97316;
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        @media (max-width: 860px) {
+            .mcq-layout { flex-direction: column-reverse; }
+            .mcq-sidebar { width: 100%; position: static; }
+            .q-nav-grid { grid-template-columns: repeat(10, 1fr); max-height: 140px; }
+        }
     </style>
 </head>
 <body>
     <nav class="navbar" style="padding: 0.75rem 5%; border-bottom: 1px solid var(--border-color); background: var(--card-bg);">
-        <div class="logo" style="cursor:pointer;" onclick="window.location.href='../../index.html'"><span class="logo-icon"></span> HireSmart</div>
-        <div class="nav-links">
+        <div class="logo" style="cursor:pointer;" onclick="window.location.href='../../index.html'"><span class="logo-icon"></span> HirePrep</div>
+        <button class="hamburger" id="hamburgerBtn" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="navLinks">
+            <span class="bar"></span>
+            <span class="bar"></span>
+            <span class="bar"></span>
+        </button>
+        <div class="nav-links" id="navLinks">
             <a href="../../index.html">Home</a>
             <a href="practice.html" class="active">Practice</a>
             <a href="preparation.html">Preparation</a>
@@ -49,30 +297,53 @@
         </div>
     </nav>
 
-    <div class="container py-12">
-        <a href="practice.html" style="color: var(--text-muted); text-decoration: none; font-size: 0.875rem; display: inline-flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">← Back to Practice</a>
-        
-        <div class="mcq-container" id="mcq-container">
-            <div style="padding: 4rem; text-align: center; color: var(--text-muted);">
-                <div style="font-size: 2rem; margin-bottom: 1rem; animation: pulse 2s infinite;">⏳</div>
-                Loading question...
+    <div style="max-width:1180px;margin:0 auto;padding:1rem 1.25rem 0;">
+        <a href="practice.html" style="color: var(--text-muted); text-decoration: none; font-size: 0.875rem; display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 500;">← Back to Practice Hub</a>
+    </div>
+
+    <div class="mcq-layout">
+        <div class="mcq-main">
+            <div class="mcq-container" id="mcq-container">
+                <div style="padding: 4rem; text-align: center; color: var(--text-muted);">
+                    <div style="font-size: 2.25rem; margin-bottom: 1rem; animation: pulse 2s infinite;">⏳</div>
+                    <div style="font-weight: 600; font-size: 1.1rem;">Loading Question...</div>
+                </div>
             </div>
+        </div>
+        <div class="mcq-sidebar" id="mcq-sidebar">
+            <!-- Question navigator rendered by JS -->
         </div>
     </div>
 
+    <script src="../../js/sanitize.js"></script>
     <script src="../../js/api.js"></script>
     <script>
         let currentQuestion = null;
         let selectedOption = null;
         let hasSubmitted = false;
-        
+        let allQuestions = [];
+        let currentIndex = -1;
+        let questionType = 'coding_mcq';
+
+        function getSolvedKey() {
+            return 'hireprep_solved_' + questionType;
+        }
+        function getSolvedMap() {
+            try { return JSON.parse(localStorage.getItem(getSolvedKey()) || '{}'); } catch(e) { return {}; }
+        }
+        function markSolved(qId, isCorrect) {
+            const map = getSolvedMap();
+            map[qId] = isCorrect ? 'correct' : 'wrong';
+            localStorage.setItem(getSolvedKey(), JSON.stringify(map));
+        }
+
         (async () => {
             const params = new URLSearchParams(window.location.search);
             const questionId = params.get('id');
-            const questionType = params.get('type') || 'mcq';
+            questionType = params.get('type') || 'coding_mcq';
 
             if (!questionId) {
-                document.getElementById('mcq-container').innerHTML = '<div style="padding: 3rem; text-align: center; color: #ef4444;">Question ID is missing.</div>';
+                document.getElementById('mcq-container').innerHTML = '<div style="padding: 3rem; text-align: center; color: #ef4444; font-weight: 600;">Question ID is missing.</div>';
                 return;
             }
 
@@ -82,16 +353,19 @@
                 let arrayKey = 'coding_mcq';
                 if (questionType.toLowerCase() === 'aptitude') arrayKey = 'aptitude';
                 const searchArray = data[arrayKey] || [];
+                allQuestions = searchArray;
                 currentQuestion = searchArray.find(q => q.id === questionId);
+                currentIndex = searchArray.findIndex(q => q.id === questionId);
 
                 if (!currentQuestion) {
-                    document.getElementById('mcq-container').innerHTML = '<div style="padding: 3rem; text-align: center; color: #ef4444;">Question not found.</div>';
+                    document.getElementById('mcq-container').innerHTML = '<div style="padding: 3rem; text-align: center; color: #ef4444; font-weight: 600;">Question not found.</div>';
                     return;
                 }
 
                 renderQuestion();
+                renderNavigator();
             } catch (e) {
-                document.getElementById('mcq-container').innerHTML = '<div style="padding: 3rem; text-align: center; color: #ef4444;">Failed to load question.</div>';
+                document.getElementById('mcq-container').innerHTML = '<div style="padding: 3rem; text-align: center; color: #ef4444; font-weight: 600;">Failed to load question data.</div>';
             }
         })();
 
@@ -103,102 +377,302 @@
             const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
             const options = q.options || ['Option 1', 'Option 2', 'Option 3', 'Option 4'];
             
-            const codeBlock = q.code ? `<div style="margin-top:1.5rem;background:#1e293b;color:#f8fafc;padding:1.5rem;border-radius:8px;font-family:monospace;font-size:0.9rem;white-space:pre-wrap;overflow-x:auto;position:relative;">
-                ${q.language ? `<span style="position:absolute;top:0.5rem;right:0.5rem;background:rgba(255,255,255,0.1);padding:0.2rem 0.5rem;border-radius:4px;font-size:0.75rem;">${q.language}</span>` : ''}
+            const codeBlock = q.code ? `<div style="margin: 1.25rem 0; background: #1e293b; color: #f8fafc; padding: 1.25rem 1.5rem; border-radius: 10px; font-family: 'Fira Code', monospace; font-size: 0.92rem; white-space: pre-wrap; overflow-x: auto; position: relative;">
+                ${q.language ? `<span style="position: absolute; top: 0.6rem; right: 0.75rem; background: rgba(255,255,255,0.15); padding: 0.2rem 0.55rem; border-radius: 4px; font-size: 0.72rem; font-weight: 600;">${q.language}</span>` : ''}
                 ${q.code}
             </div>` : '';
+
+            // Check if already solved or draft exists
+            const solvedMap = getSolvedMap();
+            const alreadySolved = solvedMap[q.id];
+            const savedDraft = localStorage.getItem('hireprep_draft_' + q.id);
+            const solvedBadge = alreadySolved ? `<span id="statusBadge" style="font-size:0.75rem;font-weight:700;padding:0.25rem 0.65rem;border-radius:999px;margin-left:0.6rem;${alreadySolved === 'correct' ? 'color:#10b981;background:rgba(16,185,129,0.12);' : 'color:#ef4444;background:rgba(239,68,68,0.12);'}">${alreadySolved === 'correct' ? '✅ Solved' : '❌ Attempted'}</span>` : '<span id="statusBadge"></span>';
+
+            // Record session
+            try {
+                localStorage.setItem('hireprep_last_problem', JSON.stringify({
+                    id: q.id,
+                    title: q.title,
+                    type: questionType,
+                    difficulty: q.difficulty,
+                    company: q.company,
+                    url: window.location.href,
+                    timestamp: Date.now()
+                }));
+            } catch(e) {}
 
             document.getElementById('mcq-container').innerHTML = `
                 <div class="mcq-header">
                     <div>
                         <div style="margin-bottom: 0.75rem;">
-                            <span class="tag-pill">${q.type || 'Coding MCQ'}</span>
-                            ${q.topic ? `<span class="tag-pill">${q.topic}</span>` : ''}
-                            ${q.language ? `<span style="display:inline-flex;align-items:center;background:#f3f4f6;border:1px solid #d1d5db;padding:0.2rem 0.6rem;border-radius:6px;font-size:0.75rem;color:#374151;font-weight:600;margin-right:0.5rem;margin-bottom:0.5rem;">${q.language}</span>` : ''}
+                            <span class="tag-pill">${q.type || (questionType === 'aptitude' ? 'Aptitude' : 'Coding MCQ')}</span>
+                            ${q.topic ? `<span class="topic-pill">${q.topic}</span>` : ''}
+                            ${q.language ? `<span style="display:inline-flex;align-items:center;background:#f3f4f6;border:1px solid #d1d5db;padding:0.25rem 0.65rem;border-radius:6px;font-size:0.75rem;color:#374151;font-weight:700;margin-right:0.5rem;">${q.language}</span>` : ''}
                         </div>
-                        <h1 style="font-size: 1.5rem; margin: 0; color: var(--text-main); line-height: 1.4;">${q.title}</h1>
+                        <h1 style="font-size: 1.45rem; margin: 0; color: var(--text-main); line-height: 1.4; font-weight: 700;">
+                            <span style="color:var(--text-muted);font-size:0.95rem;font-weight:600;">Q${currentIndex + 1}.</span> ${q.title}${solvedBadge}
+                        </h1>
                     </div>
-                    <div style="text-align: right;">
+                    <div style="text-align: right; flex-shrink: 0; margin-left: 1rem;">
                         <span class="difficulty-badge" style="color: ${diffColor}; background: ${diffBg};">${q.difficulty}</span>
-                        <div style="margin-top: 0.75rem;">
-                            <span class="company-pill">${q.company || 'Multiple'}</span>
+                        <div style="margin-top: 0.65rem;">
+                            <span class="company-pill">${q.company || 'Top Company'}</span>
                         </div>
                     </div>
                 </div>
                 <div class="mcq-body">
+                    ${q.question ? `<div class="question-statement-box">${q.question}</div>` : ''}
                     ${codeBlock}
                     <div class="option-list" id="option-list">
                         ${options.map((opt, i) => `
                             <button class="option-btn" id="opt-${i}" onclick="selectOption(${i})">
                                 <span class="opt-letter">${letters[i]}</span>
-                                <span>${opt}</span>
+                                <span style="line-height: 1.5;">${opt}</span>
                             </button>
                         `).join('')}
                     </div>
                     <div id="result-message"></div>
                 </div>
                 <div class="mcq-footer">
-                    <div style="color: var(--text-muted); font-size: 0.875rem;">
-                        <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--primary); margin-right: 0.5rem;"></span>
-                        Practice Mode
+                    <div style="display:flex;align-items:center;gap:0.75rem;">
+                        <button class="btn btn-outline" id="prev-btn" onclick="navigateQuestion(-1)" style="padding:0.5rem 1rem;font-size:0.85rem;font-weight:600;${currentIndex <= 0 ? 'opacity:0.4;cursor:not-allowed;' : ''}" ${currentIndex <= 0 ? 'disabled' : ''}>← Previous</button>
+                        <span style="color:var(--text-muted);font-size:0.85rem;font-weight:600;">${currentIndex + 1} of ${allQuestions.length}</span>
                     </div>
-                    <button class="btn btn-primary" id="submit-btn" onclick="submitAnswer()" disabled style="padding: 0.75rem 2rem; font-size: 1rem; opacity: 0.5; cursor: not-allowed;">Submit Answer</button>
+                    <div style="display:flex;align-items:center;gap:0.75rem;" id="footerActionGroup">
+                        <button class="btn-retry" id="retry-btn" onclick="retryQuestion()" style="display: ${alreadySolved ? 'inline-flex' : 'none'};">🔄 Try Again</button>
+                        <button class="btn btn-primary" id="submit-btn" onclick="submitAnswer()" disabled style="padding: 0.65rem 2rem; font-size: 0.95rem; font-weight: 700; opacity: 0.5; cursor: not-allowed; display: ${alreadySolved ? 'none' : 'inline-flex'};">Submit Answer</button>
+                        <button class="btn btn-primary" id="next-btn" onclick="navigateQuestion(1)" style="padding:0.5rem 1.25rem;font-size:0.85rem;font-weight:600;${currentIndex >= allQuestions.length - 1 ? 'opacity:0.4;cursor:not-allowed;' : ''}" ${currentIndex >= allQuestions.length - 1 ? 'disabled' : ''}>Next →</button>
+                    </div>
                 </div>
             `;
+
+            // Restore in-progress selection or past solved state
+            if (savedDraft !== null && !alreadySolved) {
+                const draftIdx = parseInt(savedDraft);
+                if (!isNaN(draftIdx) && draftIdx >= 0 && draftIdx < options.length) {
+                    selectOption(draftIdx);
+                }
+            } else if (alreadySolved) {
+                applySubmittedUI(alreadySolved === 'correct');
+            }
+        }
+
+        function applySubmittedUI(isCorrect) {
+            const q = currentQuestion;
+            const correctIndex = q.correctAnswer !== undefined ? q.correctAnswer : 0;
+            const savedDraft = localStorage.getItem('hireprep_draft_' + q.id);
+            const draftIdx = savedDraft !== null ? parseInt(savedDraft) : (isCorrect ? correctIndex : -1);
+            
+            hasSubmitted = true;
+            selectedOption = draftIdx;
+            
+            const submitBtn = document.getElementById('submit-btn');
+            if (submitBtn) submitBtn.style.display = 'none';
+            const retryBtn = document.getElementById('retry-btn');
+            if (retryBtn) retryBtn.style.display = 'inline-flex';
+            
+            const resultMsg = document.getElementById('result-message');
+            if (resultMsg) {
+                resultMsg.style.display = 'block';
+                document.getElementById(`opt-${correctIndex}`)?.classList.add('correct');
+                
+                if (!isCorrect) {
+                    if (draftIdx >= 0 && document.getElementById(`opt-${draftIdx}`)) {
+                        document.getElementById(`opt-${draftIdx}`).classList.add('wrong');
+                    }
+                    resultMsg.className = 'error';
+                    resultMsg.innerHTML = `
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;flex-wrap:wrap;gap:0.5rem;">
+                            <div style="font-size:1.05rem;font-weight:700;display:flex;align-items:center;gap:0.4rem;">
+                                <span>❌ Incorrect</span>
+                                <span style="font-size:0.85rem;font-weight:500;opacity:0.85;">— Correct answer is <strong>Option ${String.fromCharCode(65 + correctIndex)}</strong></span>
+                            </div>
+                            <button onclick="retryQuestion()" class="btn-retry" style="background:#ef4444;color:white;border-color:#ef4444;padding:0.35rem 0.85rem;font-size:0.8rem;">🔄 Retry & Pick Correct Option</button>
+                        </div>
+                        ${q.explanation ? `<div style="padding-top:0.75rem;border-top:1px solid rgba(239,68,68,0.2);font-size:0.9rem;line-height:1.6;"><strong>Explanation:</strong> ${q.explanation}</div>` : ''}
+                    `;
+                } else {
+                    resultMsg.className = 'success';
+                    resultMsg.innerHTML = `
+                        <div style="font-size:1.05rem;font-weight:700;margin-bottom:0.5rem;display:flex;align-items:center;gap:0.4rem;">
+                            <span>🎉 Correct!</span>
+                            <span style="font-size:0.85rem;font-weight:500;opacity:0.85;">Great problem solving.</span>
+                        </div>
+                        ${q.explanation ? `<div style="padding-top:0.75rem;border-top:1px solid rgba(16,185,129,0.2);font-size:0.9rem;line-height:1.6;"><strong>Explanation:</strong> ${q.explanation}</div>` : ''}
+                    `;
+                }
+            }
+            
+            document.querySelectorAll('.option-btn').forEach(btn => {
+                btn.style.cursor = 'default';
+                if (!btn.classList.contains('correct') && !btn.classList.contains('wrong')) {
+                    btn.style.opacity = '0.55';
+                }
+            });
+        }
+
+        function retryQuestion() {
+            hasSubmitted = false;
+            selectedOption = null;
+            
+            // Clear current draft
+            if (currentQuestion) {
+                try { localStorage.removeItem('hireprep_draft_' + currentQuestion.id); } catch(e) {}
+            }
+            
+            // Reset option button styles
+            document.querySelectorAll('.option-btn').forEach(btn => {
+                btn.className = 'option-btn';
+                btn.style.cursor = 'pointer';
+                btn.style.opacity = '1';
+            });
+            
+            // Hide result message
+            const resultMsg = document.getElementById('result-message');
+            if (resultMsg) resultMsg.style.display = 'none';
+            
+            // Show submit button in disabled state
+            const submitBtn = document.getElementById('submit-btn');
+            if (submitBtn) {
+                submitBtn.style.display = 'inline-flex';
+                submitBtn.disabled = true;
+                submitBtn.style.opacity = '0.5';
+                submitBtn.style.cursor = 'not-allowed';
+            }
+            
+            // Hide retry button until next submission
+            const retryBtn = document.getElementById('retry-btn');
+            if (retryBtn) retryBtn.style.display = 'none';
+        }
+        window.retryQuestion = retryQuestion;
+
+        function renderNavigator() {
+            const solvedMap = getSolvedMap();
+            const solvedCorrect = Object.values(solvedMap).filter(v => v === 'correct').length;
+            const solvedWrong = Object.values(solvedMap).filter(v => v === 'wrong').length;
+            const totalSolved = solvedCorrect + solvedWrong;
+
+            const maxDisplay = Math.min(allQuestions.length, 100);
+            let startQ = 0;
+            if (allQuestions.length > maxDisplay) {
+                startQ = Math.max(0, currentIndex - 50);
+                startQ = Math.min(startQ, allQuestions.length - maxDisplay);
+            }
+            const displayQuestions = allQuestions.slice(startQ, startQ + maxDisplay);
+
+            document.getElementById('mcq-sidebar').innerHTML = `
+                <div class="q-nav-card">
+                    <div style="font-weight:800;font-size:1rem;margin-bottom:0.85rem;color:var(--text-main);display:flex;align-items:center;justify-content:space-between;">
+                        <span>📋 Navigator</span>
+                        <span style="font-size:0.75rem;color:var(--text-muted);font-weight:600;">${allQuestions.length} Total</span>
+                    </div>
+                    <div class="q-nav-stats">
+                        <div class="q-nav-stat"><span style="width:10px;height:10px;border-radius:50%;background:#10b981;display:inline-block;"></span> ${solvedCorrect} Correct</div>
+                        <div class="q-nav-stat"><span style="width:10px;height:10px;border-radius:50%;background:#ef4444;display:inline-block;"></span> ${solvedWrong} Wrong</div>
+                        <div class="q-nav-stat"><span style="width:10px;height:10px;border-radius:50%;background:var(--border-color);display:inline-block;"></span> ${allQuestions.length - totalSolved} Left</div>
+                    </div>
+                    <div style="background:var(--bg-muted, #f1f5f9);border-radius:8px;height:6px;margin-bottom:1.25rem;overflow:hidden;display:flex;">
+                        <div style="width:${allQuestions.length ? (solvedCorrect/allQuestions.length*100) : 0}%;background:#10b981;transition:width 0.3s;"></div>
+                        <div style="width:${allQuestions.length ? (solvedWrong/allQuestions.length*100) : 0}%;background:#ef4444;transition:width 0.3s;"></div>
+                    </div>
+                    <div class="q-nav-grid">
+                        ${displayQuestions.map((q, i) => {
+                            const realIdx = startQ + i;
+                            const status = solvedMap[q.id];
+                            let cls = '';
+                            if (realIdx === currentIndex) cls = 'current';
+                            else if (status === 'correct') cls = 'solved-correct';
+                            else if (status === 'wrong') cls = 'solved-wrong';
+                            return `<button class="q-nav-btn ${cls}" onclick="goToQuestion(${realIdx})" title="Q${realIdx+1}: ${(q.title||'').substring(0,30)}">${realIdx + 1}</button>`;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+
+            setTimeout(() => {
+                const currentBtn = document.querySelector('.q-nav-btn.current');
+                if (currentBtn) currentBtn.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            }, 100);
+        }
+
+        function goToQuestion(idx) {
+            if (idx < 0 || idx >= allQuestions.length) return;
+            const q = allQuestions[idx];
+            window.location.href = `mcq-detail.html?id=${encodeURIComponent(q.id)}&type=${encodeURIComponent(questionType)}`;
         }
 
         function selectOption(index) {
             if (hasSubmitted) return;
             selectedOption = index;
+            if (currentQuestion) {
+                try { localStorage.setItem('hireprep_draft_' + currentQuestion.id, index); } catch(e) {}
+            }
             
             document.querySelectorAll('.option-btn').forEach(btn => btn.classList.remove('selected'));
-            document.getElementById(`opt-${index}`).classList.add('selected');
+            document.getElementById(`opt-${index}`)?.classList.add('selected');
             
             const submitBtn = document.getElementById('submit-btn');
-            submitBtn.disabled = false;
-            submitBtn.style.opacity = '1';
-            submitBtn.style.cursor = 'pointer';
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.style.opacity = '1';
+                submitBtn.style.cursor = 'pointer';
+            }
+        }
+
+        function showMcqAuthModal(msg) {
+            let modal = document.getElementById('mcqAuthModal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'mcqAuthModal';
+                modal.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.7);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:99999;padding:1.5rem;';
+                document.body.appendChild(modal);
+            }
+            modal.innerHTML = `
+                <div style="background:var(--card-bg, #ffffff);color:var(--text-main, #0f172a);border-radius:16px;padding:2rem;max-width:440px;width:100%;box-shadow:0 20px 40px rgba(0,0,0,0.3);border:1px solid var(--border-color);text-align:center;">
+                    <div style="font-size:2.5rem;margin-bottom:0.75rem;">🔒</div>
+                    <h3 style="margin:0 0 0.5rem;font-size:1.2rem;font-weight:700;">Sign In Required</h3>
+                    <p style="font-size:0.875rem;color:var(--text-muted);margin:0 0 1.5rem;line-height:1.5;">${msg || 'Please sign in or create an account to submit MCQ solutions.'}</p>
+                    <a href="../auth.html?redirect=practice" class="btn btn-primary" style="display:block;width:100%;padding:0.75rem;border-radius:8px;font-weight:600;text-decoration:none;margin-bottom:0.75rem;">Sign In / Sign Up →</a>
+                    <button onclick="document.getElementById('mcqAuthModal').style.display='none'" class="btn btn-outline" style="width:100%;padding:0.6rem;font-size:0.85rem;border-radius:8px;cursor:pointer;">Cancel</button>
+                </div>
+            `;
+            modal.style.display = 'flex';
         }
 
         function submitAnswer() {
             if (selectedOption === null || hasSubmitted) return;
+            if (typeof API !== 'undefined' && !API.isLoggedIn()) {
+                showMcqAuthModal('Sign in to submit your answer, view explanations, and track your score.');
+                return;
+            }
             hasSubmitted = true;
             
             const q = currentQuestion;
-            const correctIndex = q.correctAnswer !== undefined ? q.correctAnswer : 0; // fallback to 0 if not set
+            const correctIndex = q.correctAnswer !== undefined ? q.correctAnswer : 0;
             const isCorrect = selectedOption === correctIndex;
             
-            const submitBtn = document.getElementById('submit-btn');
-            submitBtn.style.display = 'none'; // Hide submit button after submission
+            // Save solved status (if correct, overrides any past wrong status!)
+            markSolved(q.id, isCorrect);
+            try { localStorage.setItem('hireprep_draft_' + q.id, selectedOption); } catch(e) {}
             
-            const resultMsg = document.getElementById('result-message');
-            resultMsg.style.display = 'block';
+            // Update UI
+            applySubmittedUI(isCorrect);
             
-            // Mark correct answer
-            document.getElementById(`opt-${correctIndex}`).classList.add('correct');
-            
-            // If selected is wrong, mark it wrong
-            if (!isCorrect) {
-                document.getElementById(`opt-${selectedOption}`).classList.add('wrong');
-                resultMsg.className = 'error';
-                resultMsg.innerHTML = '❌ <strong>Incorrect!</strong> The correct answer is ' + String.fromCharCode(65 + correctIndex) + '.';
-            } else {
-                resultMsg.className = 'success';
-                resultMsg.innerHTML = '✅ <strong>Correct!</strong> Great job.';
+            // Update header status badge
+            const statusBadge = document.getElementById('statusBadge');
+            if (statusBadge) {
+                statusBadge.innerHTML = isCorrect ? '✅ Solved' : '❌ Attempted';
+                statusBadge.style.cssText = `font-size:0.75rem;font-weight:700;padding:0.25rem 0.65rem;border-radius:999px;margin-left:0.6rem;${isCorrect ? 'color:#10b981;background:rgba(16,185,129,0.12);' : 'color:#ef4444;background:rgba(239,68,68,0.12);'}`;
             }
-            
-            if (q.explanation) {
-                resultMsg.innerHTML += `<div style="margin-top:1rem;padding-top:1rem;border-top:1px solid rgba(0,0,0,0.1);font-size:0.9rem;color:var(--text-main);line-height:1.5;"><strong>Explanation:</strong> ${q.explanation}</div>`;
-            }
-            
-            // Disable all buttons
-            document.querySelectorAll('.option-btn').forEach(btn => {
-                btn.style.cursor = 'default';
-                // Decrease opacity of unselected and incorrect options
-                if (!btn.classList.contains('correct') && !btn.classList.contains('wrong')) {
-                    btn.style.opacity = '0.5';
-                }
-            });
+
+            // Re-render navigator to update stats and colors in real-time
+            renderNavigator();
+        }
+
+        function navigateQuestion(direction) {
+            const newIndex = currentIndex + direction;
+            if (newIndex < 0 || newIndex >= allQuestions.length) return;
+            goToQuestion(newIndex);
         }
     </script>
 </body>

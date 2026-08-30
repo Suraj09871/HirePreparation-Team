@@ -3,18 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Dashboard - HireSmart</title>
+    <title>Student Dashboard - HirePrep</title>
     <link rel="stylesheet" href="../../css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body style="background: #f8fafc;">
-    <nav class="navbar" style="border-bottom: 1px solid var(--border-color); background: white;">
+    <nav class="navbar" style="border-bottom: 1px solid var(--border-color); background: var(--card-bg);">
         <div class="logo">
             <span class="logo-icon"></span>
-            HireSmart
+            HirePrep
         </div>
-        <div class="nav-links">
+        <button class="hamburger" id="hamburgerBtn" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="navLinks">
+
+            <span class="bar"></span>
+
+            <span class="bar"></span>
+
+            <span class="bar"></span>
+
+        </button>
+
+        <div class="nav-links" id="navLinks">
             <a href="../../index.html">Home</a>
             <a href="jobs.html">Jobs</a>
             <a href="practice.html">Practice</a>
@@ -42,6 +52,18 @@
             </div>
         </div>
 
+        <!-- Resume In-Progress Problem Banner -->
+        <div id="studentResumeBanner" style="display:none;background:linear-gradient(135deg, rgba(249,115,22,0.12), rgba(59,130,246,0.12));border:1.5px solid var(--primary);border-radius:14px;padding:1.25rem 1.75rem;margin-bottom:2rem;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
+            <div style="display:flex;align-items:center;gap:1rem;">
+                <div style="width:44px;height:44px;border-radius:12px;background:var(--primary);color:white;display:flex;align-items:center;justify-content:center;font-size:1.4rem;">⚡</div>
+                <div>
+                    <div style="font-weight:700;color:var(--text-main);font-size:1rem;" id="studentResumeTitle">Resume In-Progress Practice</div>
+                    <div style="font-size:0.825rem;color:var(--text-muted);margin-top:0.15rem;" id="studentResumeMeta">Your last problem session is saved. Pick up right where you paused.</div>
+                </div>
+            </div>
+            <a href="#" id="studentResumeLink" class="btn btn-primary" style="padding:0.55rem 1.5rem;font-size:0.9rem;font-weight:700;text-decoration:none;white-space:nowrap;">Resume Question →</a>
+        </div>
+
         <!-- Stats Cards -->
         <div id="statsGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:1.25rem;margin-bottom:2.5rem;">
             <div class="card-gradient-1" style="border-radius:12px;padding:1.25rem;">
@@ -64,24 +86,26 @@
 
         <!-- Charts Row -->
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:2.5rem;">
-            <div style="background:white;border-radius:12px;border:1px solid var(--border-color);padding:1.5rem;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
-                <h3 style="font-size:1rem;margin:0 0 1rem 0;">📊 Skill Overview</h3>
-                <canvas id="skillChart" height="220"></canvas>
+            <div style="background:var(--card-bg);border-radius:12px;border:1px solid var(--border-color);padding:1.5rem;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+                <h3 style="font-size:1rem;margin:0 0 1rem 0;color:var(--text-main);">📊 Skill Overview</h3>
+                <div style="position:relative;height:250px;width:100%;overflow:hidden;">
+                    <canvas id="skillChart"></canvas>
+                </div>
             </div>
-            <div style="background:white;border-radius:12px;border:1px solid var(--border-color);padding:1.5rem;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
-                <h3 style="font-size:1rem;margin:0 0 1rem 0;">🏢 Recommended Companies</h3>
+            <div style="background:var(--card-bg);border-radius:12px;border:1px solid var(--border-color);padding:1.5rem;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+                <h3 style="font-size:1rem;margin:0 0 1rem 0;color:var(--text-main);">🏢 Recommended Companies</h3>
                 <div id="recommendedCompanies" style="display:flex;flex-direction:column;gap:0.75rem;"></div>
             </div>
         </div>
 
         <!-- Quick Actions -->
-        <h2 style="font-size:1.25rem;margin-bottom:1rem;">⚡ Quick Access</h2>
+        <h2 style="font-size:1.25rem;margin-bottom:1rem;color:var(--text-main);">⚡ Quick Access</h2>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:2.5rem;">
-            <a href="practice.html" style="text-decoration:none;"><div style="background:white;border:1px solid var(--border-color);border-radius:12px;padding:1.5rem;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 16px rgba(0,0,0,0.08)';" onmouseout="this.style.transform='';this.style.boxShadow='none';"><div style="font-size:2rem;margin-bottom:0.5rem;">💻</div><div style="font-weight:600;color:var(--text-main);">Practice Coding</div><div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.25rem;">Solve DSA problems</div></div></a>
-            <a href="preparation.html" style="text-decoration:none;"><div style="background:white;border:1px solid var(--border-color);border-radius:12px;padding:1.5rem;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 16px rgba(0,0,0,0.08)';" onmouseout="this.style.transform='';this.style.boxShadow='none';"><div style="font-size:2rem;margin-bottom:0.5rem;">📖</div><div style="font-weight:600;color:var(--text-main);">Company Prep</div><div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.25rem;">Interview guides</div></div></a>
-            <a href="resume-builder.html" style="text-decoration:none;"><div style="background:white;border:1px solid var(--border-color);border-radius:12px;padding:1.5rem;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 16px rgba(0,0,0,0.08)';" onmouseout="this.style.transform='';this.style.boxShadow='none';"><div style="font-size:2rem;margin-bottom:0.5rem;">📄</div><div style="font-weight:600;color:var(--text-main);">Resume Builder</div><div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.25rem;">Build & analyze</div></div></a>
-            <a href="mock-test.html" style="text-decoration:none;"><div style="background:white;border:1px solid var(--border-color);border-radius:12px;padding:1.5rem;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 16px rgba(0,0,0,0.08)';" onmouseout="this.style.transform='';this.style.boxShadow='none';"><div style="font-size:2rem;margin-bottom:0.5rem;">⏱</div><div style="font-weight:600;color:var(--text-main);">Mock Test</div><div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.25rem;">Timed practice</div></div></a>
-            <a href="student-profile.html" style="text-decoration:none;"><div style="background:white;border:1px solid var(--border-color);border-radius:12px;padding:1.5rem;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 16px rgba(0,0,0,0.08)';" onmouseout="this.style.transform='';this.style.boxShadow='none';"><div style="font-size:2rem;margin-bottom:0.5rem;">👤</div><div style="font-weight:600;color:var(--text-main);">My Profile</div><div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.25rem;">Edit details</div></div></a>
+            <a href="practice.html" style="text-decoration:none;"><div style="background:var(--card-bg);border:1px solid var(--border-color);border-radius:12px;padding:1.5rem;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 16px rgba(0,0,0,0.08)';" onmouseout="this.style.transform='';this.style.boxShadow='none';"><div style="font-size:2rem;margin-bottom:0.5rem;">💻</div><div style="font-weight:600;color:var(--text-main);">Practice Coding</div><div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.25rem;">Solve DSA problems</div></div></a>
+            <a href="preparation.html" style="text-decoration:none;"><div style="background:var(--card-bg);border:1px solid var(--border-color);border-radius:12px;padding:1.5rem;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 16px rgba(0,0,0,0.08)';" onmouseout="this.style.transform='';this.style.boxShadow='none';"><div style="font-size:2rem;margin-bottom:0.5rem;">📖</div><div style="font-weight:600;color:var(--text-main);">Company Prep</div><div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.25rem;">Interview guides</div></div></a>
+            <a href="resume-builder.html" style="text-decoration:none;"><div style="background:var(--card-bg);border:1px solid var(--border-color);border-radius:12px;padding:1.5rem;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 16px rgba(0,0,0,0.08)';" onmouseout="this.style.transform='';this.style.boxShadow='none';"><div style="font-size:2rem;margin-bottom:0.5rem;">📄</div><div style="font-weight:600;color:var(--text-main);">Resume Builder</div><div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.25rem;">Build & analyze</div></div></a>
+            <a href="mock-test.html" style="text-decoration:none;"><div style="background:var(--card-bg);border:1px solid var(--border-color);border-radius:12px;padding:1.5rem;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 16px rgba(0,0,0,0.08)';" onmouseout="this.style.transform='';this.style.boxShadow='none';"><div style="font-size:2rem;margin-bottom:0.5rem;">⏱</div><div style="font-weight:600;color:var(--text-main);">Mock Test</div><div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.25rem;">Timed practice</div></div></a>
+            <a href="student-profile.html" style="text-decoration:none;"><div style="background:var(--card-bg);border:1px solid var(--border-color);border-radius:12px;padding:1.5rem;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 16px rgba(0,0,0,0.08)';" onmouseout="this.style.transform='';this.style.boxShadow='none';"><div style="font-size:2rem;margin-bottom:0.5rem;">👤</div><div style="font-weight:600;color:var(--text-main);">My Profile</div><div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.25rem;">Edit details</div></div></a>
         </div>
 
         <!-- Notifications -->
@@ -91,6 +115,8 @@
         </div>
     </main>
 
+    <script src="../../js/theme.js"></script>
+    <script src="../../js/sanitize.js"></script>
     <script src="../../js/api.js"></script>
     <script src="../../js/student-dashboard.js"></script>
 </body>

@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const path = require('path');
+const { body, param, validationResult } = require('express-validator');
 const StudentProfile = require('../models/StudentProfile');
 const User = require('../models/User');
 const { auth } = require('../middleware/auth');
@@ -56,9 +57,13 @@ router.get('/', auth, async (req, res) => {
     }
 });
 
-// GET /api/profile/:userId - Get specific user's profile
-router.get('/:userId', async (req, res) => {
+// GET /api/profile/:userId - Get specific user's profile (requires auth)
+router.get('/:userId', auth, async (req, res) => {
     try {
+        if (!req.params.userId.match(/^[0-9a-fA-F]{24}$/)) {
+            return res.status(400).json({ success: false, message: 'Invalid user ID format.' });
+        }
+
         const user = await User.findById(req.params.userId);
         if (!user) {
             return res.status(404).json({ success: false, message: 'User not found.' });
@@ -79,7 +84,7 @@ router.get('/:userId', async (req, res) => {
             }
         });
     } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+        res.status(500).json({ success: false, message: 'Failed to fetch profile.' });
     }
 });
 
@@ -128,8 +133,16 @@ router.put('/', auth, async (req, res) => {
 });
 
 // POST /api/profile/skills - Add a skill
-router.post('/skills', auth, async (req, res) => {
+router.post('/skills', auth, [
+    body('name').trim().notEmpty().withMessage('Skill name is required').isLength({ max: 100 }).withMessage('Skill name too long'),
+    body('level').optional().isIn(['Beginner', 'Intermediate', 'Advanced']).withMessage('Invalid skill level')
+], async (req, res) => {
     try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ success: false, message: errors.array()[0].msg });
+        }
+
         const { name, level } = req.body;
 
         let profile = await StudentProfile.findOne({ userId: req.userId });
@@ -170,8 +183,17 @@ router.delete('/skills/:skillId', auth, async (req, res) => {
 });
 
 // POST /api/profile/projects - Add a project
-router.post('/projects', auth, async (req, res) => {
+router.post('/projects', auth, [
+    body('title').trim().notEmpty().withMessage('Project title is required').isLength({ max: 200 }).withMessage('Title too long'),
+    body('description').optional().isLength({ max: 2000 }).withMessage('Description too long'),
+    body('techStack').optional().isLength({ max: 500 }).withMessage('Tech stack too long')
+], async (req, res) => {
     try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ success: false, message: errors.array()[0].msg });
+        }
+
         const { title, description, techStack } = req.body;
 
         let profile = await StudentProfile.findOne({ userId: req.userId });

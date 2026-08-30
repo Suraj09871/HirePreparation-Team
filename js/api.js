@@ -1,32 +1,73 @@
 /**
- * HireSmart API Client with Mock Fallback for Netlify Static Hosting
+ * HirePrep API Client - Full Support for Render (Backend) + Netlify (Frontend)
  */
+const DEFAULT_RENDER_BACKEND = 'https://hireprep-backend.onrender.com';
+
+function getApiBaseUrl() {
+    if (typeof window === 'undefined') return '/api';
+    
+    // 1. Explicit developer override
+    if (window.HIREPREP_BACKEND_URL) {
+        return window.HIREPREP_BACKEND_URL.replace(/\/+$/, '') + '/api';
+    }
+    // 2. User/Admin configured custom backend in localStorage
+    const customBackend = localStorage.getItem('hireprep_backend_url');
+    if (customBackend) {
+        return customBackend.replace(/\/+$/, '') + '/api';
+    }
+    // 3. Localhost development environment
+    const host = window.location.hostname;
+    if (host === 'localhost' || host === '127.0.0.1') {
+        return window.location.port === '5000' ? '/api' : 'http://localhost:5000/api';
+    }
+    // 4. Production hosting (Netlify proxy or relative path)
+    return '/api';
+}
+
 const API = {
-    BASE_URL: window.location.origin + '/api',
-    getToken() { return localStorage.getItem('hiresmart_token'); },
-    getUser() { const u = localStorage.getItem('hiresmart_user'); return u ? JSON.parse(u) : null; },
-    saveAuth(token, user) { localStorage.setItem('hiresmart_token', token); localStorage.setItem('hiresmart_user', JSON.stringify(user)); },
-    clearAuth() { localStorage.removeItem('hiresmart_token'); localStorage.removeItem('hiresmart_user'); },
+    BASE_URL: getApiBaseUrl(),
+    RENDER_URL: DEFAULT_RENDER_BACKEND + '/api',
+    getToken() { return localStorage.getItem('hireprep_token'); },
+    getUser() { const u = localStorage.getItem('hireprep_user'); return u ? JSON.parse(u) : null; },
+    saveAuth(token, user) { localStorage.setItem('hireprep_token', token); localStorage.setItem('hireprep_user', JSON.stringify(user)); },
+    clearAuth() { localStorage.removeItem('hireprep_token'); localStorage.removeItem('hireprep_user'); },
     isLoggedIn() { return !!this.getToken(); },
 
     async request(endpoint, options = {}) {
-        const url = `${this.BASE_URL}${endpoint}`;
+        let url = `${this.BASE_URL}${endpoint}`;
         const headers = { 'Content-Type': 'application/json', ...options.headers };
         const token = this.getToken();
         if (token) headers['Authorization'] = `Bearer ${token}`;
 
-        // Auth endpoints must hit real backend - no mock fallback
         const isAuthEndpoint = endpoint.startsWith('/auth/');
 
         try {
-            const res = await fetch(url, { ...options, headers });
+            let res;
+            try {
+                res = await fetch(url, { ...options, headers });
+            } catch (networkErr) {
+                // If relative /api failed and we are on Netlify/production, retry directly with Render backend URL
+                if (this.BASE_URL === '/api' && this.RENDER_URL) {
+                    url = `${this.RENDER_URL}${endpoint}`;
+                    res = await fetch(url, { ...options, headers });
+                } else {
+                    throw networkErr;
+                }
+            }
+
             const ct = res.headers.get("content-type");
             if (!res.ok) {
+                // Auto-logout on 401 (expired/invalid token)
+                if (res.status === 401 && !isAuthEndpoint) {
+                    this.clearAuth();
+                    window.location.href = '/frontend/auth.html';
+                    throw new Error('Session expired. Please log in again.');
+                }
                 if (ct && ct.includes("application/json")) { 
                     const d = await res.json(); 
                     throw new Error(d.message || 'Request failed'); 
                 }
-                if (isAuthEndpoint) throw new Error('Server unavailable. Please try again.');
+                if (isAuthEndpoint) throw new Error('Server unavailable. Please verify Render backend is running.');
                 throw new Error("Need Mock");
             }
             if (ct && ct.includes("application/json")) return await res.json();
@@ -42,10 +83,24 @@ const API = {
     post(endpoint, body) { return this.request(endpoint, { method: 'POST', body: JSON.stringify(body) }); },
     put(endpoint, body) { return this.request(endpoint, { method: 'PUT', body: JSON.stringify(body) }); },
     del(endpoint) { return this.request(endpoint, { method: 'DELETE' }); },
+    delete(endpoint) { return this.request(endpoint, { method: 'DELETE' }); },
     async upload(endpoint, formData) {
-        const url = `${this.BASE_URL}${endpoint}`;
+        let url = `${this.BASE_URL}${endpoint}`;
         const headers = {}; const token = this.getToken(); if (token) headers['Authorization'] = `Bearer ${token}`;
-        try { const res = await fetch(url, { method: 'POST', headers, body: formData }); const data = await res.json(); if (!res.ok) throw new Error(data.message); return data; }
+        try { 
+            let res;
+            try {
+                res = await fetch(url, { method: 'POST', headers, body: formData });
+            } catch(e) {
+                if (this.BASE_URL === '/api' && this.RENDER_URL) {
+                    url = `${this.RENDER_URL}${endpoint}`;
+                    res = await fetch(url, { method: 'POST', headers, body: formData });
+                } else throw e;
+            }
+            const data = await res.json(); 
+            if (!res.ok) throw new Error(data.message); 
+            return data; 
+        }
         catch(e) { return MockAPI.handle(endpoint, {}); }
     }
 };
@@ -115,27 +170,27 @@ const MockAPI = {
         }
 
         // Admin
-        if (endpoint.includes('/admin/stats')) return { stats: { students: 156, recruiters: 24, jobs: 42, applications: 312, admins: 2, companies: 28, pendingVerifications: 2, activeJobs: 35, activeUsers: 134, inactiveUsers: 48, totalUsers: 182, conversionRate: 8, shortlistRate: 23 } };
+        if (endpoint.includes('/admin/stats')) return { stats: { students: 0, recruiters: 0, jobs: 0, applications: 0, admins: 1, companies: 0, pendingVerifications: 0, activeJobs: 0, activeUsers: 0, inactiveUsers: 0, totalUsers: 1, conversionRate: 0, shortlistRate: 0 } };
         if (endpoint.includes('/admin/analytics/advanced')) return MockAPI._adminAdvancedAnalytics();
         if (endpoint.includes('/admin/matching-logic')) return MockAPI._matchingLogic();
         if (endpoint.includes('/admin/analytics')) return MockAPI._adminAnalytics();
         if (endpoint.includes('/admin/companies') && endpoint.includes('/verify')) return { success: true };
-        if (endpoint.includes('/admin/companies')) return { companies: MockAPI._companies() };
+        if (endpoint.includes('/admin/companies')) return { companies: [] };
         if (endpoint.includes('/admin/users') && endpoint.includes('/role')) return { success: true, message: 'Role updated' };
         if (endpoint.includes('/admin/users') && options.method === 'DELETE') return { success: true };
-        if (endpoint.includes('/admin/users')) return { users: MockAPI._adminUsers() };
-        if (endpoint.includes('/admin/jobs')) return { jobs: MockAPI._allJobs() };
-        if (endpoint.includes('/admin/top-performers')) return { performers: MockAPI._topPerformers() };
-        if (endpoint.includes('/admin/activity-log')) return { logs: MockAPI._activityLogs() };
-        if (endpoint.includes('/admin/notifications/bulk')) return { success: true, message: 'Bulk notification sent to 48 users.' };
+        if (endpoint.includes('/admin/users')) return { users: [] };
+        if (endpoint.includes('/admin/jobs')) return { jobs: [] };
+        if (endpoint.includes('/admin/top-performers')) return { performers: [] };
+        if (endpoint.includes('/admin/activity-log')) return { logs: [] };
+        if (endpoint.includes('/admin/notifications/bulk')) return { success: true, message: 'Bulk notification sent.' };
         if (endpoint.includes('/admin/notifications/send')) return { success: true };
         if (endpoint.includes('/admin/export')) return { success: true, message: 'Export started' };
 
         // Notifications
-        if (endpoint.includes('/notifications/unread-count')) return { count: 3 };
-        if (endpoint.includes('/notifications')) return { notifications: [{_id:'n1',title:'Welcome!',message:'Welcome to HireSmart!',isRead:false,createdAt:new Date().toISOString()},{_id:'n2',title:'Profile Viewed',message:'Your profile was viewed by a recruiter.',isRead:true,createdAt:new Date(Date.now()-86400000).toISOString()}] };
+        if (endpoint.includes('/notifications/unread-count')) return { count: 0 };
+        if (endpoint.includes('/notifications')) return { notifications: [] };
 
-        return { success: true, message: 'Mock response' };
+        return { success: true, message: 'Clean response' };
     },
 
     _preparations() {
@@ -250,11 +305,11 @@ const MockAPI = {
         return {
             analytics: {
                 monthLabels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-                studentGrowth: [12, 28, 45, 67, 98, 156],
-                recruiterGrowth: [2, 5, 8, 12, 18, 24],
-                roleDistribution: { students: 156, recruiters: 24, admins: 2 },
-                appStatuses: [{ _id: 'new', count: 45 }, { _id: 'in-review', count: 38 }, { _id: 'shortlisted', count: 22 }, { _id: 'selected', count: 12 }],
-                topCompanies: [{ _id: 'Acme Corp', jobCount: 3, totalApplicants: 252 }, { _id: 'Swiggy', jobCount: 1, totalApplicants: 112 }]
+                studentGrowth: [0, 0, 0, 0, 0, 0],
+                recruiterGrowth: [0, 0, 0, 0, 0, 0],
+                roleDistribution: { students: 0, recruiters: 0, admins: 1 },
+                appStatuses: [],
+                topCompanies: []
             }
         };
     },
@@ -262,13 +317,13 @@ const MockAPI = {
     _adminAdvancedAnalytics() {
         return {
             advanced: {
-                growth: { labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'], students: [12, 28, 45, 67, 98, 156], recruiters: [2, 5, 8, 12, 18, 24] },
-                activeVsInactive: { active: 134, inactive: 48 },
-                conversionFunnel: { applied: 312, inReview: 85, shortlisted: 48, interviewed: 22, selected: 12, rejected: 35 },
-                performanceDistribution: { buckets: [22, 38, 56, 40], labels: ['0-25%', '25-50%', '50-75%', '75-100%'], avgScore: 58, top10AvgScore: 91 },
-                resumeDistribution: { buckets: [8, 15, 28, 42, 63], labels: ['0-20', '20-40', '40-60', '60-80', '80-100'] },
-                skillGapTrends: [{ skill: 'Docker', count: 45 }, { skill: 'Kubernetes', count: 38 }, { skill: 'GraphQL', count: 32 }, { skill: 'TypeScript', count: 28 }, { skill: 'AWS', count: 24 }, { skill: 'System Design', count: 20 }],
-                appsPerDay: { labels: Array.from({ length: 30 }, (_, i) => { const d = new Date(); d.setDate(d.getDate() - 29 + i); return `${d.getMonth() + 1}/${d.getDate()}`; }), data: [3, 5, 2, 8, 6, 4, 7, 9, 5, 11, 8, 6, 12, 10, 7, 14, 9, 11, 8, 15, 13, 10, 16, 12, 9, 18, 14, 11, 20, 15] }
+                growth: { labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'], students: [0, 0, 0, 0, 0, 0], recruiters: [0, 0, 0, 0, 0, 0] },
+                activeVsInactive: { active: 1, inactive: 0 },
+                conversionFunnel: { applied: 0, inReview: 0, shortlisted: 0, interviewed: 0, selected: 0, rejected: 0 },
+                performanceDistribution: { buckets: [0, 0, 0, 0], labels: ['0-25%', '25-50%', '50-75%', '75-100%'], avgScore: 0, top10AvgScore: 0 },
+                resumeDistribution: { buckets: [0, 0, 0, 0, 0], labels: ['0-20', '20-40', '40-60', '60-80', '80-100'] },
+                skillGapTrends: [],
+                appsPerDay: { labels: Array.from({ length: 30 }, (_, i) => { const d = new Date(); d.setDate(d.getDate() - 29 + i); return `${d.getMonth() + 1}/${d.getDate()}`; }), data: Array(30).fill(0) }
             }
         };
     },
@@ -347,29 +402,20 @@ function showToast(message, type = 'success') {
     setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 300); }, 3000);
 }
 
-// Update navbar auth state
-function updateNavAuth() {
-    const user = API.getUser();
-    const navActions = document.querySelector('.nav-actions');
-    if (!navActions) return;
-    if (user) {
-        const profileLink = user.role === 'student' ? '/frontend/student/student-profile.html' : '#';
-        navActions.innerHTML = `
-            <span id="themeToggle" onclick="toggleTheme()" style="font-size:1.25rem;color:var(--text-muted);cursor:pointer;margin-right:0.5rem;">☼</span>
-            <a href="${profileLink}" style="display:flex;align-items:center;gap:0.5rem;font-weight:500;font-size:0.875rem;text-decoration:none;color:var(--text-main);">
-                <span style="width:28px;height:28px;background:var(--primary);color:white;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:bold;">${user.name.charAt(0).toUpperCase()}</span>
-                ${user.name}
-            </a>
-            <button class="btn btn-outline" onclick="handleLogout()"><span style="margin-right:0.25rem;">↪</span> Sign Out</button>`;
+// Global Logout Handler Delegation
+function handleLogout() {
+    if (typeof window.handleLogout === 'function') {
+        window.handleLogout();
     } else {
-        navActions.innerHTML = `
-            <span id="themeToggle" onclick="toggleTheme()" style="font-size:1.25rem;color:var(--text-muted);cursor:pointer;margin-right:0.5rem;">☼</span>
-            <button class="btn btn-outline" onclick="window.location.href='/frontend/auth.html'">Sign In</button>
-            <button class="btn btn-dark" onclick="window.location.href='/frontend/auth.html'">Get Started</button>`;
+        API.clearAuth();
+        localStorage.removeItem('hireprep_token');
+        localStorage.removeItem('hireprep_user');
+        sessionStorage.clear();
+        const path = window.location.pathname;
+        let base = '';
+        if (/\/frontend\/(student|recruiter|admin)\//i.test(path)) base = '../../';
+        else if (/\/frontend\//i.test(path)) base = '../';
+        window.location.href = base + 'frontend/auth.html';
     }
-    const savedTheme = localStorage.getItem('hiresmart_theme') || 'light';
-    if (savedTheme === 'dark') { document.documentElement.setAttribute('data-theme', 'dark'); const t = document.getElementById('themeToggle'); if(t) t.innerHTML = '🌙'; }
 }
 
-function handleLogout() { API.clearAuth(); showToast('Logged out successfully'); setTimeout(() => window.location.href = '/index.html', 500); }
-document.addEventListener('DOMContentLoaded', () => { updateNavAuth(); });

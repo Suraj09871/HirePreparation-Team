@@ -1,13 +1,15 @@
 {
-  "name": "hiresmart",
+  "name": "hireprep",
   "version": "1.0.0",
-  "description": "HireSmart - Intelligent Hiring & Resume Platform",
+  "description": "HirePrep - Intelligent Hiring & Resume Platform",
+  "main": "server/server.js",
   "scripts": {
-    "start": "npm --prefix server start",
+    "start": "node server/server.js",
+    "build": "npm --prefix server install",
     "dev": "npm --prefix server run dev",
     "install-server": "npm --prefix server install"
   },
   "keywords": ["hiring", "resume", "jobs", "interview-prep"],
-  "author": "HireSmart Team",
+  "author": "HirePrep Team",
   "license": "ISC"
 }

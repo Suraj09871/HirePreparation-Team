@@ -3,17 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Post a Job - HireSmart Recruiter</title>
+    <title>Post a Job - HirePrep Recruiter</title>
     <link rel="stylesheet" href="../../css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body style="background: #f8fafc;">
-    <nav class="navbar" style="border-bottom: 1px solid var(--border-color); background: white;">
+    <nav class="navbar" style="border-bottom: 1px solid var(--border-color); background: var(--card-bg);">
         <div class="logo">
             <span class="logo-icon"></span>
-            HireSmart <span style="font-size: 0.75rem; background: var(--bg-muted); padding: 0.2rem 0.5rem; border-radius: 4px; margin-left: 0.5rem; font-weight: normal; border: 1px solid var(--border-color); color: var(--text-muted);">Recruiter</span>
+            HirePrep <span style="font-size: 0.75rem; background: var(--bg-muted); padding: 0.2rem 0.5rem; border-radius: 4px; margin-left: 0.5rem; font-weight: normal; border: 1px solid var(--border-color); color: var(--text-muted);">Recruiter</span>
         </div>
-        <div class="nav-links">
+        <button class="hamburger" id="hamburgerBtn" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="navLinks">
+
+            <span class="bar"></span>
+
+            <span class="bar"></span>
+
+            <span class="bar"></span>
+
+        </button>
+
+        <div class="nav-links" id="navLinks">
             <a href="recruiter-dashboard.html">Dashboard</a>
             <a href="#" class="active">Post a Job</a>
             <a href="applicant-list.html">Applicants</a>
@@ -78,7 +88,10 @@
             </form>
         </div>
     </main>
+    <script src="../../js/theme.js"></script>
+    <script src="../../js/sanitize.js"></script>
     <script src="../../js/api.js"></script>
+    <script src="../../js/nav-auth.js"></script>
     <script src="../../js/job-posting.js"></script>
 </body>
 </html>

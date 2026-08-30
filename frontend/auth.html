@@ -3,11 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Authentication - HireSmart</title>
+    <title>Authentication - HirePrep</title>
     <meta name="google-client-id" content="622950445435-o4rmk192qnuttg77mv1poo707ov6upng.apps.googleusercontent.com">
     <link rel="stylesheet" href="../css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="../js/theme.js"></script>
     <style>
+        body {
+            background: var(--bg-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            margin: 0;
+        }
+
+        .auth-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .auth-wrapper {
+            width: 100%;
+            max-width: 480px;
+        }
+
+        /* ===== Role Tabs ===== */
+        .role-tabs {
+            display: flex;
+            gap: 0.5rem;
+            background: var(--card-bg);
+            padding: 0.5rem;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            margin-bottom: 2rem;
+        }
+
         .auth-tab {
             flex: 1;
             padding: 0.75rem 0.5rem;
@@ -22,16 +57,232 @@
             align-items: center;
             justify-content: center;
             gap: 0.5rem;
-            transition: all 0.2s;
+            transition: all 0.25s ease;
+            font-family: inherit;
+            position: relative;
+            z-index: 1;
         }
+
+        .auth-tab:hover {
+            background: var(--bg-muted);
+            color: var(--text-main);
+        }
+
         .auth-tab.active {
             background: var(--primary);
             color: white;
-            box-shadow: 0 4px 6px -1px rgba(249, 115, 22, 0.2);
+            box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
         }
-        .auth-tab.active-recruiter { background: #1e293b; color: white; }
-        .auth-tab.active-developer { background: linear-gradient(135deg, #7c3aed, #6d28d9); color: white; box-shadow: 0 4px 6px -1px rgba(124, 58, 237, 0.3); }
 
+        .auth-tab.active-recruiter {
+            background: #1e293b;
+            color: white;
+            box-shadow: 0 4px 12px rgba(30, 41, 59, 0.3);
+        }
+
+        .auth-tab.active-developer {
+            background: linear-gradient(135deg, #7c3aed, #6d28d9);
+            color: white;
+            box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+        }
+
+        /* ===== Login Card ===== */
+        .auth-card {
+            background: var(--card-bg);
+            padding: 2.5rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.06);
+            border: 1px solid var(--border-color);
+        }
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .auth-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.75rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .auth-icon-student {
+            background: rgba(249, 115, 22, 0.1);
+        }
+
+        .auth-icon-recruiter {
+            background: #f1f5f9;
+        }
+
+        .auth-icon-developer {
+            background: rgba(124, 58, 237, 0.1);
+        }
+
+        .auth-header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--text-main);
+        }
+
+        .auth-header p {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        /* ===== Form ===== */
+        .auth-form .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .auth-form label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--text-main);
+        }
+
+        .auth-form input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--bg-muted);
+            color: var(--text-main);
+            font-size: 0.95rem;
+            font-family: inherit;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            box-sizing: border-box;
+        }
+
+        .auth-form input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+        }
+
+        .auth-form input::placeholder {
+            color: var(--text-muted);
+            opacity: 0.7;
+        }
+
+        .auth-submit {
+            width: 100%;
+            padding: 0.8rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+            margin-bottom: 1rem;
+            color: white;
+            background: var(--primary);
+        }
+
+        .auth-submit:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+        }
+
+        .auth-submit:active {
+            transform: translateY(0);
+        }
+
+        .auth-submit:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .auth-submit.recruiter-mode {
+            background: #1e293b;
+        }
+
+        .auth-submit.recruiter-mode:hover {
+            background: #0f172a;
+            box-shadow: 0 4px 12px rgba(30, 41, 59, 0.3);
+        }
+
+        .auth-submit.developer-mode {
+            background: linear-gradient(135deg, #7c3aed, #6d28d9);
+        }
+
+        .auth-submit.developer-mode:hover {
+            box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+        }
+
+        /* ===== Error ===== */
+        .auth-error {
+            display: none;
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        /* ===== Success ===== */
+        .auth-success {
+            display: none;
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        /* ===== Forgot + Toggle ===== */
+        .forgot-link {
+            text-align: center;
+            font-size: 0.875rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .forgot-link a {
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .forgot-link a:hover {
+            color: var(--primary);
+        }
+
+        .auth-divider {
+            display: flex;
+            align-items: center;
+            margin: 1.5rem 0;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        .auth-divider hr {
+            flex: 1;
+            border: none;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .auth-divider span {
+            padding: 0 1rem;
+        }
+
+        /* ===== Google ===== */
         .btn-google {
             display: flex;
             align-items: center;
@@ -39,147 +290,591 @@
             gap: 0.75rem;
             width: 100%;
             padding: 0.75rem;
-            background: white;
+            background: var(--card-bg);
             border: 1px solid var(--border-color);
             border-radius: 8px;
             font-size: 0.9rem;
             font-weight: 500;
             color: var(--text-main);
             cursor: pointer;
-            transition: background 0.2s;
+            transition: all 0.2s;
+            font-family: inherit;
         }
+
         .btn-google:hover {
-            background: #f8fafc;
+            background: var(--bg-muted);
+            border-color: var(--text-muted);
+        }
+
+        .toggle-section {
+            margin-top: 1.5rem;
+            text-align: center;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        .toggle-section a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .toggle-section a:hover {
+            text-decoration: underline;
+        }
+
+        /* Admin key field */
+        .admin-key-label {
+            color: #7c3aed;
+        }
+
+        .admin-key-input {
+            border: 2px solid rgba(124, 58, 237, 0.3) !important;
+            background: #faf5ff !important;
+        }
+
+        .admin-key-hint {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 0.35rem;
+        }
+
+        /* ===== Responsive ===== */
+        @media (max-width: 480px) {
+            .auth-container {
+                padding: 1rem;
+            }
+
+            .auth-card {
+                padding: 1.75rem;
+            }
+
+            .auth-tab {
+                font-size: 0.8rem;
+                padding: 0.6rem 0.25rem;
+            }
         }
     </style>
 </head>
-<body style="background: #f8fafc; min-height: 100vh; display: flex; flex-direction: column;">
-    
+<body>
     <nav class="navbar" style="background: transparent; border-bottom: none;">
         <div class="logo" style="cursor: pointer;" onclick="window.location.href='../index.html'">
             <span class="logo-icon"></span>
-            HireSmart
+            HirePrep
         </div>
-        <div class="nav-links">
+        <button class="hamburger" id="hamburgerBtn" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="navLinks">
+            <span class="bar"></span>
+            <span class="bar"></span>
+            <span class="bar"></span>
+        </button>
+        <div class="nav-links" id="navLinks">
             <a href="../index.html">Home</a>
             <a href="student/jobs.html">Jobs</a>
             <a href="student/practice.html">Practice</a>
             <a href="student/preparation.html">Preparation</a>
-
+        </div>
+        <div class="nav-actions">
+            <span id="themeToggle" onclick="toggleTheme()" role="button" tabindex="0" aria-label="Toggle dark mode" style="font-size: 1.25rem; color: var(--text-muted); cursor: pointer; margin-right: 0.5rem;">☼</span>
         </div>
     </nav>
 
-    <div style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 2rem;">
-        <div style="width: 100%; max-width: 480px;">
+    <div class="auth-container">
+        <div class="auth-wrapper">
             <!-- Role Tabs -->
-            <div style="display: flex; gap: 0.5rem; background: white; padding: 0.5rem; border-radius: 12px; border: 1px solid var(--border-color); box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 2rem;">
-                <button class="auth-tab active" data-role="student" onclick="switchRole('student')">
+            <div class="role-tabs">
+                <button class="auth-tab active" data-role="student" id="tabStudent">
                     <span>🎓</span> Student
                 </button>
-                <button class="auth-tab" data-role="recruiter" onclick="switchRole('recruiter')">
+                <button class="auth-tab" data-role="recruiter" id="tabRecruiter">
                     <span>💼</span> Recruiter
                 </button>
-                <button class="auth-tab" data-role="developer" onclick="switchRole('developer')">
+                <button class="auth-tab" data-role="developer" id="tabDeveloper">
                     <span>⚡</span> Developer
                 </button>
             </div>
 
             <!-- Login Card -->
-            <div style="background: white; padding: 3rem; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid var(--border-color);">
-                <div style="text-align: center; margin-bottom: 2rem;">
-                    <div id="roleIcon" style="width: 48px; height: 48px; background: rgba(249, 115, 22, 0.1); color: var(--primary); border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 1rem;">🎓</div>
-                    <h1 style="font-size: 1.5rem; margin-bottom: 0.5rem;">Welcome Back</h1>
-                    <p id="pageSubtitle" style="color: var(--text-muted); font-size: 0.875rem;">Sign in to your student account</p>
+            <div class="auth-card">
+                <div class="auth-header">
+                    <div id="roleIcon" class="auth-icon auth-icon-student">🎓</div>
+                    <h1 id="authTitle">Welcome Back</h1>
+                    <p id="pageSubtitle">Sign in to your student account</p>
                 </div>
 
-                <div id="authError" class="error-message" style="display:none;background:rgba(239,68,68,0.1);color:#ef4444;padding:0.75rem;border-radius:8px;text-align:center;margin-bottom:1rem;font-size:0.875rem;"></div>
+                <div id="authError" class="auth-error"></div>
+                <div id="authSuccess" class="auth-success"></div>
 
-                <form id="authForm">
-                    <div id="nameField" class="form-group" style="display:none;margin-bottom:1.25rem;">
-                        <label style="display:block;font-size:0.875rem;font-weight:500;margin-bottom:0.5rem;">Full Name</label>
-                        <input type="text" id="authName" placeholder="John Doe" style="width:100%;padding:0.75rem;border:1px solid var(--border-color);border-radius:8px;background:#f8fafc;">
+                <form id="authForm" class="auth-form">
+                    <div id="nameField" class="form-group" style="display:none;">
+                        <label>Full Name</label>
+                        <input type="text" id="authName" placeholder="John Doe" autocomplete="name">
                     </div>
-                    <div class="form-group" style="margin-bottom:1.25rem;">
-                        <label id="emailLabel" style="display:block;font-size:0.875rem;font-weight:500;margin-bottom:0.5rem;">Email</label>
-                        <input type="email" id="authEmail" placeholder="your@email.com" required style="width:100%;padding:0.75rem;border:1px solid var(--border-color);border-radius:8px;background:#f8fafc;">
+                    <div class="form-group">
+                        <label id="emailLabel">Email</label>
+                        <input type="email" id="authEmail" placeholder="your@email.com" required autocomplete="email">
                     </div>
-                    <div class="form-group" style="margin-bottom:1.25rem;">
-                        <label id="passwordLabel" style="display:block;font-size:0.875rem;font-weight:500;margin-bottom:0.5rem;">Password</label>
-                        <input type="password" id="authPassword" placeholder="••••••••" required style="width:100%;padding:0.75rem;border:1px solid var(--border-color);border-radius:8px;background:#f8fafc;">
+                    <div class="form-group" id="passwordGroup">
+                        <label id="passwordLabel">Password</label>
+                        <input type="password" id="authPassword" placeholder="Enter your password" required autocomplete="current-password">
                     </div>
-                    <div id="adminKeyField" class="form-group" style="display:none;margin-bottom:1.25rem;">
-                        <label style="display:block;font-size:0.875rem;font-weight:500;margin-bottom:0.5rem;color:#7c3aed;">🔑 Admin Secret Key</label>
-                        <input type="password" id="adminSecretKey" placeholder="Enter admin access key" style="width:100%;padding:0.75rem;border:2px solid rgba(124,58,237,0.3);border-radius:8px;background:#faf5ff;">
-                        <p style="font-size:0.7rem;color:var(--text-muted);margin-top:0.35rem;">Required for admin/developer access. Contact project lead for the key.</p>
+                    <div id="adminKeyField" class="form-group" style="display:none;">
+                        <label class="admin-key-label">🔑 Admin Secret Key</label>
+                        <input type="password" id="adminSecretKey" placeholder="Enter admin access key" class="admin-key-input">
+                        <p class="admin-key-hint">Admin access requires authorized credentials.</p>
                     </div>
-                    
-                    <button type="submit" id="submitBtn" class="btn btn-primary" style="width:100%;padding:0.75rem;font-size:1rem;margin-bottom:1rem; transition: background 0.2s;">Sign In</button>
-                    
 
+                    <button type="submit" id="submitBtn" class="auth-submit">Sign In</button>
 
-                    <div id="forgotPassword" style="text-align:center;font-size:0.875rem;margin-bottom:1.5rem;">
-                        <a href="#" style="color:var(--text-muted);text-decoration:none;">Forgot your password?</a>
+                    <div id="forgotPassword" class="forgot-link">
+                        <a href="#">Forgot your password?</a>
                     </div>
                 </form>
 
-                <div id="googleDivider" style="display:flex;align-items:center;margin:1.5rem 0;color:var(--text-muted);font-size:0.875rem;">
-                    <hr style="flex:1;border:none;border-top:1px solid var(--border-color);">
-                    <span style="padding:0 1rem;">or continue with</span>
-                    <hr style="flex:1;border:none;border-top:1px solid var(--border-color);">
+                <div id="googleDivider" class="auth-divider">
+                    <hr>
+                    <span>or continue with</span>
+                    <hr>
                 </div>
 
-                <button id="googleBtn" onclick="handleGoogleLogin()" class="btn-google" style="display:flex;align-items:center;justify-content:center;gap:0.75rem;width:100%;padding:0.75rem;background:white;border:1px solid var(--border-color);border-radius:8px;font-size:0.9rem;font-weight:500;color:var(--text-main);cursor:pointer;">
+                <button id="googleBtn" class="btn-google">
                     <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
                     Continue with Google
                 </button>
 
-                <div id="signupSection" style="margin-top:1.5rem;text-align:center;font-size:0.875rem;color:var(--text-muted);">
-                    <span id="toggleText">Don't have an account?</span> <a href="#" id="toggleLink" onclick="toggleMode(event)" style="color:var(--primary);text-decoration:none;font-weight:600;">Sign Up</a>
+                <div id="signupSection" class="toggle-section">
+                    <span id="toggleText">Don't have an account?</span>
+                    <a href="#" id="toggleLink">Sign Up</a>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <!-- Scripts: theme.js already in head, load rest here -->
+    <script src="../js/sanitize.js"></script>
     <script src="../js/api.js"></script>
-    <script src="../js/unified-auth.js"></script>
     <script>
-    // Google Sign-In initialization
-    const GOOGLE_CLIENT_ID = document.querySelector('meta[name="google-client-id"]')?.content || '';
-    
-    function handleGoogleLogin() {
-        // Check if Google Identity Services library is loaded
-        if (typeof google === 'undefined' || !google.accounts) {
-            showToast('Google Sign-In is loading, please try again...', 'error');
-            return;
+    // ===== All auth logic inline to avoid loading issues =====
+    let currentRole = 'student';
+    let isLoginMode = true;
+
+    // ── Theme toggle sync ──
+    (function syncTheme() {
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        const toggle = document.getElementById('themeToggle');
+        if (toggle) toggle.textContent = isDark ? '🌙' : '☼';
+    })();
+
+    // ── Hamburger menu ──
+    (function initHamburger() {
+        const btn = document.getElementById('hamburgerBtn');
+        const links = document.getElementById('navLinks');
+        if (btn && links) {
+            btn.addEventListener('click', function() {
+                const expanded = btn.getAttribute('aria-expanded') === 'true';
+                btn.setAttribute('aria-expanded', !expanded);
+                btn.classList.toggle('active');
+                links.classList.toggle('active');
+            });
+            // Close on link click
+            links.querySelectorAll('a').forEach(function(a) {
+                a.addEventListener('click', function() {
+                    btn.classList.remove('active');
+                    links.classList.remove('active');
+                    btn.setAttribute('aria-expanded', 'false');
+                });
+            });
         }
-        
-        // Check if client ID is configured
-        if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID === 'YOUR_GOOGLE_CLIENT_ID') {
-            showToast('Google Sign-In is not configured yet. Use email/password to sign in.', 'error');
-            return;
+    })();
+
+    // ── Role switching ──
+    function switchRole(role) {
+        currentRole = role;
+
+        // Update tabs
+        document.querySelectorAll('.auth-tab').forEach(function(tab) {
+            tab.className = 'auth-tab';
+            if (tab.dataset.role === role) {
+                tab.classList.add('active');
+                if (role === 'recruiter') tab.classList.add('active-recruiter');
+                if (role === 'developer') tab.classList.add('active-developer');
+            }
+        });
+
+        // Update UI
+        var icon = document.getElementById('roleIcon');
+        var subtitle = document.getElementById('pageSubtitle');
+        var title = document.getElementById('authTitle');
+        var nameField = document.getElementById('nameField');
+        var nameLabel = nameField ? nameField.querySelector('label') : null;
+        var adminKeyField = document.getElementById('adminKeyField');
+        var forgotPassword = document.getElementById('forgotPassword');
+        var googleDivider = document.getElementById('googleDivider');
+        var googleBtn = document.getElementById('googleBtn');
+        var signupSection = document.getElementById('signupSection');
+        var emailLabel = document.getElementById('emailLabel');
+        var passwordLabel = document.getElementById('passwordLabel');
+        var passwordGroup = document.getElementById('passwordGroup');
+        var submitBtn = document.getElementById('submitBtn');
+
+        // Reset all
+        if (forgotPassword) forgotPassword.style.display = 'block';
+        if (googleDivider) googleDivider.style.display = 'flex';
+        if (googleBtn) googleBtn.style.display = 'flex';
+        if (signupSection) signupSection.style.display = 'block';
+        if (adminKeyField) adminKeyField.style.display = 'none';
+        if (passwordGroup) passwordGroup.style.display = 'block';
+        var authPassword = document.getElementById('authPassword');
+        if (authPassword) authPassword.setAttribute('required', 'true');
+        if (emailLabel) emailLabel.textContent = 'Email';
+        if (passwordLabel) passwordLabel.textContent = 'Password';
+
+        // Reset submit button style
+        if (submitBtn) {
+            submitBtn.className = 'auth-submit';
+            submitBtn.textContent = isLoginMode ? 'Sign In' : 'Create Account';
         }
-        
+
+        if (role === 'student') {
+            if (icon) { icon.innerHTML = '🎓'; icon.className = 'auth-icon auth-icon-student'; }
+            if (title) title.textContent = isLoginMode ? 'Welcome Back' : 'Join as a Student';
+            if (subtitle) subtitle.textContent = isLoginMode ? 'Sign in to your student account' : 'Create your student profile';
+            if (nameLabel) nameLabel.textContent = 'Full Name';
+        } else if (role === 'recruiter') {
+            if (icon) { icon.innerHTML = '💼'; icon.className = 'auth-icon auth-icon-recruiter'; }
+            if (title) title.textContent = isLoginMode ? 'Welcome Back' : 'Join as a Recruiter';
+            if (subtitle) subtitle.textContent = isLoginMode ? 'Sign in to your recruiter account' : 'Create your recruiter account';
+            if (nameLabel) nameLabel.textContent = 'Company / Full Name';
+            if (submitBtn) submitBtn.classList.add('recruiter-mode');
+        } else if (role === 'developer') {
+            if (icon) { icon.innerHTML = '⚡'; icon.className = 'auth-icon auth-icon-developer'; }
+            if (title) title.textContent = isLoginMode ? 'Developer Access' : 'Developer Registration';
+            if (subtitle) subtitle.textContent = 'Sign in with Google + Admin Secret Key or direct key authorization';
+            if (nameLabel) nameLabel.textContent = 'Full Name';
+            if (adminKeyField) adminKeyField.style.display = 'block';
+            if (passwordGroup) passwordGroup.style.display = 'none';
+            if (authPassword) authPassword.removeAttribute('required');
+            if (forgotPassword) forgotPassword.style.display = 'none';
+            if (signupSection) signupSection.style.display = 'none';
+            if (googleDivider) googleDivider.style.display = 'flex';
+            if (googleBtn) googleBtn.style.display = 'flex';
+            if (submitBtn) submitBtn.classList.add('developer-mode');
+        }
+
+        hideMessages();
+    }
+
+    // ── Toggle Login/Signup ──
+    function toggleMode(e) {
+        if (e) e.preventDefault();
+        isLoginMode = !isLoginMode;
+
+        var nameField = document.getElementById('nameField');
+        var submitBtn = document.getElementById('submitBtn');
+        var toggleText = document.getElementById('toggleText');
+        var toggleLink = document.getElementById('toggleLink');
+        var title = document.getElementById('authTitle');
+
+        if (isLoginMode) {
+            if (nameField) nameField.style.display = 'none';
+            var authName = document.getElementById('authName');
+            if (authName) authName.removeAttribute('required');
+            if (submitBtn) submitBtn.textContent = 'Sign In';
+            if (toggleText) toggleText.textContent = "Don't have an account?";
+            if (toggleLink) toggleLink.textContent = 'Sign Up';
+            if (title) title.textContent = 'Welcome Back';
+        } else {
+            if (nameField) nameField.style.display = 'block';
+            var authName = document.getElementById('authName');
+            if (authName) authName.setAttribute('required', 'true');
+            if (submitBtn) submitBtn.textContent = 'Create Account';
+            if (toggleText) toggleText.textContent = 'Already have an account?';
+            if (toggleLink) toggleLink.textContent = 'Sign In';
+            if (currentRole === 'developer') {
+                if (title) title.textContent = 'Developer Registration';
+            } else {
+                if (title) title.textContent = currentRole === 'student' ? 'Join as a Student' : 'Join as a Recruiter';
+            }
+        }
+        switchRole(currentRole);
+    }
+
+    // ── Messages ──
+    function showError(msg) {
+        var err = document.getElementById('authError');
+        if (err) { err.textContent = msg; err.style.display = 'block'; }
+        var suc = document.getElementById('authSuccess');
+        if (suc) suc.style.display = 'none';
+        setTimeout(function() { if (err) err.style.display = 'none'; }, 6000);
+    }
+
+    function showSuccess(msg) {
+        var suc = document.getElementById('authSuccess');
+        if (suc) { suc.textContent = msg; suc.style.display = 'block'; }
+        var err = document.getElementById('authError');
+        if (err) err.style.display = 'none';
+    }
+
+    function hideMessages() {
+        var err = document.getElementById('authError');
+        var suc = document.getElementById('authSuccess');
+        if (err) err.style.display = 'none';
+        if (suc) suc.style.display = 'none';
+    }
+
+    // ── Tab click handlers ──
+    document.getElementById('tabStudent').addEventListener('click', function() { switchRole('student'); });
+    document.getElementById('tabRecruiter').addEventListener('click', function() { switchRole('recruiter'); });
+    document.getElementById('tabDeveloper').addEventListener('click', function() { switchRole('developer'); });
+
+    // ── Toggle link handler ──
+    document.getElementById('toggleLink').addEventListener('click', function(e) { toggleMode(e); });
+
+    var isGoogleAuthActive = false;
+
+    // ── Real Google Authentication Handler ──
+    async function processGoogleLogin(idOrAccessToken) {
+        if (!idOrAccessToken) {
+            return showError('No Google token received. Please select your Google account.');
+        }
+
+        var adminKeyVal = document.getElementById('adminSecretKey')?.value?.trim() || '';
+        if (currentRole === 'developer' && !adminKeyVal) {
+            return showError('🔑 Admin Secret Key is required to sign in as Admin with Google. Please enter your admin key above.');
+        }
+
+        isGoogleAuthActive = true;
+        showSuccess('Verifying with Google...');
         try {
-            google.accounts.id.initialize({
-                client_id: GOOGLE_CLIENT_ID,
-                callback: handleGoogleCredential,
-                auto_select: false
+            var data = await API.post('/auth/google', {
+                token: idOrAccessToken,
+                role: currentRole,
+                adminKey: adminKeyVal
             });
-            google.accounts.id.prompt((notification) => {
-                if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-                    // Fallback: show One Tap or redirect
-                    google.accounts.id.renderButton(
-                        document.getElementById('googleBtn'),
-                        { theme: 'outline', size: 'large', width: '100%', text: 'signin_with' }
-                    );
-                    showToast('Click the Google button again to sign in', 'info');
-                }
-            });
+            if (data.token && data.user) {
+                API.saveAuth(data.token, data.user);
+                showSuccess('Google Sign-In verified! Redirecting to dashboard...');
+                var role = data.user.role;
+                var target = (role === 'admin' || role === 'sub-admin')
+                    ? '/frontend/admin/admin-dashboard.html'
+                    : (role === 'recruiter')
+                    ? '/frontend/recruiter/recruiter-dashboard.html'
+                    : '/frontend/student/student-dashboard.html';
+                
+                setTimeout(function() { 
+                    window.location.href = target; 
+                }, 300);
+            } else {
+                isGoogleAuthActive = false;
+                showError(data.message || 'Google verification failed.');
+            }
         } catch (err) {
-            showToast('Google Sign-In error: ' + err.message, 'error');
+            isGoogleAuthActive = false;
+            showError(err.message || 'Google verification failed. Please try again.');
         }
     }
+
+    document.getElementById('googleBtn').addEventListener('click', function(e) {
+        e.preventDefault();
+        hideMessages();
+
+        if (typeof google !== 'undefined' && google.accounts) {
+            try {
+                if (google.accounts.oauth2) {
+                    const tokenClient = google.accounts.oauth2.initTokenClient({
+                        client_id: '622950445435-o4rmk192qnuttg77mv1poo707ov6upng.apps.googleusercontent.com',
+                        scope: 'email profile openid',
+                        callback: function(tokenResponse) {
+                            if (tokenResponse && tokenResponse.access_token) {
+                                processGoogleLogin(tokenResponse.access_token);
+                            }
+                        },
+                        error_callback: function(err) {
+                            if (isGoogleAuthActive) return;
+                            if (err && (err.type === 'popup_closed' || err.type === 'popup_blocked_by_browser')) {
+                                return;
+                            }
+                            showError('Google Sign-In: ' + (err.message || 'Popup was closed.'));
+                        }
+                    });
+                    tokenClient.requestAccessToken({ prompt: 'select_account' });
+                } else if (google.accounts.id) {
+                    google.accounts.id.initialize({
+                        client_id: '622950445435-o4rmk192qnuttg77mv1poo707ov6upng.apps.googleusercontent.com',
+                        callback: function(response) {
+                            if (response && response.credential) {
+                                processGoogleLogin(response.credential);
+                            }
+                        }
+                    });
+                    google.accounts.id.prompt();
+                }
+            } catch (err) {
+                showError('Google Sign-In initialization failed: ' + err.message);
+            }
+        } else {
+            showError('Google authentication service is loading. Please check your internet connection and try again.');
+        }
+    });
+
+    // ── Email OTP Verification Modal Handler ──
+    window.showOtpVerificationModal = function(email, name, password, role) {
+        let modal = document.getElementById('otpAuthModal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'otpAuthModal';
+            modal.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.7);backdrop-filter:blur(5px);display:flex;align-items:center;justify-content:center;z-index:99999;padding:1.5rem;';
+            document.body.appendChild(modal);
+        }
+
+        modal.innerHTML = `
+            <div style="background:var(--card-bg, #ffffff);color:var(--text-main, #0f172a);border-radius:16px;padding:2.25rem;max-width:440px;width:100%;box-shadow:0 25px 50px rgba(0,0,0,0.3);border:1px solid var(--border-color, #e2e8f0);text-align:center;position:relative;">
+                <div style="font-size:2.5rem;margin-bottom:0.75rem;">📩</div>
+                <h3 style="margin:0 0 0.5rem;font-size:1.25rem;font-weight:700;">Verify Your Email</h3>
+                <p style="font-size:0.85rem;color:var(--text-muted);margin:0 0 1.5rem;">We sent a 6-digit verification code to<br><b style="color:var(--text-main);">${sanitize(email)}</b></p>
+                <div id="otpModalError" style="display:none;background:rgba(239,68,68,0.1);color:#ef4444;padding:0.6rem;border-radius:8px;font-size:0.8rem;margin-bottom:1rem;"></div>
+                <input type="text" id="otpCodeInput" maxlength="6" placeholder="• • • • • •" style="width:100%;text-align:center;font-size:1.75rem;letter-spacing:0.35em;font-weight:700;padding:0.75rem;border:2px solid var(--border-color);border-radius:10px;margin-bottom:1.25rem;background:var(--input-bg);color:var(--text-main);">
+                <button id="btnSubmitOtp" class="btn btn-primary" style="width:100%;padding:0.8rem;font-size:1rem;border-radius:8px;font-weight:600;margin-bottom:1rem;">Verify & Continue</button>
+                <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.8rem;">
+                    <a href="#" id="btnResendOtp" style="color:var(--primary);text-decoration:none;font-weight:600;">Resend Code</a>
+                    <a href="#" onclick="document.getElementById('otpAuthModal').style.display='none'" style="color:var(--text-muted);text-decoration:none;">Cancel</a>
+                </div>
+            </div>
+        `;
+        modal.style.display = 'flex';
+
+        const otpInput = document.getElementById('otpCodeInput');
+        otpInput.focus();
+
+        document.getElementById('btnSubmitOtp').onclick = async function() {
+            const code = otpInput.value.trim();
+            const errEl = document.getElementById('otpModalError');
+            if (code.length !== 6) {
+                errEl.textContent = 'Please enter the 6-digit code.';
+                errEl.style.display = 'block';
+                return;
+            }
+            this.disabled = true;
+            this.textContent = 'Verifying...';
+            try {
+                const res = await API.post('/auth/verify-email-otp', {
+                    email, otp: code, name, password, role
+                });
+                if (res.token && res.user) {
+                    API.saveAuth(res.token, res.user);
+                    modal.style.display = 'none';
+                    showSuccess('Email verified successfully! Redirecting...');
+                    var target = (res.user.role === 'admin' || res.user.role === 'sub-admin')
+                        ? 'admin/admin-dashboard.html'
+                        : (res.user.role === 'recruiter')
+                        ? 'recruiter/recruiter-dashboard.html'
+                        : 'student/student-dashboard.html';
+                    setTimeout(function() { window.location.href = target; }, 500);
+                } else {
+                    errEl.textContent = res.message || 'Verification failed';
+                    errEl.style.display = 'block';
+                }
+            } catch(e) {
+                errEl.textContent = e.message || 'Verification failed';
+                errEl.style.display = 'block';
+            } finally {
+                document.getElementById('btnSubmitOtp').disabled = false;
+                document.getElementById('btnSubmitOtp').textContent = 'Verify & Continue';
+            }
+        };
+
+        document.getElementById('btnResendOtp').onclick = async function(e) {
+            e.preventDefault();
+            this.textContent = 'Sending...';
+            try {
+                await API.post('/auth/send-verification-otp', { email, name, role });
+                showToast('New code sent to your email!', 'success');
+            } catch(e) {
+                showToast('Failed to resend: ' + e.message, 'error');
+            } finally {
+                this.textContent = 'Resend Code';
+            }
+        };
+    };
+
+    // ── Form submit handler ──
+    document.getElementById('authForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        hideMessages();
+
+        var email = document.getElementById('authEmail').value.trim();
+        var password = document.getElementById('authPassword').value;
+        var submitBtn = document.getElementById('submitBtn');
+        var originalText = submitBtn.textContent;
+
+        if (!email) { showError('Please enter your email.'); return; }
+
+        submitBtn.textContent = 'Processing...';
+        submitBtn.disabled = true;
+
+        try {
+            var endpoint = isLoginMode ? '/auth/login' : '/auth/register';
+            var payload = { email: email, password: password };
+
+            if (!isLoginMode) {
+                var nameVal = document.getElementById('authName').value.trim();
+                if (!nameVal) { showError('Please enter your name.'); submitBtn.textContent = originalText; submitBtn.disabled = false; return; }
+                payload.name = nameVal;
+                payload.role = currentRole;
+            }
+
+            // Developer tab uses admin-login endpoint
+            if (currentRole === 'developer') {
+                var adminKey = document.getElementById('adminSecretKey').value;
+                if (!adminKey) {
+                    showError('Admin Secret Key is required for developer access.');
+                    submitBtn.textContent = originalText;
+                    submitBtn.disabled = false;
+                    return;
+                }
+                endpoint = '/auth/admin-login';
+                payload = { email: email, adminKey: adminKey };
+            }
+
+            var data = await API.post(endpoint, payload);
+
+            if (data.token && data.user) {
+                API.saveAuth(data.token, data.user);
+                showSuccess('Login successful! Redirecting...');
+
+                // Redirect based on role
+                var role = data.user.role;
+                var target;
+                if (role === 'admin' || role === 'sub-admin') {
+                    target = 'admin/admin-dashboard.html';
+                } else if (role === 'recruiter') {
+                    target = 'recruiter/recruiter-dashboard.html';
+                } else {
+                    target = 'student/student-dashboard.html';
+                }
+
+                setTimeout(function() {
+                    window.location.href = target;
+                }, 500);
+            } else {
+                showError(data.message || 'Login failed. Please check your credentials.');
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            }
+        } catch (err) {
+            showError(err.message || 'Authentication failed. Please check your credentials.');
+            submitBtn.textContent = originalText;
+            submitBtn.disabled = false;
+        }
+    });
+
+    // ── Handle ?tab=register query param ──
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        if (params.get('tab') === 'register') {
+            toggleMode(null);
+        }
+    })();
     </script>
 </body>
 </html>

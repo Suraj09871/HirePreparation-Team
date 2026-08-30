@@ -90,9 +90,9 @@ function switchRole(role) {
             submitBtn.style.color = 'white';
         }
         
-        // Hide Google sign-in for developer mode (must use key)
-        if (googleDivider) googleDivider.style.display = 'none';
-        if (googleBtn) googleBtn.style.display = 'none';
+        // Show Google sign-in for developer mode with Admin Key
+        if (googleDivider) googleDivider.style.display = 'flex';
+        if (googleBtn) googleBtn.style.display = 'flex';
         
         // Hide password field and sign up options for developer
         if (authPassword) {

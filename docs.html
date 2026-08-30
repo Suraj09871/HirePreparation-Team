@@ -3,24 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>System Architecture & Docs - HireSmart</title>
+    <title>System Architecture & Diagrams - HirePrep</title>
     <link rel="stylesheet" href="css/style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         .docs-tab {
-            padding: 0.75rem 1.5rem;
+            padding: 0.75rem 1.25rem;
             border: none;
             background: transparent;
             font-weight: 600;
+            font-size: 0.875rem;
             color: var(--text-muted);
             cursor: pointer;
             border-bottom: 2px solid transparent;
             transition: all 0.2s;
+            white-space: nowrap;
         }
         .docs-tab.active {
             color: var(--primary);
             border-bottom: 2px solid var(--primary);
-            background: rgba(249, 115, 22, 0.05);
+            background: rgba(249, 115, 22, 0.08);
             border-radius: 8px 8px 0 0;
         }
         .tech-card {
@@ -43,6 +45,128 @@
             margin-right: 0.5rem;
             margin-bottom: 0.5rem;
         }
+        .diagram-box {
+            background: #090d16 !important;
+            border-radius: 12px;
+            padding: 1.75rem;
+            overflow-x: auto;
+            border: 1px solid #1e293b;
+            margin-bottom: 1.5rem;
+        }
+        .diagram-box pre {
+            color: #38bdf8 !important;
+            margin: 0;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.825rem;
+            line-height: 1.55;
+            white-space: pre;
+        }
+        .tier-card {
+            background: var(--bg-muted);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            position: relative;
+        }
+        .tier-badge {
+            display: inline-block;
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 0.25rem 0.6rem;
+            border-radius: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.75rem;
+        }
+        .uml-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .uml-card {
+            background: var(--card-bg, #ffffff);
+            border: 1px solid var(--border-color, #e2e8f0);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .uml-card-header {
+            background: #0f172a;
+            color: #f8fafc;
+            padding: 0.75rem 1.25rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .uml-card-title {
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: #38bdf8;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .uml-card-tag {
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            background: rgba(255,255,255,0.12);
+            color: #94a3b8;
+            text-transform: uppercase;
+        }
+        .uml-section-title {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted, #64748b);
+            padding: 0.5rem 1.25rem 0.25rem;
+            background: rgba(0,0,0,0.02);
+            border-top: 1px solid var(--border-color);
+        }
+        .uml-list {
+            list-style: none;
+            margin: 0;
+            padding: 0.4rem 1.25rem 0.75rem;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.78rem;
+            line-height: 1.6;
+            color: var(--text-main, #1e293b);
+            flex-grow: 1;
+        }
+        .uml-rel-box {
+            background: var(--bg-muted);
+            border-top: 1px solid var(--border-color);
+            padding: 0.75rem 1.25rem;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+        .flow-step-card {
+            background: var(--bg-muted);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 1.25rem;
+            display: flex;
+            gap: 1rem;
+            align-items: flex-start;
+        }
+        .flow-step-num {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 0.85rem;
+            flex-shrink: 0;
+            color: white;
+        }
     </style>
 </head>
 <body style="background: var(--bg-muted);">
@@ -50,8 +174,9 @@
     <nav class="navbar">
         <div class="logo">
             <span class="logo-icon"></span>
-            HireSmart
+            HirePrep
         </div>
+        <button class="hamburger" id="hamburgerBtn" aria-label="Toggle navigation" aria-expanded="false"><span class="bar"></span><span class="bar"></span><span class="bar"></span></button>
         <div class="nav-links">
             <a href="index.html">Home</a>
             <a href="frontend/student/jobs.html">Jobs</a>
@@ -60,33 +185,36 @@
             <a href="frontend/student/student-dashboard.html">Dashboard</a>
             <a href="frontend/student/resume-builder.html">Resume Builder</a>
             <a href="team.html">Team</a>
-            <a href="#" class="active">Docs</a>
+            <a href="#" class="active">Docs & Architecture</a>
         </div>
         <div class="nav-actions">
-            <span style="font-size: 1.25rem; color: var(--text-muted); cursor: pointer; margin-right: 0.5rem;">☼</span>
+            <span id="themeToggle" onclick="toggleTheme()" style="font-size: 1.25rem; color: var(--text-muted); cursor: pointer; margin-right: 0.5rem;">☼</span>
             <button class="btn btn-outline" onclick="window.location.href='frontend/auth.html'">Sign In</button>
         </div>
     </nav>
 
     <!-- Header Banner -->
-    <div style="background: #2e4c6a; padding: 2.5rem 0; color: white;">
+    <div style="background: #1e293b; padding: 2.5rem 0; color: white;">
         <div class="container text-center">
-            <h1 style="color: white; margin-bottom: 0;">System Documentation</h1>
+            <h1 style="color: white; margin-bottom: 0.5rem; font-weight: 800;">System Architecture & Diagrams</h1>
+            <p style="color: rgba(255,255,255,0.7); margin: 0; font-size: 0.95rem;">Comprehensive Class Diagrams, System Lifecycles, and Multi-Tier Technical Architecture</p>
         </div>
     </div>
 
     <main class="container py-12">
         <!-- Tabs -->
-        <div style="display: flex; border-bottom: 1px solid var(--border-color); margin-bottom: 2.5rem; overflow-x: auto;">
-            <button class="docs-tab active" data-target="tab-architecture">Architecture</button>
-            <button class="docs-tab" data-target="tab-schema">Database Schema</button>
-            <button class="docs-tab" data-target="tab-functions">Edge Functions</button>
-            <button class="docs-tab" data-target="tab-algorithms">Algorithms</button>
-            <button class="docs-tab" data-target="tab-auth">Auth & Security</button>
-            <button class="docs-tab" data-target="tab-routes">Pages & Routes</button>
+        <div style="display: flex; border-bottom: 1px solid var(--border-color); margin-bottom: 2.5rem; overflow-x: auto; gap: 0.25rem;">
+            <button class="docs-tab active" data-target="tab-architecture">🏗️ Architecture</button>
+            <button class="docs-tab" data-target="tab-class-diagram">📐 Class Diagram</button>
+            <button class="docs-tab" data-target="tab-workflows">🔄 System Workflows</button>
+            <button class="docs-tab" data-target="tab-schema">🛢️ Database Schema</button>
+            <button class="docs-tab" data-target="tab-algorithms">🧠 Algorithms</button>
+            <button class="docs-tab" data-target="tab-functions">⚡ API Services</button>
+            <button class="docs-tab" data-target="tab-auth">🛡️ Auth & Security</button>
+            <button class="docs-tab" data-target="tab-routes">📄 Pages & Routes</button>
         </div>
 
-        <!-- Architecture Tab -->
+        <!-- Tab 1: Architecture Tab -->
         <div id="tab-architecture" class="tab-content">
 
         <div style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; padding: 2.5rem; margin-bottom: 2.5rem;">
@@ -97,39 +225,45 @@
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
                 
                 <div class="tech-card">
-                    <h3 style="font-size: 1rem; color: var(--text-main); margin-bottom: 1rem;">Frontend</h3>
+                    <h3 style="font-size: 1rem; color: var(--text-main); margin-bottom: 1rem;">Frontend Client</h3>
                     <div>
-                        <span class="tech-badge"><span>&lt;/&gt;</span> Vanilla JS</span>
-                        <span class="tech-badge"><span>&lt;/&gt;</span> HTML5/CSS3</span>
-                        <span class="tech-badge"><span>&lt;/&gt;</span> Fetch API</span>
-                        <span class="tech-badge"><span>&lt;/&gt;</span> Chart.js</span>
+                        <span class="tech-badge"><span>&lt;/&gt;</span> Vanilla JS (ES6+)</span>
+                        <span class="tech-badge"><span>&lt;/&gt;</span> HTML5 & Custom CSS3</span>
+                        <span class="tech-badge"><span>&lt;/&gt;</span> Ace Code Editor</span>
+                        <span class="tech-badge"><span>&lt;/&gt;</span> Chart.js Data Viz</span>
+                        <span class="tech-badge"><span>&lt;/&gt;</span> jsPDF / HTML2Canvas</span>
+                        <span class="tech-badge"><span>&lt;/&gt;</span> Dark/Light Theme</span>
                     </div>
                 </div>
 
                 <div class="tech-card">
-                    <h3 style="font-size: 1rem; color: var(--text-main); margin-bottom: 1rem;">State Management</h3>
+                    <h3 style="font-size: 1rem; color: var(--text-main); margin-bottom: 1rem;">State & Autosave</h3>
                     <div>
-                        <span class="tech-badge"><span>&lt;/&gt;</span> LocalStorage Auth Token</span>
-                        <span class="tech-badge"><span>&lt;/&gt;</span> URL Search Params</span>
-                        <span class="tech-badge"><span>&lt;/&gt;</span> DOM Events</span>
+                        <span class="tech-badge"><span>&lt;/&gt;</span> LocalStorage Session</span>
+                        <span class="tech-badge"><span>&lt;/&gt;</span> Real-time Debounced Autosave</span>
+                        <span class="tech-badge"><span>&lt;/&gt;</span> Interactive Quiz State</span>
+                        <span class="tech-badge"><span>&lt;/&gt;</span> URLSearchParams Router</span>
                     </div>
                 </div>
 
                 <div class="tech-card">
-                    <h3 style="font-size: 1rem; color: var(--text-main); margin-bottom: 1rem;">Backend</h3>
+                    <h3 style="font-size: 1rem; color: var(--text-main); margin-bottom: 1rem;">Backend & Cloud Hosting</h3>
                     <div>
-                        <span class="tech-badge"><span>&lt;/&gt;</span> Node.js</span>
-                        <span class="tech-badge"><span>&lt;/&gt;</span> Express</span>
-                        <span class="tech-badge"><span>&lt;/&gt;</span> MongoDB (Memory/Atlas)</span>
-                        <span class="tech-badge"><span>&lt;/&gt;</span> Mongoose</span>
+                        <span class="tech-badge"><span>&lt;/&gt;</span> Node.js & Express.js</span>
+                        <span class="tech-badge"><span>&lt;/&gt;</span> Render Web Service</span>
+                        <span class="tech-badge"><span>&lt;/&gt;</span> Netlify Edge Proxy</span>
+                        <span class="tech-badge"><span>&lt;/&gt;</span> MongoDB Atlas Cluster</span>
+                        <span class="tech-badge"><span>&lt;/&gt;</span> Mongoose ODM</span>
                     </div>
                 </div>
 
                 <div class="tech-card">
-                    <h3 style="font-size: 1rem; color: var(--text-main); margin-bottom: 1rem;">AI & Integration</h3>
+                    <h3 style="font-size: 1rem; color: var(--text-main); margin-bottom: 1rem;">AI & Intelligent Matching</h3>
                     <div>
-                        <span class="tech-badge"><span>&lt;/&gt;</span> Google Auth</span>
-                        <span class="tech-badge"><span>&lt;/&gt;</span> Candidate Scoring Engine</span>
+                        <span class="tech-badge"><span>&lt;/&gt;</span> Fuzzy Skill Match Engine</span>
+                        <span class="tech-badge"><span>&lt;/&gt;</span> Weighted Applicant Scoring</span>
+                        <span class="tech-badge"><span>&lt;/&gt;</span> Candidate Recommendation Class</span>
+                        <span class="tech-badge"><span>&lt;/&gt;</span> Resume Quality Analyzer</span>
                     </div>
                 </div>
 
@@ -137,43 +271,549 @@
                     <h3 style="font-size: 1rem; color: var(--text-main); margin-bottom: 1rem;">Auth & Security</h3>
                     <div>
                         <span class="tech-badge"><span>&lt;/&gt;</span> JWT (JSON Web Tokens)</span>
+                        <span class="tech-badge"><span>&lt;/&gt;</span> Admin Master Secret Key</span>
                         <span class="tech-badge"><span>&lt;/&gt;</span> Role-Based Middleware</span>
                         <span class="tech-badge"><span>&lt;/&gt;</span> Bcrypt Password Hashing</span>
+                        <span class="tech-badge"><span>&lt;/&gt;</span> Google OAuth 2.0</span>
+                    </div>
+                </div>
+
+                <div class="tech-card">
+                    <h3 style="font-size: 1rem; color: var(--text-main); margin-bottom: 1rem;">Learning & Practice Engine</h3>
+                    <div>
+                        <span class="tech-badge"><span>&lt;/&gt;</span> 210 Coding Problems</span>
+                        <span class="tech-badge"><span>&lt;/&gt;</span> 210 CS Technical MCQs</span>
+                        <span class="tech-badge"><span>&lt;/&gt;</span> 210 Aptitude Questions</span>
+                        <span class="tech-badge"><span>&lt;/&gt;</span> Dynamic Retry & Recalibration</span>
                     </div>
                 </div>
 
             </div>
         </div>
 
-        <div style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; padding: 2.5rem;">
-            <h2 style="font-size: 1.5rem; display: flex; align-items: center; gap: 0.5rem; margin-bottom: 2rem;">
-                <span style="color: var(--primary);">🔀</span> System Architecture
-            </h2>
-            
-            <div style="background: var(--bg-muted); border-radius: 12px; padding: 3rem; overflow-x: auto; font-family: monospace; white-space: pre; color: var(--text-main); border: 1px solid var(--border-color); font-size: 0.875rem; line-height: 1.6;">
-    ┌────────────────────────────────────────────────────────┐
-    │                        Frontend                        │
-    │             Vanilla JS + HTML5 + Custom CSS            │
-    │  ┌─────────────────┬────────────────┬───────────────┐  │
-    │  │   Student UI    │  Recruiter UI  │   Admin UI    │  │
-    │  └─────────────────┴────────────────┴───────────────┘  │
-    │                        Fetch API                       │
-    └────────────────────────────────────────────────────────┘
-                               │
-    ┌────────────────────────────────────────────────────────┐
-    │                        Backend                         │
-    │                    Node.js + Express                   │
-    │  ┌─────────────────┬────────────────┬───────────────┐  │
-    │  │  Auth Service   │  Jobs & Match  │  Prep Routes  │  │
-    │  └─────────────────┴────────────────┴───────────────┘  │
-    │                        Mongoose                        │
-    │                                                        │
-    │  ┌──────────────────────────────────────────────────┐  │
-    │  │              MongoDB (In-Memory / Atlas)         │  │
-    │  └──────────────────────────────────────────────────┘  │
-    └────────────────────────────────────────────────────────┘
+        <!-- Multi-Tier System Architecture -->
+        <div style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; padding: 2.5rem; margin-bottom: 2.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem;">
+                <div>
+                    <h2 style="font-size: 1.5rem; display: flex; align-items: center; gap: 0.5rem; margin: 0 0 0.5rem;">
+                        <span style="color: var(--primary);">🔀</span> Multi-Tier System Architecture
+                    </h2>
+                    <p style="color: var(--text-muted); font-size: 0.9rem; margin: 0;">High-availability decoupled cloud architecture connecting Netlify Edge, Render Compute, and MongoDB Atlas.</p>
+                </div>
+            </div>
+
+            <!-- Tier Cards Layout -->
+            <div style="display: flex; flex-direction: column; gap: 1.25rem; margin-bottom: 2rem;">
+                
+                <!-- Tier 1: Frontend -->
+                <div class="tier-card" style="border-left: 5px solid #06b6d4;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+                        <span class="tier-badge" style="background: #cffafe; color: #0891b2;">Tier 1 · Frontend Edge</span>
+                        <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">Hosted on Netlify Edge CDN</span>
+                    </div>
+                    <h3 style="font-size: 1.1rem; color: var(--text-main); margin-bottom: 0.5rem;">🌐 Presentation & Client-Side Sandbox</h3>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem; line-height: 1.6;">
+                        Responsive HTML5/CSS3 client with Ace Code Editor IDE, real-time debounced autosave, interactive MCQ solver with instant retry, and dynamic role-based routing.
+                    </p>
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                        <span style="font-size: 0.75rem; background: var(--card-bg); border: 1px solid var(--border-color); padding: 0.25rem 0.6rem; border-radius: 6px;">Student Portal (/frontend/student/)</span>
+                        <span style="font-size: 0.75rem; background: var(--card-bg); border: 1px solid var(--border-color); padding: 0.25rem 0.6rem; border-radius: 6px;">Recruiter Suite (/frontend/recruiter/)</span>
+                        <span style="font-size: 0.75rem; background: var(--card-bg); border: 1px solid var(--border-color); padding: 0.25rem 0.6rem; border-radius: 6px;">Admin CMS Panel (/frontend/admin/)</span>
+                        <span style="font-size: 0.75rem; background: #e0f2fe; color: #0369a1; padding: 0.25rem 0.6rem; border-radius: 6px; font-weight: 600;">Netlify Edge Proxy (_redirects)</span>
+                    </div>
+                </div>
+
+                <!-- Connector 1 -->
+                <div style="display: flex; align-items: center; justify-content: center; gap: 0.75rem; color: var(--primary); font-weight: 700; font-size: 0.85rem; padding: 0.25rem 0;">
+                    <span>↓</span> HTTPS REST Requests · Bearer JWT Authentication · CORS Protected <span>↓</span>
+                </div>
+
+                <!-- Tier 2: Backend -->
+                <div class="tier-card" style="border-left: 5px solid #8b5cf6;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+                        <span class="tier-badge" style="background: #ede9fe; color: #7c3aed;">Tier 2 · Application Server</span>
+                        <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">Hosted on Render Cloud (Node.js)</span>
+                    </div>
+                    <h3 style="font-size: 1.1rem; color: var(--text-main); margin-bottom: 0.5rem;">⚙️ Node.js & Express 4 Compute Services</h3>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem; line-height: 1.6;">
+                        Micro-modular REST API layer handling JWT authentication, AI fuzzy skill matching (60% Skill + 20% Exp + 20% Resume), question bank CMS CRUD, and activity audit logging.
+                    </p>
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                        <span style="font-size: 0.75rem; background: var(--card-bg); border: 1px solid var(--border-color); padding: 0.25rem 0.6rem; border-radius: 6px;">/api/auth (JWT & Secret Key)</span>
+                        <span style="font-size: 0.75rem; background: var(--card-bg); border: 1px solid var(--border-color); padding: 0.25rem 0.6rem; border-radius: 6px;">/api/jobs & /api/applications</span>
+                        <span style="font-size: 0.75rem; background: var(--card-bg); border: 1px solid var(--border-color); padding: 0.25rem 0.6rem; border-radius: 6px;">/api/admin (CMS CRUD & Toggles)</span>
+                        <span style="font-size: 0.75rem; background: #f3e8ff; color: #6b21a8; padding: 0.25rem 0.6rem; border-radius: 6px; font-weight: 600;">Fuzzy Matching Algorithm</span>
+                    </div>
+                </div>
+
+                <!-- Connector 2 -->
+                <div style="display: flex; align-items: center; justify-content: center; gap: 0.75rem; color: #8b5cf6; font-weight: 700; font-size: 0.85rem; padding: 0.25rem 0;">
+                    <span>↓</span> Mongoose ODM · Encrypted Connection Pool · TCP Port 27017 <span>↓</span>
+                </div>
+
+                <!-- Tier 3: Database -->
+                <div class="tier-card" style="border-left: 5px solid #10b981;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+                        <span class="tier-badge" style="background: #d1fae5; color: #059669;">Tier 3 · Data Persistence</span>
+                        <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">Hosted on MongoDB Atlas</span>
+                    </div>
+                    <h3 style="font-size: 1.1rem; color: var(--text-main); margin-bottom: 0.5rem;">🗄️ MongoDB Atlas Cloud Cluster</h3>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem; line-height: 1.6;">
+                        High-availability NoSQL database maintaining indexed collections for user accounts, candidate skills, verified employers, job pipelines, roadmaps, and notifications.
+                    </p>
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                        <span style="font-size: 0.75rem; background: var(--card-bg); border: 1px solid var(--border-color); padding: 0.25rem 0.6rem; border-radius: 6px;">Users & Roles</span>
+                        <span style="font-size: 0.75rem; background: var(--card-bg); border: 1px solid var(--border-color); padding: 0.25rem 0.6rem; border-radius: 6px;">StudentProfiles & Skills</span>
+                        <span style="font-size: 0.75rem; background: var(--card-bg); border: 1px solid var(--border-color); padding: 0.25rem 0.6rem; border-radius: 6px;">Jobs & Applications</span>
+                        <span style="font-size: 0.75rem; background: var(--card-bg); border: 1px solid var(--border-color); padding: 0.25rem 0.6rem; border-radius: 6px;">Companies (Verified)</span>
+                        <span style="font-size: 0.75rem; background: var(--card-bg); border: 1px solid var(--border-color); padding: 0.25rem 0.6rem; border-radius: 6px;">PreparationPaths & Notifs</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Dark High-Contrast Terminal Diagram -->
+            <div class="diagram-box">
+                <pre>
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                                NETLIFY EDGE FRONTEND                                    │
+│       Modern Vanilla JS (ES6+) · Custom Responsive CSS3 · Dark/Light Multi-Theme        │
+│  ┌──────────────────────────┬──────────────────────────┬─────────────────────────────┐  │
+│  │      STUDENT PORTAL      │     RECRUITER SUITE      │       ADMIN DASHBOARD       │  │
+│  │ · 630+ Practice Bank     │ · Job Creation Pipeline  │ · Content Management (CRUD) │  │
+│  │ · Ace Code IDE (Autosave)│ · Company Verification   │ · User & Company Manager    │  │
+│  │ · Interactive MCQ Retry  │ · Ranked Candidates View │ · Platform Controls/Toggles │  │
+│  │ · Resume Builder & PDF   │ · Interview Scheduling   │ · System Health & Backups   │  │
+│  └──────────────────────────┴──────────────────────────┴─────────────────────────────┘  │
+│                        Netlify Edge Proxy (_redirects -> /api/*)                        │
+└────────────────────────────────────────────┬────────────────────────────────────────────┘
+                                             │ HTTPS Requests / Bearer JWT
+                                             ▼
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                             RENDER CLOUD BACKEND (NODE.JS)                              │
+│       Express 4 REST Architecture · Dynamic Routing · Multi-Role Middleware Guards       │
+│  ┌────────────────────┬─────────────────────┬────────────────────┬───────────────────┐  │
+│  │   Auth & Security  │   Matching Engine   │  Questions & Prep  │   Notifications   │  │
+│  │ · JWT (7-Day Token)│ · 60% Skill Match   │ · 210 Coding Tests │ · In-App Alerts   │  │
+│  │ · Admin Secret Key │ · 20% Experience    │ · 210 Tech MCQs    │ · Email Dispatch  │  │
+│  │ · Google OAuth 2.0 │ · 20% Resume Score  │ · 210 Aptitude Qs  │ · Activity Audit  │  │
+│  └────────────────────┴─────────────────────┴────────────────────┴───────────────────┘  │
+│                                      Mongoose ODM                                       │
+└────────────────────────────────────────────┬────────────────────────────────────────────┘
+                                             │ MongoDB Driver Connection
+                                             ▼
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                         MONGODB ATLAS (CLOUD DATABASE CLUSTER)                          │
+│   [Users] · [StudentProfiles] · [Jobs] · [Applications] · [Companies]                   │
+│   [PreparationPaths] · [Notifications] · [ActivityLogs] · [Resumes]                     │
+└─────────────────────────────────────────────────────────────────────────────────────────┘
+                </pre>
             </div>
         </div>
+        </div>
+
+        <!-- Tab 2: Class Diagram Tab -->
+        <div id="tab-class-diagram" class="tab-content" style="display: none;">
+            <div style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; padding: 2.5rem; margin-bottom: 2.5rem;">
+                <h2 style="font-size: 1.5rem; display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                    <span style="color: var(--primary);">📐</span> Domain Model & Class Diagram
+                </h2>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 2rem;">Unified domain models, data types, attributes, operations, and entity relationships across the HirePrep platform.</p>
+
+                <!-- Unicode UML Architectural Map -->
+                <div class="diagram-box">
+                    <pre>
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                   HIREPREP DOMAIN CLASS RELATIONSHIPS                                  │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+    ┌──────────────────────┐         1 : 1          ┌──────────────────────────┐
+    │         User         ├────────────────────────┤      StudentProfile      │
+    ├──────────────────────┤                        ├──────────────────────────┤
+    │ + _id: ObjectId      │                        │ + _id: ObjectId          │
+    │ + name: String       │                        │ + userId: ObjectId (FK)  │
+    │ + email: String      │                        │ + headline: String       │
+    │ + role: Enum         │                        │ + bio: String            │
+    │ + password: Hash     │                        │ + skills: Array&lt;String&gt;  │
+    │ + createdAt: Date    │                        │ + resumeUrl: String      │
+    ├──────────────────────┤                        │ + additionalDetails: JSON│
+    │ + generateToken()    │                        ├──────────────────────────┤
+    │ + comparePassword()  │                        │ + calcProfileStrength()  │
+    └──────────┬───────────┘                        └──────────────────────────┘
+               │
+               │ 1 : 0..1 (if recruiter)
+               ▼
+    ┌──────────────────────┐         1 : *          ┌──────────────────────────┐
+    │       Company        ├────────────────────────┤           Job            │
+    ├──────────────────────┤                        ├──────────────────────────┤
+    │ + _id: ObjectId      │                        │ + _id: ObjectId          │
+    │ + name: String       │                        │ + title: String          │
+    │ + domain: String     │                        │ + companyId: ObjectId(FK)│
+    │ + isVerified: Boolean│                        │ + requiredSkills: Array  │
+    │ + recruiterId: FK    │                        │ + salary: String         │
+    ├──────────────────────┤                        │ + status: Enum           │
+    │ + verifyCompany()    │                        ├──────────────────────────┤
+    └──────────────────────┘                        │ + computeCandidateMatch()│
+                                                    └────────────┬─────────────┘
+                                                                 │ 1 : *
+                                                                 ▼
+    ┌──────────────────────┐         1 : *          ┌──────────────────────────┐
+    │     Notification     ├────────────────────────┤       Application        │
+    ├──────────────────────┤                        ├──────────────────────────┤
+    │ + _id: ObjectId      │                        │ + _id: ObjectId          │
+    │ + userId: FK         │                        │ + jobId: ObjectId (FK)   │
+    │ + title: String      │                        │ + applicantId: User (FK) │
+    │ + message: String    │                        │ + matchScore: Number (%) │
+    │ + isRead: Boolean    │                        │ + status: Enum (pipeline)│
+    └──────────────────────┘                        │ + appliedAt: Date        │
+                                                    └──────────────────────────┘
+                    </pre>
+                </div>
+
+                <!-- 8 Rich UML Entity Cards Grid -->
+                <h3 style="font-size: 1.15rem; color: var(--text-main); font-weight: 700; margin: 2rem 0 1.25rem;">📦 Entity Models & Attribute Specifications</h3>
+                
+                <div class="uml-grid">
+                    
+                    <!-- 1. User -->
+                    <div class="uml-card">
+                        <div class="uml-card-header">
+                            <span class="uml-card-title">👤 User</span>
+                            <span class="uml-card-tag">Core Model</span>
+                        </div>
+                        <div class="uml-section-title">Attributes</div>
+                        <ul class="uml-list">
+                            <li><span style="color:#0ea5e9;">+</span> _id: ObjectId</li>
+                            <li><span style="color:#0ea5e9;">+</span> name: String</li>
+                            <li><span style="color:#0ea5e9;">+</span> email: String (unique)</li>
+                            <li><span style="color:#0ea5e9;">+</span> password: String (hash)</li>
+                            <li><span style="color:#0ea5e9;">+</span> role: 'student'|'recruiter'|'admin'</li>
+                            <li><span style="color:#0ea5e9;">+</span> companyId: ObjectId?</li>
+                            <li><span style="color:#0ea5e9;">+</span> createdAt: Date</li>
+                        </ul>
+                        <div class="uml-section-title">Operations</div>
+                        <ul class="uml-list">
+                            <li><span style="color:#10b981;">+</span> generateAuthToken(): JWT</li>
+                            <li><span style="color:#10b981;">+</span> comparePassword(pwd): Bool</li>
+                        </ul>
+                        <div class="uml-rel-box">
+                            <strong>Associations:</strong> 1:1 StudentProfile · 1:0..1 Company · 1:* Applications
+                        </div>
+                    </div>
+
+                    <!-- 2. StudentProfile -->
+                    <div class="uml-card">
+                        <div class="uml-card-header">
+                            <span class="uml-card-title">📄 StudentProfile</span>
+                            <span class="uml-card-tag">Student Module</span>
+                        </div>
+                        <div class="uml-section-title">Attributes</div>
+                        <ul class="uml-list">
+                            <li><span style="color:#0ea5e9;">+</span> _id: ObjectId</li>
+                            <li><span style="color:#0ea5e9;">+</span> userId: ObjectId (FK)</li>
+                            <li><span style="color:#0ea5e9;">+</span> headline: String</li>
+                            <li><span style="color:#0ea5e9;">+</span> bio: String</li>
+                            <li><span style="color:#0ea5e9;">+</span> skills: Array&lt;String&gt;</li>
+                            <li><span style="color:#0ea5e9;">+</span> education: Array&lt;Object&gt;</li>
+                            <li><span style="color:#0ea5e9;">+</span> resumeUrl: String</li>
+                        </ul>
+                        <div class="uml-section-title">Operations</div>
+                        <ul class="uml-list">
+                            <li><span style="color:#10b981;">+</span> calculateProfileStrength(): %</li>
+                            <li><span style="color:#10b981;">+</span> extractSkillKeywords(): Array</li>
+                        </ul>
+                        <div class="uml-rel-box">
+                            <strong>Associations:</strong> Belongs to User (1:1)
+                        </div>
+                    </div>
+
+                    <!-- 3. Company -->
+                    <div class="uml-card">
+                        <div class="uml-card-header">
+                            <span class="uml-card-title">🏢 Company</span>
+                            <span class="uml-card-tag">Employer Model</span>
+                        </div>
+                        <div class="uml-section-title">Attributes</div>
+                        <ul class="uml-list">
+                            <li><span style="color:#0ea5e9;">+</span> _id: ObjectId</li>
+                            <li><span style="color:#0ea5e9;">+</span> name: String</li>
+                            <li><span style="color:#0ea5e9;">+</span> website: String</li>
+                            <li><span style="color:#0ea5e9;">+</span> domain: 'product'|'service'|'startup'</li>
+                            <li><span style="color:#0ea5e9;">+</span> isVerified: Boolean</li>
+                            <li><span style="color:#0ea5e9;">+</span> verificationStatus: Enum</li>
+                            <li><span style="color:#0ea5e9;">+</span> recruiterId: ObjectId (FK)</li>
+                        </ul>
+                        <div class="uml-section-title">Operations</div>
+                        <ul class="uml-list">
+                            <li><span style="color:#10b981;">+</span> verifyCompany(): Void</li>
+                            <li><span style="color:#10b981;">+</span> getActiveJobCount(): Number</li>
+                        </ul>
+                        <div class="uml-rel-box">
+                            <strong>Associations:</strong> 1:* Jobs · Belongs to Recruiter (1:1)
+                        </div>
+                    </div>
+
+                    <!-- 4. Job -->
+                    <div class="uml-card">
+                        <div class="uml-card-header">
+                            <span class="uml-card-title">💼 Job</span>
+                            <span class="uml-card-tag">Recruiter Module</span>
+                        </div>
+                        <div class="uml-section-title">Attributes</div>
+                        <ul class="uml-list">
+                            <li><span style="color:#0ea5e9;">+</span> _id: ObjectId</li>
+                            <li><span style="color:#0ea5e9;">+</span> title: String</li>
+                            <li><span style="color:#0ea5e9;">+</span> companyId: ObjectId (FK)</li>
+                            <li><span style="color:#0ea5e9;">+</span> companyName: String</li>
+                            <li><span style="color:#0ea5e9;">+</span> requiredSkills: Array&lt;String&gt;</li>
+                            <li><span style="color:#0ea5e9;">+</span> salary: String</li>
+                            <li><span style="color:#0ea5e9;">+</span> status: 'active'|'closed'</li>
+                        </ul>
+                        <div class="uml-section-title">Operations</div>
+                        <ul class="uml-list">
+                            <li><span style="color:#10b981;">+</span> computeCandidateMatch(profile): %</li>
+                            <li><span style="color:#10b981;">+</span> closeJob(): Void</li>
+                        </ul>
+                        <div class="uml-rel-box">
+                            <strong>Associations:</strong> Belongs to Company (1:1) · 1:* Applications
+                        </div>
+                    </div>
+
+                    <!-- 5. Application -->
+                    <div class="uml-card">
+                        <div class="uml-card-header">
+                            <span class="uml-card-title">📄 Application</span>
+                            <span class="uml-card-tag">Pipeline Entity</span>
+                        </div>
+                        <div class="uml-section-title">Attributes</div>
+                        <ul class="uml-list">
+                            <li><span style="color:#0ea5e9;">+</span> _id: ObjectId</li>
+                            <li><span style="color:#0ea5e9;">+</span> jobId: ObjectId (FK)</li>
+                            <li><span style="color:#0ea5e9;">+</span> applicantId: ObjectId (FK)</li>
+                            <li><span style="color:#0ea5e9;">+</span> matchScore: Number (0-100%)</li>
+                            <li><span style="color:#0ea5e9;">+</span> matchBadge: 'High'|'Medium'|'Low'</li>
+                            <li><span style="color:#0ea5e9;">+</span> status: 'applied'|'interview'|'selected'</li>
+                            <li><span style="color:#0ea5e9;">+</span> appliedAt: Date</li>
+                        </ul>
+                        <div class="uml-section-title">Operations</div>
+                        <ul class="uml-list">
+                            <li><span style="color:#10b981;">+</span> updateStatus(newStatus): Void</li>
+                            <li><span style="color:#10b981;">+</span> scheduleInterview(meetLink): Void</li>
+                        </ul>
+                        <div class="uml-rel-box">
+                            <strong>Associations:</strong> Ref Job (FK) · Ref User (FK)
+                        </div>
+                    </div>
+
+                    <!-- 6. PreparationPath -->
+                    <div class="uml-card">
+                        <div class="uml-card-header">
+                            <span class="uml-card-title">📖 PreparationPath</span>
+                            <span class="uml-card-tag">Learning Engine</span>
+                        </div>
+                        <div class="uml-section-title">Attributes</div>
+                        <ul class="uml-list">
+                            <li><span style="color:#0ea5e9;">+</span> _id: ObjectId</li>
+                            <li><span style="color:#0ea5e9;">+</span> companyName: String</li>
+                            <li><span style="color:#0ea5e9;">+</span> difficulty: 'Easy'|'Med'|'Hard'</li>
+                            <li><span style="color:#0ea5e9;">+</span> questionCount: Number</li>
+                            <li><span style="color:#0ea5e9;">+</span> topicCount: Number</li>
+                            <li><span style="color:#0ea5e9;">+</span> topics: Array&lt;String&gt;</li>
+                            <li><span style="color:#0ea5e9;">+</span> questions: Array&lt;Object&gt;</li>
+                        </ul>
+                        <div class="uml-section-title">Operations</div>
+                        <ul class="uml-list">
+                            <li><span style="color:#10b981;">+</span> getQuestionsByTopic(): Array</li>
+                        </ul>
+                        <div class="uml-rel-box">
+                            <strong>Associations:</strong> Managed by Admin Content CMS
+                        </div>
+                    </div>
+
+                    <!-- 7. Notification -->
+                    <div class="uml-card">
+                        <div class="uml-card-header">
+                            <span class="uml-card-title">🔔 Notification</span>
+                            <span class="uml-card-tag">Realtime Alert</span>
+                        </div>
+                        <div class="uml-section-title">Attributes</div>
+                        <ul class="uml-list">
+                            <li><span style="color:#0ea5e9;">+</span> _id: ObjectId</li>
+                            <li><span style="color:#0ea5e9;">+</span> userId: ObjectId (FK)</li>
+                            <li><span style="color:#0ea5e9;">+</span> title: String</li>
+                            <li><span style="color:#0ea5e9;">+</span> message: String</li>
+                            <li><span style="color:#0ea5e9;">+</span> type: 'info'|'success'|'alert'</li>
+                            <li><span style="color:#0ea5e9;">+</span> isRead: Boolean</li>
+                            <li><span style="color:#0ea5e9;">+</span> createdAt: Date</li>
+                        </ul>
+                        <div class="uml-section-title">Operations</div>
+                        <ul class="uml-list">
+                            <li><span style="color:#10b981;">+</span> markAsRead(): Void</li>
+                        </ul>
+                        <div class="uml-rel-box">
+                            <strong>Associations:</strong> Belongs to User (1:*)
+                        </div>
+                    </div>
+
+                    <!-- 8. ActivityLog -->
+                    <div class="uml-card">
+                        <div class="uml-card-header">
+                            <span class="uml-card-title">📋 ActivityLog</span>
+                            <span class="uml-card-tag">Audit Trail</span>
+                        </div>
+                        <div class="uml-section-title">Attributes</div>
+                        <ul class="uml-list">
+                            <li><span style="color:#0ea5e9;">+</span> _id: ObjectId</li>
+                            <li><span style="color:#0ea5e9;">+</span> userId: ObjectId (FK)</li>
+                            <li><span style="color:#0ea5e9;">+</span> action: String</li>
+                            <li><span style="color:#0ea5e9;">+</span> details: String</li>
+                            <li><span style="color:#0ea5e9;">+</span> ip: String</li>
+                            <li><span style="color:#0ea5e9;">+</span> timestamp: Date</li>
+                        </ul>
+                        <div class="uml-section-title">Operations</div>
+                        <ul class="uml-list">
+                            <li><span style="color:#10b981;">+</span> logSecurityEvent(): Void</li>
+                        </ul>
+                        <div class="uml-rel-box">
+                            <strong>Associations:</strong> Triggered by User (1:*)
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 3: System Workflows Tab -->
+        <div id="tab-workflows" class="tab-content" style="display: none;">
+            <div style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; padding: 2.5rem; margin-bottom: 2.5rem;">
+                <h2 style="font-size: 1.5rem; display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                    <span style="color: var(--primary);">🔄</span> Complete System Workflows & User Lifecycles
+                </h2>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 2rem;">Visual end-to-end operational sequence flowcharts for Students, Recruiters, and Platform Administrators.</p>
+                
+                <!-- 1. Student Workflow -->
+                <div style="margin-bottom: 2.5rem;">
+                    <h3 style="font-size: 1.15rem; color: var(--text-main); font-weight: 700; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                        <span>🎓</span> 1. Student Journey & Practice Flow
+                    </h3>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+                        <div class="flow-step-card">
+                            <div class="flow-step-num" style="background: #3b82f6;">1</div>
+                            <div>
+                                <div style="font-weight: 700; font-size: 0.9rem; color: var(--text-main);">Sign In & Profile</div>
+                                <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">Register account, configure verified technical skills and target roles.</div>
+                            </div>
+                        </div>
+                        <div class="flow-step-card">
+                            <div class="flow-step-num" style="background: #8b5cf6;">2</div>
+                            <div>
+                                <div style="font-weight: 700; font-size: 0.9rem; color: var(--text-main);">630+ Practice Bank</div>
+                                <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">Solve 210 DSA problems in Ace IDE + 210 CS MCQs + 210 Aptitude tests.</div>
+                            </div>
+                        </div>
+                        <div class="flow-step-card">
+                            <div class="flow-step-num" style="background: #f59e0b;">3</div>
+                            <div>
+                                <div style="font-weight: 700; font-size: 0.9rem; color: var(--text-main);">Autosave & Retry</div>
+                                <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">Real-time debounced editor save. Instant retry on wrong MCQ options.</div>
+                            </div>
+                        </div>
+                        <div class="flow-step-card">
+                            <div class="flow-step-num" style="background: #10b981;">4</div>
+                            <div>
+                                <div style="font-weight: 700; font-size: 0.9rem; color: var(--text-main);">AI Match & Apply</div>
+                                <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">Browse active jobs, view real-time skill match %, and apply in 1 click.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="diagram-box">
+                        <pre>
+[ Student Register / Login ] ──► [ Complete Profile & Skills ] ──► [ Choose Practice Mode ]
+                                                                               │
+         ┌─────────────────────────────────────────────────────────────────────┴───────────────────────────────────────────────────────┐
+         ▼                                                             ▼                                                               ▼
+[ Coding IDE (210 DSA) ]                                    [ Tech MCQ Quiz (210 Qs) ]                                     [ Aptitude Tests (210 Qs) ]
+         │                                                             │                                                               │
+[ Real-time Code Autosave ]                                 [ Instant Retry on Wrong Choice ]                              [ Instant Retry on Wrong Choice ]
+         │                                                             │                                                               │
+         └─────────────────────────────────────────────────────────────┬───────────────────────────────────────────────────────────────┘
+                                                                       ▼
+                                                    [ Track Solved Progress & Badges ]
+                                                                       │
+                                                    [ Browse Jobs with AI Skill Match % ]
+                                                                       │
+                                                    [ 1-Click Apply & Interview Alerts ]
+                        </pre>
+                    </div>
+                </div>
+
+                <!-- 2. Recruiter Workflow -->
+                <div style="margin-bottom: 2.5rem;">
+                    <h3 style="font-size: 1.15rem; color: var(--text-main); font-weight: 700; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                        <span>🏢</span> 2. Recruiter Hiring & Pipeline Lifecycle
+                    </h3>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+                        <div class="flow-step-card">
+                            <div class="flow-step-num" style="background: #ec4899;">1</div>
+                            <div>
+                                <div style="font-weight: 700; font-size: 0.9rem; color: var(--text-main);">Company Verification</div>
+                                <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">Submit company registration, verified automatically or by admin.</div>
+                            </div>
+                        </div>
+                        <div class="flow-step-card">
+                            <div class="flow-step-num" style="background: #3b82f6;">2</div>
+                            <div>
+                                <div style="font-weight: 700; font-size: 0.9rem; color: var(--text-main);">Post Job Openings</div>
+                                <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">Define required skills, experience level, salary range, and job perks.</div>
+                            </div>
+                        </div>
+                        <div class="flow-step-card">
+                            <div class="flow-step-num" style="background: #8b5cf6;">3</div>
+                            <div>
+                                <div style="font-weight: 700; font-size: 0.9rem; color: var(--text-main);">AI-Ranked Candidates</div>
+                                <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">Candidates ranked automatically: 60% Skill + 20% Exp + 20% Resume.</div>
+                            </div>
+                        </div>
+                        <div class="flow-step-card">
+                            <div class="flow-step-num" style="background: #10b981;">4</div>
+                            <div>
+                                <div style="font-weight: 700; font-size: 0.9rem; color: var(--text-main);">Interview Scheduler</div>
+                                <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">Schedule interviews directly with integrated Google Meet links.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="diagram-box">
+                        <pre>
+[ Recruiter Registration ] ──► [ Admin Company Verification ] ──► [ Post Job with Skill Tags ]
+                                                                                │
+[ Final Status: Selected / Rejected ] ◄── [ Schedule Google Meet Interview ] ◄── [ AI Match Ranking (60/20/20) ] ◄── [ Candidates Apply ]
+                        </pre>
+                    </div>
+                </div>
+
+                <!-- 3. Admin Workflow -->
+                <div>
+                    <h3 style="font-size: 1.15rem; color: var(--text-main); font-weight: 700; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                        <span>🛡️</span> 3. Admin Management & Content Control
+                    </h3>
+
+                    <div class="diagram-box">
+                        <pre>
+[ Master Secret Key Login ] ──► [ Admin Dashboard & System Health ]
+                                              │
+               ┌──────────────────────────────┼──────────────────────────────┐
+               ▼                              ▼                              ▼
+    [ Verify Companies ]         [ Question Content CMS CRUD ]     [ Platform Toggles & Backups ]
+    • Grant posting access       • Add/Edit 630+ Practice Qs       • Auto-approve toggles
+    • Audit employer domain      • Curate Company Roadmaps         • Memory/Ping & CSV Export
+                        </pre>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Database Schema Tab -->
@@ -420,18 +1060,12 @@
 
     </main>
 
+    <script src="js/theme.js"></script>
+    <script src="js/sanitize.js"></script>
     <script src="js/api.js"></script>
     <script src="js/nav-auth.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Admin Check
-            if (window.API) {
-                const user = window.API.getUser();
-                if (!user || user.role !== 'admin') {
-                    window.location.href = 'index.html';
-                }
-            }
-
             // Tab Switching Logic
             const tabs = document.querySelectorAll('.docs-tab');
             const contents = document.querySelectorAll('.tab-content');
@@ -443,7 +1077,8 @@
                     
                     tab.classList.add('active');
                     const targetId = tab.getAttribute('data-target');
-                    document.getElementById(targetId).style.display = 'block';
+                    const targetEl = document.getElementById(targetId);
+                    if (targetEl) targetEl.style.display = 'block';
                 });
             });
         });

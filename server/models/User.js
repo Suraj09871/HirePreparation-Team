@@ -43,6 +43,23 @@ const userSchema = new mongoose.Schema({
         type: String,
         enum: ['manage_users', 'manage_companies', 'view_analytics', 'manage_content', 'send_notifications', 'manage_jobs', 'export_data']
     }],
+    companyId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Company',
+        default: null
+    },
+    isEmailVerified: {
+        type: Boolean,
+        default: false
+    },
+    emailOtp: {
+        type: String,
+        default: ''
+    },
+    emailOtpExpires: {
+        type: Date,
+        default: null
+    },
     createdAt: {
         type: Date,
         default: Date.now
@@ -65,10 +82,12 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
     return await bcrypt.compare(candidatePassword, this.password);
 };
 
-// Remove password from JSON output
+// Remove password and sensitive auth fields from JSON output
 userSchema.methods.toJSON = function() {
     const user = this.toObject();
     delete user.password;
+    delete user.emailOtp;
+    delete user.emailOtpExpires;
     return user;
 };
 

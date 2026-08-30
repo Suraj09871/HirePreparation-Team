@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Company-Wise Preparation - HireSmart</title>
+    <title>Company-Wise Preparation - HirePrep</title>
     <link rel="stylesheet" href="../../css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
@@ -11,9 +11,19 @@
     <nav class="navbar" style="border-bottom: 1px solid var(--border-color); background: var(--card-bg);">
         <div class="logo">
             <span class="logo-icon"></span>
-            HireSmart
+            HirePrep
         </div>
-        <div class="nav-links">
+        <button class="hamburger" id="hamburgerBtn" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="navLinks">
+
+            <span class="bar"></span>
+
+            <span class="bar"></span>
+
+            <span class="bar"></span>
+
+        </button>
+
+        <div class="nav-links" id="navLinks">
             <a href="../../index.html">Home</a>
             <a href="jobs.html">Jobs</a>
             <a href="practice.html">Practice</a>
@@ -33,6 +43,8 @@
         </div>
     </main>
 
+    <script src="../../js/theme.js"></script>
+    <script src="../../js/sanitize.js"></script>
     <script src="../../js/api.js"></script>
     <script src="../../js/nav-auth.js"></script>
     <script src="../../js/preparation.js"></script>
