@@ -1,7 +1,7 @@
 /**
  * HirePrep API Client - Full Support for Render (Backend) + Netlify (Frontend)
  */
-const DEFAULT_RENDER_BACKEND = 'https://hireprep-backend.onrender.com';
+const DEFAULT_RENDER_BACKEND = 'https://hirepreparation-backend.onrender.com';
 
 function getApiBaseUrl() {
     if (typeof window === 'undefined') return '/api';

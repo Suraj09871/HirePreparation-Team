@@ -7,7 +7,7 @@
 # Redirect API calls to Render Backend with 200 Proxy
 [[redirects]]
   from = "/api/*"
-  to = "https://hireprep-backend.onrender.com/api/:splat"
+  to = "https://hirepreparation-backend.onrender.com/api/:splat"
   status = 200
   force = false
   headers = {X-From = "Netlify"}

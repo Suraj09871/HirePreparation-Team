@@ -95,7 +95,7 @@ router.post('/register', [
                 hrPhone: hrPhone || '',
                 registrationNumber: registrationNumber || '',
                 linkedIn: companyLinkedIn || '',
-                verificationStatus: (process.env.AUTO_APPROVE_COMPANIES === 'true') ? 'verified' : 'pending',
+                verificationStatus: (process.env.AUTO_APPROVE_COMPANIES === 'true') ? 'approved' : 'pending',
                 isVerified: (process.env.AUTO_APPROVE_COMPANIES === 'true'),
                 submittedBy: user._id
             });
@@ -483,7 +483,7 @@ router.post('/google', async (req, res) => {
                     industry: 'Technology',
                     domain: 'product',
                     isVerified: (process.env.AUTO_APPROVE_COMPANIES === 'true'),
-                    verificationStatus: (process.env.AUTO_APPROVE_COMPANIES === 'true') ? 'verified' : 'pending'
+                    verificationStatus: (process.env.AUTO_APPROVE_COMPANIES === 'true') ? 'approved' : 'pending'
                 });
                 await company.save();
                 user.companyId = company._id;
