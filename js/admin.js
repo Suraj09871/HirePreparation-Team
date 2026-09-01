@@ -164,8 +164,20 @@ async function renderOverview(c) {
             </div>
         </div>
         <div class="chart-grid">
-            <div class="chart-card"><h3>📈 User Growth</h3><div style="position:relative;height:250px;"><canvas id="overviewGrowthChart"></canvas></div></div>
-            <div class="chart-card"><h3>👥 Active vs Inactive</h3><div style="position:relative;height:250px;"><canvas id="overviewActiveChart"></canvas></div></div>
+            <div class="chart-card" style="cursor:pointer;" onclick="if(!event.target.closest('canvas')) navigateToSection('analytics');" title="Click to view detailed analytics">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;">
+                    <h3 style="margin:0;">📈 User Growth</h3>
+                    <span style="font-size:0.75rem;color:var(--primary);font-weight:600;">Explore Analytics ↗</span>
+                </div>
+                <div style="position:relative;height:250px;"><canvas id="overviewGrowthChart"></canvas></div>
+            </div>
+            <div class="chart-card" style="cursor:pointer;" onclick="if(!event.target.closest('canvas')) navigateToUsersWithRole('all');" title="Click to inspect users">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;">
+                    <h3 style="margin:0;">👥 Active vs Inactive</h3>
+                    <span style="font-size:0.75rem;color:var(--primary);font-weight:600;">Manage Users ↗</span>
+                </div>
+                <div style="position:relative;height:250px;"><canvas id="overviewActiveChart"></canvas></div>
+            </div>
         </div>
     `;
     try {
@@ -178,14 +190,69 @@ async function renderOverview(c) {
             type: 'line', data: { labels: monthLabels, datasets: [
                 { label: 'Students', data: studentGrowth, borderColor: '#f97316', backgroundColor: 'rgba(249,115,22,0.1)', tension: 0.4, fill: true },
                 { label: 'Recruiters', data: recruiterGrowth, borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', tension: 0.4, fill: true }
-            ]}, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+            ]}, options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom' } },
+                onClick: (evt, elements) => {
+                    if (elements && elements.length > 0) {
+                        const idx = elements[0].index;
+                        showGrowthDetailModal(monthLabels[idx], studentGrowth[idx], recruiterGrowth[idx]);
+                    } else {
+                        navigateToSection('analytics');
+                    }
+                }
+            }
         });
         new Chart(document.getElementById('overviewActiveChart'), {
             type: 'doughnut', data: { labels: ['Active (7d)', 'Inactive'], datasets: [{ data: [s.activeUsers||0, s.inactiveUsers||0], backgroundColor: ['#10b981', '#ef4444'] }] },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom' } },
+                onClick: (evt, elements) => {
+                    navigateToUsersWithRole('all');
+                }
+            }
         });
     } catch (e) { console.log('Analytics load error:', e.message); }
 }
+
+function showGrowthDetailModal(month, students = 0, recruiters = 0) {
+    let modal = document.getElementById('growthDetailModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'growthDetailModal';
+        modal.className = 'modal-backdrop';
+        modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99999;display:flex;align-items:center;justify-content:center;padding:1rem;';
+        document.body.appendChild(modal);
+    }
+    modal.innerHTML = `
+        <div style="background:white;border-radius:16px;max-width:480px;width:100%;padding:1.75rem;box-shadow:0 20px 40px rgba(0,0,0,0.25);border:1px solid var(--border-color);" onclick="event.stopPropagation();">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;border-bottom:1px solid var(--border-color);padding-bottom:0.75rem;">
+                <h3 style="margin:0;font-size:1.15rem;font-weight:700;">📈 Growth Data: ${sanitize(month)}</h3>
+                <button onclick="document.getElementById('growthDetailModal').style.display='none'" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--text-muted);">&times;</button>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem;">
+                <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:1rem;text-align:center;">
+                    <div style="font-size:0.75rem;color:#c2410c;font-weight:600;text-transform:uppercase;">New Students</div>
+                    <div style="font-size:1.75rem;font-weight:700;color:#ea580c;margin-top:0.25rem;">${students}</div>
+                    <button onclick="navigateToUsersWithRole('student'); document.getElementById('growthDetailModal').style.display='none';" class="btn btn-outline" style="margin-top:0.5rem;font-size:0.75rem;padding:0.25rem 0.5rem;width:100%;">View Students →</button>
+                </div>
+                <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:1rem;text-align:center;">
+                    <div style="font-size:0.75rem;color:#1d4ed8;font-weight:600;text-transform:uppercase;">New Recruiters</div>
+                    <div style="font-size:1.75rem;font-weight:700;color:#2563eb;margin-top:0.25rem;">${recruiters}</div>
+                    <button onclick="navigateToUsersWithRole('recruiter'); document.getElementById('growthDetailModal').style.display='none';" class="btn btn-outline" style="margin-top:0.5rem;font-size:0.75rem;padding:0.25rem 0.5rem;width:100%;">View Recruiters →</button>
+                </div>
+            </div>
+            <div style="display:flex;justify-content:flex-end;">
+                <button onclick="navigateToSection('analytics'); document.getElementById('growthDetailModal').style.display='none';" class="btn btn-primary" style="font-size:0.85rem;">Deep Analytics →</button>
+            </div>
+        </div>
+    `;
+    modal.style.display = 'flex';
+}
+window.showGrowthDetailModal = showGrowthDetailModal;
 
 // === ANALYTICS (Advanced) ===
 async function renderAnalytics(c) {
@@ -201,29 +268,89 @@ async function renderAnalytics(c) {
                 <button id="btnGranMonthly" onclick="switchGranularity('monthly')" class="btn btn-primary" style="font-size:0.75rem;padding:0.3rem 0.7rem;">Monthly</button>
             </div><div style="font-size:0.8rem;color:var(--text-muted);">Avg Score: <b>${perf.avgScore}%</b> · Top 10% Avg: <b>${perf.top10AvgScore}%</b></div></div>
             <div class="chart-grid">
-                <div class="chart-card"><h3>📈 User Growth</h3><div style="position:relative;height:250px;"><canvas id="advGrowth"></canvas></div></div>
-                <div class="chart-card"><h3>🔄 Conversion Funnel</h3><div style="position:relative;height:250px;"><canvas id="advFunnel"></canvas></div></div>
+                <div class="chart-card" style="cursor:pointer;"><h3>📈 User Growth</h3><div style="position:relative;height:250px;"><canvas id="advGrowth"></canvas></div></div>
+                <div class="chart-card" style="cursor:pointer;"><h3>🔄 Conversion Funnel (Click stage to filter)</h3><div style="position:relative;height:250px;"><canvas id="advFunnel"></canvas></div></div>
             </div>
             <div class="chart-grid">
-                <div class="chart-card"><h3>📊 Performance Distribution</h3><div style="position:relative;height:250px;"><canvas id="advPerf"></canvas></div></div>
-                <div class="chart-card"><h3>📄 Resume Score Distribution</h3><div style="position:relative;height:250px;"><canvas id="advResume"></canvas></div></div>
+                <div class="chart-card" style="cursor:pointer;"><h3>📊 Performance Distribution (Click to view students)</h3><div style="position:relative;height:250px;"><canvas id="advPerf"></canvas></div></div>
+                <div class="chart-card" style="cursor:pointer;"><h3>📄 Resume Score Distribution (Click to view students)</h3><div style="position:relative;height:250px;"><canvas id="advResume"></canvas></div></div>
             </div>
             <div class="chart-grid">
-                <div class="chart-card"><h3>⚠️ Skill Gap Trends</h3><div style="position:relative;height:250px;"><canvas id="advSkillGap"></canvas></div></div>
-                <div class="chart-card"><h3>📅 Applications Per Day</h3><div style="position:relative;height:250px;"><canvas id="advAppsDay"></canvas></div></div>
+                <div class="chart-card" style="cursor:pointer;"><h3>⚠️ Skill Gap Trends (Click to view matching logic)</h3><div style="position:relative;height:250px;"><canvas id="advSkillGap"></canvas></div></div>
+                <div class="chart-card" style="cursor:pointer;"><h3>📅 Applications Per Day (Click to view applications)</h3><div style="position:relative;height:250px;"><canvas id="advAppsDay"></canvas></div></div>
             </div>
         `;
         const g = adv.growth || { labels: [], students: [], recruiters: [] };
-        new Chart(document.getElementById('advGrowth'), { type:'line', data:{ labels:g.labels, datasets:[{label:'Students',data:g.students,borderColor:'#f97316',backgroundColor:'rgba(249,115,22,0.1)',tension:0.4,fill:true},{label:'Recruiters',data:g.recruiters,borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,0.1)',tension:0.4,fill:true}]}, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}} });
+        new Chart(document.getElementById('advGrowth'), {
+            type:'line',
+            data:{ labels:g.labels, datasets:[{label:'Students',data:g.students,borderColor:'#f97316',backgroundColor:'rgba(249,115,22,0.1)',tension:0.4,fill:true},{label:'Recruiters',data:g.recruiters,borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,0.1)',tension:0.4,fill:true}]},
+            options:{
+                responsive:true,
+                maintainAspectRatio:false,
+                plugins:{legend:{position:'bottom'}},
+                onClick: (e, els) => {
+                    if (els.length > 0) {
+                        const idx = els[0].index;
+                        showGrowthDetailModal(g.labels[idx], g.students[idx], g.recruiters[idx]);
+                    }
+                }
+            }
+        });
         const f = adv.conversionFunnel || {};
-        new Chart(document.getElementById('advFunnel'), { type:'bar', data:{ labels:['Applied','In Review','Shortlisted','Interview','Selected','Rejected'], datasets:[{label:'Count',data:[f.applied||0,f.inReview||0,f.shortlisted||0,f.interviewed||0,f.selected||0,f.rejected||0],backgroundColor:['#6366f1','#3b82f6','#f59e0b','#8b5cf6','#10b981','#ef4444']}]}, options:{responsive:true,maintainAspectRatio:false,indexAxis:'y'} });
-        new Chart(document.getElementById('advPerf'), { type:'bar', data:{ labels:(perf.labels||[]), datasets:[{label:'Students',data:(perf.buckets||[]),backgroundColor:['#ef4444','#f59e0b','#3b82f6','#10b981']}]}, options:{responsive:true,maintainAspectRatio:false} });
+        const funnelLabels = ['Applied','In Review','Shortlisted','Interview','Selected','Rejected'];
+        const funnelStageKeys = ['applied', 'in-review', 'shortlisted', 'interview', 'selected', 'rejected'];
+        new Chart(document.getElementById('advFunnel'), {
+            type:'bar',
+            data:{ labels:funnelLabels, datasets:[{label:'Count',data:[f.applied||0,f.inReview||0,f.shortlisted||0,f.interviewed||0,f.selected||0,f.rejected||0],backgroundColor:['#6366f1','#3b82f6','#f59e0b','#8b5cf6','#10b981','#ef4444']}]},
+            options:{
+                responsive:true,
+                maintainAspectRatio:false,
+                indexAxis:'y',
+                onClick: (e, els) => {
+                    navigateToSection('applications');
+                }
+            }
+        });
+        new Chart(document.getElementById('advPerf'), {
+            type:'bar',
+            data:{ labels:(perf.labels||[]), datasets:[{label:'Students',data:(perf.buckets||[]),backgroundColor:['#ef4444','#f59e0b','#3b82f6','#10b981']}]},
+            options:{
+                responsive:true,
+                maintainAspectRatio:false,
+                onClick: () => navigateToUsersWithRole('student')
+            }
+        });
         const rd = adv.resumeDistribution || {};
-        new Chart(document.getElementById('advResume'), { type:'bar', data:{ labels:(rd.labels||[]), datasets:[{label:'Students',data:(rd.buckets||[]),backgroundColor:'#8b5cf6'}]}, options:{responsive:true,maintainAspectRatio:false} });
+        new Chart(document.getElementById('advResume'), {
+            type:'bar',
+            data:{ labels:(rd.labels||[]), datasets:[{label:'Students',data:(rd.buckets||[]),backgroundColor:'#8b5cf6'}]},
+            options:{
+                responsive:true,
+                maintainAspectRatio:false,
+                onClick: () => navigateToUsersWithRole('student')
+            }
+        });
         const sgt = adv.skillGapTrends || [];
-        if(sgt.length>0) new Chart(document.getElementById('advSkillGap'), { type:'bar', data:{ labels:sgt.map(s=>s.skill), datasets:[{label:'Missing Count',data:sgt.map(s=>s.count),backgroundColor:'#ef4444'}]}, options:{indexAxis:'y',responsive:true,maintainAspectRatio:false} });
+        if(sgt.length>0) new Chart(document.getElementById('advSkillGap'), {
+            type:'bar',
+            data:{ labels:sgt.map(s=>s.skill), datasets:[{label:'Missing Count',data:sgt.map(s=>s.count),backgroundColor:'#ef4444'}]},
+            options:{
+                indexAxis:'y',
+                responsive:true,
+                maintainAspectRatio:false,
+                onClick: () => navigateToSection('matching')
+            }
+        });
         const apd = adv.appsPerDay || {};
-        new Chart(document.getElementById('advAppsDay'), { type:'line', data:{ labels:(apd.labels||[]), datasets:[{label:'Applications',data:(apd.data||[]),borderColor:'#6366f1',backgroundColor:'rgba(99,102,241,0.1)',tension:0.3,fill:true}]}, options:{responsive:true,maintainAspectRatio:false} });
+        new Chart(document.getElementById('advAppsDay'), {
+            type:'line',
+            data:{ labels:(apd.labels||[]), datasets:[{label:'Applications',data:(apd.data||[]),borderColor:'#6366f1',backgroundColor:'rgba(99,102,241,0.1)',tension:0.3,fill:true}]},
+            options:{
+                responsive:true,
+                maintainAspectRatio:false,
+                onClick: () => navigateToSection('applications')
+            }
+        });
     } catch(e) { c.innerHTML = `<div style="color:#ef4444;padding:2rem;">Error: ${e.message}</div>`; }
 }
 function handleLogout() {
@@ -1133,22 +1260,67 @@ async function renderActivity(c) {
     try {
         const data = await API.get('/admin/activity-log');
         const logs = data.logs || [];
+        state.activityLogs = logs;
         c.innerHTML = `<div style="background:white;border-radius:12px;border:1px solid var(--border-color);overflow:hidden;">
             <div style="padding:1rem 1.25rem;border-bottom:1px solid var(--border-color);display:flex;justify-content:space-between;align-items:center;">
                 <h3 style="margin:0;font-size:1rem;">📋 System Activity Log</h3>
                 <span style="font-size:0.8rem;color:var(--text-muted);">${logs.length} entries</span>
             </div>
             <div class="table-responsive" style="border:none;border-radius:0;">
-                <table class="data-table"><thead><tr><th>Action</th><th>User</th><th>Details</th><th>Time</th></tr></thead>
-                <tbody>${logs.length === 0 ? '<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--text-muted);">No activity logs yet. Actions like logins and applications will appear here.</td></tr>' : logs.map(l => `<tr>
-                    <td><span style="font-size:0.75rem;font-weight:600;padding:0.15rem 0.5rem;border-radius:4px;background:#f1f5f9;">${sanitize(l.action||'event')}</span></td>
+                <table class="data-table"><thead><tr><th>Action</th><th>User</th><th>Details</th><th>Time</th><th style="text-align:right;">Actions</th></tr></thead>
+                <tbody>${logs.length === 0 ? '<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--text-muted);">No activity logs yet. Actions like logins and applications will appear here.</td></tr>' : logs.map(l => `<tr onclick="viewActivityDetails('${l._id}')" style="cursor:pointer;" title="Click to view activity details">
+                    <td><span style="font-size:0.75rem;font-weight:600;padding:0.15rem 0.5rem;border-radius:4px;background:#f1f5f9;color:var(--primary);">${sanitize(l.action||'event')}</span></td>
                     <td style="font-weight:500;">${sanitize(l.userId?.name||'System')}</td>
-                    <td style="font-size:0.8rem;color:var(--text-muted);">${sanitize(l.details||'-')}</td>
+                    <td style="font-size:0.8rem;color:var(--text-muted);max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${sanitize(l.details||'-')}</td>
                     <td style="font-size:0.75rem;color:var(--text-muted);">${new Date(l.createdAt).toLocaleString()}</td>
+                    <td style="text-align:right;">
+                        <button onclick="event.stopPropagation(); viewActivityDetails('${l._id}')" class="btn btn-outline" style="font-size:0.72rem;padding:0.2rem 0.5rem;background:#f0fdf4;color:#15803d;border-color:#bbf7d0;font-weight:600;">👁 Inspect</button>
+                    </td>
                 </tr>`).join('')}</tbody></table>
             </div></div>`;
     } catch(e) { c.innerHTML = `<div style="padding:2rem;color:var(--text-muted);">Activity logging is available. Events will appear as users interact with the platform.</div>`; }
 }
+
+function viewActivityDetails(logId) {
+    const logs = state.activityLogs || [];
+    const log = logs.find(l => l._id === logId) || {};
+    let modal = document.getElementById('activityDetailModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'activityDetailModal';
+        modal.className = 'modal-backdrop';
+        modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99999;display:flex;align-items:center;justify-content:center;padding:1rem;';
+        document.body.appendChild(modal);
+    }
+
+    modal.innerHTML = `
+        <div style="background:var(--card-bg, white);border-radius:16px;max-width:580px;width:100%;max-height:90vh;overflow-y:auto;padding:1.75rem;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);border:1px solid var(--border-color);" onclick="event.stopPropagation();">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;border-bottom:1px solid var(--border-color);padding-bottom:1rem;">
+                <h3 style="margin:0;font-size:1.15rem;">📋 Activity Log Inspection</h3>
+                <button onclick="document.getElementById('activityDetailModal').style.display='none'" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--text-muted);">&times;</button>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:1rem;">
+                <div style="background:#f8fafc;padding:0.75rem;border-radius:8px;border:1px solid var(--border-color);"><div style="font-size:0.7rem;color:var(--text-muted);font-weight:600;">Action Type</div><div style="font-size:0.9rem;font-weight:700;color:var(--primary);">${sanitize(log.action || 'Event')}</div></div>
+                <div style="background:#f8fafc;padding:0.75rem;border-radius:8px;border:1px solid var(--border-color);"><div style="font-size:0.7rem;color:var(--text-muted);font-weight:600;">Timestamp</div><div style="font-size:0.85rem;">${new Date(log.createdAt || Date.now()).toLocaleString()}</div></div>
+            </div>
+            <div style="background:#f8fafc;padding:1rem;border-radius:8px;border:1px solid var(--border-color);margin-bottom:1.25rem;">
+                <div style="font-size:0.75rem;color:var(--text-muted);font-weight:700;margin-bottom:0.3rem;">Actor Details</div>
+                <div style="font-weight:600;font-size:0.9rem;">${sanitize(log.userId?.name || 'System / Anonymous')}</div>
+                <div style="font-size:0.8rem;color:var(--text-muted);">${sanitize(log.userId?.email || '')} ${log.userId?.role ? '· Role: ' + log.userId.role : ''}</div>
+            </div>
+            <div style="margin-bottom:1.25rem;">
+                <div style="font-size:0.75rem;color:var(--text-muted);font-weight:700;margin-bottom:0.3rem;">Event Details & Payload</div>
+                <div style="background:#0f172a;color:#38bdf8;padding:1rem;border-radius:8px;font-family:monospace;font-size:0.8rem;white-space:pre-wrap;max-height:160px;overflow-y:auto;">${sanitize(log.details || 'No additional payload.')}</div>
+            </div>
+            <div style="display:flex;justify-content:flex-end;">
+                <button onclick="document.getElementById('activityDetailModal').style.display='none'" class="btn btn-primary" style="font-size:0.85rem;">Close</button>
+            </div>
+        </div>
+    `;
+    modal.style.display = 'flex';
+}
+window.viewActivityDetails = viewActivityDetails;
+window.viewAdminNotification = viewAdminNotification;
 
 // === MATCHING LOGIC ===
 async function renderMatching(c) {
@@ -1851,7 +2023,7 @@ async function renderAdminJobs(c) {
             <table class="data-table" id="adminJobsTable">
                 <thead>
                     <tr>
-                        <th>Job Title</th>
+                        <th>Job Title (Click to view full job & candidate list)</th>
                         <th>Company</th>
                         <th>Posted By</th>
                         <th>Location / Type</th>
@@ -1862,8 +2034,8 @@ async function renderAdminJobs(c) {
                 </thead>
                 <tbody>
                     ${jobs.length === 0 ? '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:2rem;">No jobs posted yet.</td></tr>' : jobs.map(j => `
-                        <tr data-status="${j.status}" data-text="${sanitize((j.title + ' ' + (j.companyName || '') + ' ' + (j.location || '')).toLowerCase())}">
-                            <td style="font-weight:600;color:var(--text-main);">${sanitize(j.title)}</td>
+                        <tr onclick="viewJobDetails('${j._id}')" style="cursor:pointer;" title="Click to view full job & candidate applications" data-status="${j.status}" data-text="${sanitize((j.title + ' ' + (j.companyName || '') + ' ' + (j.location || '')).toLowerCase())}">
+                            <td style="font-weight:600;color:var(--text-main);">${sanitize(j.title)} <span style="font-size:0.75rem;color:var(--primary);opacity:0.8;">↗</span></td>
                             <td>${sanitize(j.companyName || 'N/A')}</td>
                             <td style="font-size:0.8rem;color:var(--text-muted);">${sanitize(j.postedBy?.name || 'Recruiter')}<br><small>${sanitize(j.postedBy?.email || '')}</small></td>
                             <td><span style="font-size:0.8rem;">${sanitize(j.location || 'Remote')}</span><br><small style="color:var(--text-muted);text-transform:capitalize;">${sanitize(j.type || 'Full-time')}</small></td>
@@ -1874,10 +2046,13 @@ async function renderAdminJobs(c) {
                                 </span>
                             </td>
                             <td style="text-align:right;white-space:nowrap;">
-                                <button onclick="toggleAdminJobStatus('${j._id}', '${j.status}')" class="btn btn-outline" style="padding:0.25rem 0.6rem;font-size:0.75rem;margin-right:0.35rem;">
+                                <button onclick="event.stopPropagation(); viewJobDetails('${j._id}')" class="btn btn-outline" style="padding:0.25rem 0.6rem;font-size:0.75rem;margin-right:0.35rem;background:#f0fdf4;color:#15803d;border-color:#bbf7d0;font-weight:600;">
+                                    👁 Details
+                                </button>
+                                <button onclick="event.stopPropagation(); toggleAdminJobStatus('${j._id}', '${j.status}')" class="btn btn-outline" style="padding:0.25rem 0.6rem;font-size:0.75rem;margin-right:0.35rem;">
                                     ${j.status === 'active' ? '🔒 Close' : '🔓 Activate'}
                                 </button>
-                                <button onclick="deleteAdminJob('${j._id}', '${sanitize(j.title)}')" class="btn btn-outline" style="padding:0.25rem 0.6rem;font-size:0.75rem;color:#ef4444;border-color:rgba(239,68,68,0.3);">
+                                <button onclick="event.stopPropagation(); deleteAdminJob('${j._id}', '${sanitize(j.title)}')" class="btn btn-outline" style="padding:0.25rem 0.6rem;font-size:0.75rem;color:#ef4444;border-color:rgba(239,68,68,0.3);">
                                     🗑
                                 </button>
                             </td>
@@ -1918,6 +2093,116 @@ async function deleteAdminJob(id, title) {
         await loadSection('jobs');
     } catch(e) { showToast('Error: ' + e.message, 'error'); }
 }
+
+async function viewJobDetails(jobId) {
+    let modal = document.getElementById('jobDetailModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'jobDetailModal';
+        modal.className = 'modal-backdrop';
+        modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99999;display:flex;align-items:center;justify-content:center;padding:1rem;';
+        document.body.appendChild(modal);
+    }
+    modal.innerHTML = '<div style="background:white;border-radius:16px;padding:2rem;text-align:center;font-size:1rem;color:var(--text-main);">Loading job details & applicants...</div>';
+    modal.style.display = 'flex';
+
+    try {
+        let job = null;
+        let applicants = [];
+        try {
+            const res = await API.get(`/jobs/${jobId}`);
+            job = res.job || res;
+        } catch(e) {
+            const res2 = await API.get('/admin/jobs');
+            job = (res2.jobs || []).find(j => j._id === jobId) || {};
+        }
+
+        try {
+            const appRes = await API.get('/admin/applications');
+            applicants = (appRes.applications || []).filter(a => (a.jobId?._id || a.jobId) === jobId);
+        } catch(e) {}
+
+        const skills = job.requiredSkills || [];
+
+        modal.innerHTML = `
+            <div style="background:var(--card-bg, white);border-radius:16px;max-width:760px;width:100%;max-height:90vh;overflow-y:auto;padding:1.75rem;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);border:1px solid var(--border-color);" onclick="event.stopPropagation();">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.25rem;border-bottom:1px solid var(--border-color);padding-bottom:1rem;">
+                    <div>
+                        <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.25rem;">
+                            <h2 style="margin:0;font-size:1.3rem;color:var(--text-main);">${sanitize(job.title || 'Job Details')}</h2>
+                            <span class="role-pill" style="background:${job.status==='active'?'#dcfce7':'#fee2e2'};color:${job.status==='active'?'#15803d':'#991b1b'};font-size:0.75rem;">
+                                ● ${(job.status || 'ACTIVE').toUpperCase()}
+                            </span>
+                        </div>
+                        <div style="font-size:0.9rem;color:var(--primary);font-weight:600;">🏢 ${sanitize(job.companyName || 'Company')} ${job.location ? '· 📍 ' + sanitize(job.location) : ''} ${job.type ? '· 💼 ' + sanitize(job.type) : ''}</div>
+                    </div>
+                    <button onclick="document.getElementById('jobDetailModal').style.display='none'" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--text-muted);">&times;</button>
+                </div>
+
+                <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(140px, 1fr));gap:0.75rem;margin-bottom:1.25rem;">
+                    <div style="background:#f8fafc;padding:0.75rem;border-radius:8px;border:1px solid var(--border-color);"><div style="font-size:0.7rem;color:var(--text-muted);font-weight:600;">Salary Range</div><div style="font-size:0.9rem;font-weight:700;color:#10b981;">${sanitize(job.salary || 'Competitive')}</div></div>
+                    <div style="background:#f8fafc;padding:0.75rem;border-radius:8px;border:1px solid var(--border-color);"><div style="font-size:0.7rem;color:var(--text-muted);font-weight:600;">Experience Required</div><div style="font-size:0.9rem;font-weight:600;">${sanitize(job.experience || 'Entry-level')}</div></div>
+                    <div style="background:#f8fafc;padding:0.75rem;border-radius:8px;border:1px solid var(--border-color);"><div style="font-size:0.7rem;color:var(--text-muted);font-weight:600;">Total Applicants</div><div style="font-size:0.9rem;font-weight:700;color:var(--primary);">${applicants.length || job.applicantCount || 0}</div></div>
+                    <div style="background:#f8fafc;padding:0.75rem;border-radius:8px;border:1px solid var(--border-color);"><div style="font-size:0.7rem;color:var(--text-muted);font-weight:600;">Posted On</div><div style="font-size:0.85rem;">${job.createdAt ? new Date(job.createdAt).toLocaleDateString() : 'N/A'}</div></div>
+                </div>
+
+                ${job.description ? `
+                    <div style="margin-bottom:1.25rem;">
+                        <h4 style="margin:0 0 0.5rem;font-size:0.85rem;color:var(--text-muted);text-transform:uppercase;">📝 Job Description</h4>
+                        <div style="background:#f8fafc;padding:1rem;border-radius:8px;border:1px solid var(--border-color);font-size:0.85rem;line-height:1.6;white-space:pre-wrap;color:var(--text-main);max-height:160px;overflow-y:auto;">${sanitize(job.description)}</div>
+                    </div>
+                ` : ''}
+
+                <div style="margin-bottom:1.25rem;">
+                    <h4 style="margin:0 0 0.5rem;font-size:0.85rem;color:var(--text-muted);text-transform:uppercase;">🛠️ Required Skills (${skills.length})</h4>
+                    <div style="display:flex;flex-wrap:wrap;gap:0.4rem;">
+                        ${skills.length === 0 ? '<span style="color:var(--text-muted);font-size:0.8rem;">No required skills specified</span>' : skills.map(sk => `<span style="background:rgba(59,130,246,0.1);color:#2563eb;padding:0.25rem 0.65rem;border-radius:999px;font-size:0.75rem;font-weight:600;">${sanitize(typeof sk === 'object' ? sk.name : sk)}</span>`).join('')}
+                    </div>
+                </div>
+
+                <div>
+                    <h4 style="margin:0 0 0.5rem;font-size:0.85rem;color:var(--text-muted);text-transform:uppercase;">👥 Candidate Pipeline (${applicants.length})</h4>
+                    <div style="border:1px solid var(--border-color);border-radius:8px;overflow:hidden;max-height:220px;overflow-y:auto;">
+                        ${applicants.length === 0 ? '<div style="padding:1.5rem;text-align:center;color:var(--text-muted);font-size:0.85rem;">No candidates have applied for this job yet.</div>' : `
+                            <table class="data-table" style="margin:0;font-size:0.8rem;">
+                                <thead><tr><th>Candidate</th><th>Match %</th><th>Stage</th><th>Applied</th><th>Action</th></tr></thead>
+                                <tbody>
+                                    ${applicants.map(a => `<tr>
+                                        <td>
+                                            <div style="font-weight:600;">${sanitize(a.studentId?.name || 'Candidate')}</div>
+                                            <div style="font-size:0.7rem;color:var(--text-muted);">${sanitize(a.studentId?.email || '')}</div>
+                                        </td>
+                                        <td><span style="font-weight:700;color:${(a.skillMatch||0)>=70?'#10b981':'#3b82f6'};">${a.skillMatch||0}%</span></td>
+                                        <td><span class="role-pill" style="padding:0.15rem 0.5rem;font-size:0.7rem;">${a.status}</span></td>
+                                        <td style="color:var(--text-muted);font-size:0.75rem;">${new Date(a.appliedAt || a.createdAt).toLocaleDateString()}</td>
+                                        <td>
+                                            <button onclick="document.getElementById('jobDetailModal').style.display='none'; viewApplicationDetails('${a._id}');" class="btn btn-outline" style="font-size:0.7rem;padding:0.2rem 0.5rem;">Inspect ↗</button>
+                                        </td>
+                                    </tr>`).join('')}
+                                </tbody>
+                            </table>
+                        `}
+                    </div>
+                </div>
+
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--border-color);">
+                    <div style="display:flex;gap:0.5rem;">
+                        <button onclick="toggleAdminJobStatus('${job._id}', '${job.status}'); document.getElementById('jobDetailModal').style.display='none';" class="btn btn-outline" style="font-size:0.85rem;">
+                            ${job.status === 'active' ? '🔒 Close Job' : '🔓 Activate Job'}
+                        </button>
+                        <button onclick="deleteAdminJob('${job._id}', '${sanitize(job.title)}'); document.getElementById('jobDetailModal').style.display='none';" class="btn btn-outline" style="font-size:0.85rem;color:#ef4444;border-color:rgba(239,68,68,0.3);">
+                            🗑 Delete
+                        </button>
+                    </div>
+                    <button onclick="document.getElementById('jobDetailModal').style.display='none'" class="btn btn-primary" style="font-size:0.85rem;">Close</button>
+                </div>
+            </div>
+        `;
+    } catch(err) {
+        modal.innerHTML = `<div style="background:white;padding:2rem;border-radius:16px;color:#ef4444;text-align:center;">Failed to load job: ${err.message}<br><br><button onclick="document.getElementById('jobDetailModal').style.display='none'" class="btn btn-outline">Close</button></div>`;
+    }
+}
+window.viewJobDetails = viewJobDetails;
 
 // ════════════ All Applications Management ════════════
 async function renderAdminApplications(c) {
@@ -1965,7 +2250,7 @@ async function renderAdminApplications(c) {
             <table class="data-table" id="adminAppsTable">
                 <thead>
                     <tr>
-                        <th>Candidate</th>
+                        <th>Candidate (Click to inspect application)</th>
                         <th>Job Title & Company</th>
                         <th>Skill Match</th>
                         <th>Hire Probability</th>
@@ -1976,9 +2261,9 @@ async function renderAdminApplications(c) {
                 </thead>
                 <tbody>
                     ${apps.length === 0 ? '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:2rem;">No applications submitted yet.</td></tr>' : apps.map(a => `
-                        <tr data-status="${a.status}" data-text="${sanitize(((a.studentId?.name||'') + ' ' + (a.studentId?.email||'') + ' ' + (a.jobId?.title||'') + ' ' + (a.jobId?.companyName||'')).toLowerCase())}">
+                        <tr onclick="viewApplicationDetails('${a._id}')" style="cursor:pointer;" title="Click to inspect candidate application" data-status="${a.status}" data-text="${sanitize(((a.studentId?.name||'') + ' ' + (a.studentId?.email||'') + ' ' + (a.jobId?.title||'') + ' ' + (a.jobId?.companyName||'')).toLowerCase())}">
                             <td>
-                                <div style="font-weight:600;color:var(--text-main);">${sanitize(a.studentId?.name || 'Student')}</div>
+                                <div style="font-weight:600;color:var(--text-main);">${sanitize(a.studentId?.name || 'Student')} <span style="font-size:0.75rem;color:var(--primary);opacity:0.8;">↗</span></div>
                                 <div style="font-size:0.75rem;color:var(--text-muted);">${sanitize(a.studentId?.email || '')}</div>
                             </td>
                             <td>
@@ -1994,7 +2279,7 @@ async function renderAdminApplications(c) {
                                 <div style="font-weight:700;color:${a.hiringProbability>=70?'#10b981':'#64748b'};">${a.hiringProbability || 0}%</div>
                             </td>
                             <td>
-                                <select onchange="updateAdminAppStatus('${a._id}', this.value)" style="padding:0.3rem 0.5rem;font-size:0.75rem;border-radius:6px;border:1px solid var(--border-color);background:var(--input-bg);font-weight:600;">
+                                <select onclick="event.stopPropagation();" onchange="updateAdminAppStatus('${a._id}', this.value)" style="padding:0.3rem 0.5rem;font-size:0.75rem;border-radius:6px;border:1px solid var(--border-color);background:var(--input-bg);font-weight:600;">
                                     <option value="applied" ${a.status==='applied'?'selected':''}>Applied</option>
                                     <option value="in-review" ${a.status==='in-review'?'selected':''}>In Review</option>
                                     <option value="shortlisted" ${a.status==='shortlisted'?'selected':''}>Shortlisted</option>
@@ -2004,8 +2289,11 @@ async function renderAdminApplications(c) {
                                 </select>
                             </td>
                             <td style="font-size:0.8rem;color:var(--text-muted);">${new Date(a.appliedAt).toLocaleDateString()}</td>
-                            <td style="text-align:right;">
-                                <button onclick="deleteAdminApplication('${a._id}')" class="btn btn-outline" style="padding:0.25rem 0.6rem;font-size:0.75rem;color:#ef4444;border-color:rgba(239,68,68,0.3);">
+                            <td style="text-align:right;white-space:nowrap;">
+                                <button onclick="event.stopPropagation(); viewApplicationDetails('${a._id}')" class="btn btn-outline" style="padding:0.25rem 0.6rem;font-size:0.75rem;margin-right:0.35rem;background:#f0fdf4;color:#15803d;border-color:#bbf7d0;font-weight:600;">
+                                    👁 Details
+                                </button>
+                                <button onclick="event.stopPropagation(); deleteAdminApplication('${a._id}')" class="btn btn-outline" style="padding:0.25rem 0.6rem;font-size:0.75rem;color:#ef4444;border-color:rgba(239,68,68,0.3);">
                                     🗑
                                 </button>
                             </td>
@@ -2016,6 +2304,96 @@ async function renderAdminApplications(c) {
         </div>
     </div>`;
 }
+
+async function viewApplicationDetails(appId) {
+    let modal = document.getElementById('appDetailModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'appDetailModal';
+        modal.className = 'modal-backdrop';
+        modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99999;display:flex;align-items:center;justify-content:center;padding:1rem;';
+        document.body.appendChild(modal);
+    }
+    modal.innerHTML = '<div style="background:white;border-radius:16px;padding:2rem;text-align:center;font-size:1rem;color:var(--text-main);">Loading application details...</div>';
+    modal.style.display = 'flex';
+
+    try {
+        const res = await API.get('/admin/applications');
+        const apps = res.applications || [];
+        const app = apps.find(a => a._id === appId) || {};
+        const student = app.studentId || {};
+        const job = app.jobId || {};
+
+        modal.innerHTML = `
+            <div style="background:var(--card-bg, white);border-radius:16px;max-width:680px;width:100%;max-height:90vh;overflow-y:auto;padding:1.75rem;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);border:1px solid var(--border-color);" onclick="event.stopPropagation();">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.25rem;border-bottom:1px solid var(--border-color);padding-bottom:1rem;">
+                    <div>
+                        <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.25rem;">
+                            <h2 style="margin:0;font-size:1.25rem;color:var(--text-main);">📄 Application Inspection</h2>
+                            <span class="role-pill" style="font-size:0.75rem;padding:0.2rem 0.6rem;text-transform:capitalize;">${app.status || 'applied'}</span>
+                        </div>
+                        <div style="font-size:0.85rem;color:var(--text-muted);">Applied on ${app.appliedAt ? new Date(app.appliedAt).toLocaleDateString() : 'N/A'}</div>
+                    </div>
+                    <button onclick="document.getElementById('appDetailModal').style.display='none'" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--text-muted);">&times;</button>
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.25rem;">
+                    <div style="background:#f8fafc;padding:1rem;border-radius:10px;border:1px solid var(--border-color);">
+                        <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:0.4rem;">🎓 Candidate Information</div>
+                        <div style="font-size:1rem;font-weight:700;color:var(--text-main);">${sanitize(student.name || 'Candidate')}</div>
+                        <div style="font-size:0.8rem;color:var(--text-muted);">${sanitize(student.email || '')}</div>
+                        <button onclick="document.getElementById('appDetailModal').style.display='none'; viewUserProfile('${student._id || student}');" class="btn btn-outline" style="margin-top:0.75rem;font-size:0.75rem;padding:0.25rem 0.6rem;width:100%;">View Full Profile ↗</button>
+                    </div>
+                    <div style="background:#f8fafc;padding:1rem;border-radius:10px;border:1px solid var(--border-color);">
+                        <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:0.4rem;">💼 Target Job Posting</div>
+                        <div style="font-size:1rem;font-weight:700;color:var(--primary);">${sanitize(job.title || 'Job Posting')}</div>
+                        <div style="font-size:0.8rem;color:var(--text-muted);">${sanitize(job.companyName || 'Company')}</div>
+                <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:1rem;margin-bottom:1.25rem;">
+                    <div style="font-size:0.8rem;font-weight:700;color:#15803d;margin-bottom:0.5rem;">🤖 AI Matching Algorithm Breakdown</div>
+                    <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:0.75rem;text-align:center;">
+                        <div style="background:white;padding:0.75rem;border-radius:8px;border:1px solid #bbf7d0;">
+                            <div style="font-size:0.7rem;color:var(--text-muted);font-weight:600;">Skill Match (60%)</div>
+                            <div style="font-size:1.25rem;font-weight:700;color:#15803d;">${app.skillMatch || 0}%</div>
+                        </div>
+                        <div style="background:white;padding:0.75rem;border-radius:8px;border:1px solid #bbf7d0;">
+                            <div style="font-size:0.7rem;color:var(--text-muted);font-weight:600;">Hire Probability</div>
+                            <div style="font-size:1.25rem;font-weight:700;color:#0284c7;">${app.hiringProbability || 0}%</div>
+                        </div>
+                        <div style="background:white;padding:0.75rem;border-radius:8px;border:1px solid #bbf7d0;">
+                            <div style="font-size:0.7rem;color:var(--text-muted);font-weight:600;">Stage Status</div>
+                            <div style="font-size:1rem;font-weight:700;color:#ea580c;text-transform:capitalize;margin-top:0.15rem;">${app.status || 'Applied'}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-bottom:1.25rem;">
+                    <div style="font-size:0.8rem;font-weight:700;color:var(--text-muted);margin-bottom:0.5rem;">⚙️ Update Hiring Stage</div>
+                    <div style="display:flex;gap:0.5rem;align-items:center;">
+                        <select id="modalAppStatusSelect" style="padding:0.5rem;border-radius:8px;border:1px solid var(--border-color);font-size:0.85rem;flex:1;background:var(--input-bg);">
+                            <option value="applied" ${app.status==='applied'?'selected':''}>Applied</option>
+                            <option value="in-review" ${app.status==='in-review'?'selected':''}>In Review</option>
+                            <option value="shortlisted" ${app.status==='shortlisted'?'selected':''}>Shortlisted</option>
+                            <option value="interview" ${app.status==='interview'?'selected':''}>Interview</option>
+                            <option value="selected" ${app.status==='selected'?'selected':''}>Selected</option>
+                            <option value="rejected" ${app.status==='rejected'?'selected':''}>Rejected</option>
+                        </select>
+                        <button onclick="updateAdminAppStatus('${app._id}', document.getElementById('modalAppStatusSelect').value); document.getElementById('appDetailModal').style.display='none'; loadSection('applications');" class="btn btn-primary" style="font-size:0.85rem;padding:0.5rem 1rem;">Update Stage</button>
+                    </div>
+                </div>
+
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--border-color);">
+                    <button onclick="deleteAdminApplication('${app._id}'); document.getElementById('appDetailModal').style.display='none';" class="btn btn-outline" style="font-size:0.85rem;color:#ef4444;border-color:rgba(239,68,68,0.3);">
+                        🗑 Delete Application
+                    </button>
+                    <button onclick="document.getElementById('appDetailModal').style.display='none'" class="btn btn-outline" style="font-size:0.85rem;">Close</button>
+                </div>
+            </div>
+        `;
+    } catch(err) {
+        modal.innerHTML = `<div style="background:white;padding:2rem;border-radius:16px;color:#ef4444;text-align:center;">Failed to load application: ${err.message}<br><br><button onclick="document.getElementById('appDetailModal').style.display='none'" class="btn btn-outline">Close</button></div>`;
+    }
+}
+window.viewApplicationDetails = viewApplicationDetails;
 
 function filterAdminAppsTable() {
     const s = (document.getElementById('adminAppSearch')?.value || '').toLowerCase();
@@ -2080,6 +2458,8 @@ window.filterAdminAppsTable = filterAdminAppsTable;
 window.updateAdminAppStatus = updateAdminAppStatus;
 window.deleteAdminApplication = deleteAdminApplication;
 window.cleanTempSystemData = cleanTempSystemData;
+window.viewQuestionDetails = viewQuestionDetails;
+window.viewPrepDetails = viewPrepDetails;
 
 // ── Authenticated CSV Export ──
 async function adminExportCSV(url, filename) {
@@ -2157,16 +2537,17 @@ function renderContentTab() {
                 <button onclick="openAddPrepModal()" class="btn btn-primary" style="font-size:0.8rem;padding:0.4rem 1rem;">+ Add Prep Path</button>
             </div>
             <div class="table-responsive">
-                <table class="data-table"><thead><tr><th>Company</th><th>Difficulty</th><th>Questions</th><th>Topics</th><th>Avg Salary</th><th>Roles</th><th>Actions</th></tr></thead>
-                <tbody>${state.prepCompanies.map(p => `<tr>
-                    <td style="font-weight:600;">${sanitize(p.companyName)}</td>
+                <table class="data-table"><thead><tr><th>Company (Click to inspect path)</th><th>Difficulty</th><th>Questions</th><th>Topics</th><th>Avg Salary</th><th>Roles</th><th>Actions</th></tr></thead>
+                <tbody>${state.prepCompanies.map(p => `<tr onclick="viewPrepDetails('${p._id}')" style="cursor:pointer;" title="Click to view company roadmap details">
+                    <td style="font-weight:600;color:var(--text-main);">${sanitize(p.companyName)} <span style="font-size:0.75rem;color:var(--primary);opacity:0.8;">↗</span></td>
                     <td><span style="font-size:0.75rem;font-weight:600;padding:0.15rem 0.5rem;border-radius:999px;${p.difficulty === 'Easy' ? 'color:#10b981;background:rgba(16,185,129,0.1)' : p.difficulty === 'Medium' ? 'color:#d97706;background:rgba(217,119,6,0.1)' : 'color:#ef4444;background:rgba(239,68,68,0.1)'}">${p.difficulty}</span></td>
                     <td>${p.questionCount}</td><td>${p.topicCount}</td><td>${p.avgSalary || '-'}</td>
                     <td>${(p.roles || []).map(r => `<span style="font-size:0.7rem;background:#f1f5f9;padding:0.1rem 0.4rem;border-radius:4px;margin-right:0.25rem;">${sanitize(r)}</span>`).join('')}</td>
                     <td>
                         <div style="display:flex;gap:0.25rem;">
-                            <button onclick="openEditPrepModal('${p._id}')" class="btn btn-outline" style="font-size:0.7rem;padding:0.2rem 0.5rem;">✏️ Edit</button>
-                            <button onclick="deletePrep('${p._id}')" class="btn btn-outline" style="font-size:0.7rem;padding:0.2rem 0.5rem;color:#ef4444;border-color:rgba(239,68,68,0.3);">🗑 Delete</button>
+                            <button onclick="event.stopPropagation(); viewPrepDetails('${p._id}')" class="btn btn-outline" style="font-size:0.7rem;padding:0.2rem 0.5rem;background:#f0fdf4;color:#15803d;border-color:#bbf7d0;font-weight:600;">👁 View</button>
+                            <button onclick="event.stopPropagation(); openEditPrepModal('${p._id}')" class="btn btn-outline" style="font-size:0.7rem;padding:0.2rem 0.5rem;">✏️ Edit</button>
+                            <button onclick="event.stopPropagation(); deletePrep('${p._id}')" class="btn btn-outline" style="font-size:0.7rem;padding:0.2rem 0.5rem;color:#ef4444;border-color:rgba(239,68,68,0.3);">🗑 Delete</button>
                         </div>
                     </td>
                 </tr>`).join('')}</tbody></table>
@@ -2190,7 +2571,7 @@ function renderContentTab() {
         <div class="table-responsive" style="max-height:600px;overflow:auto;">
             <table class="data-table" style="font-size:0.8rem;"><thead><tr>
                 <th style="width:40px;">#</th>
-                <th>Title</th>
+                <th>Title (Click to view full question)</th>
                 ${isMcq ? '<th>Question</th>' : '<th>Description</th>'}
                 <th>Difficulty</th>
                 <th>Topic</th>
@@ -2198,9 +2579,9 @@ function renderContentTab() {
                 ${isMcq ? '<th>Answer</th>' : ''}
                 <th>Actions</th>
             </tr></thead>
-            <tbody>${displayQ.map((q, i) => `<tr>
+            <tbody>${displayQ.map((q, i) => `<tr onclick="viewQuestionDetails('${tab}', '${q.id || i}')" style="cursor:pointer;" title="Click to view full question details">
                 <td style="color:var(--text-muted);">${i + 1}</td>
-                <td style="font-weight:600;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${sanitize(q.title || q.id)}</td>
+                <td style="font-weight:600;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-main);">${sanitize(q.title || q.id)} <span style="font-size:0.75rem;color:var(--primary);opacity:0.8;">↗</span></td>
                 <td style="max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-muted);">${sanitize((isMcq ? q.question : q.description) || '').substring(0, 80)}...</td>
                 <td><span style="font-size:0.7rem;font-weight:600;padding:0.15rem 0.4rem;border-radius:999px;${q.difficulty === 'Easy' ? 'color:#10b981;background:rgba(16,185,129,0.1)' : q.difficulty === 'Medium' ? 'color:#d97706;background:rgba(217,119,6,0.1)' : 'color:#ef4444;background:rgba(239,68,68,0.1)'}">${q.difficulty}</span></td>
                 <td style="font-size:0.75rem;">${sanitize(q.topic || '-')}</td>
@@ -2208,8 +2589,9 @@ function renderContentTab() {
                 ${isMcq ? `<td style="font-size:0.75rem;font-weight:700;color:var(--primary);">${String.fromCharCode(65 + (q.correctAnswer || 0))}</td>` : ''}
                 <td>
                     <div style="display:flex;gap:0.25rem;">
-                        <button onclick="openEditQuestionModal('${tab}', '${q.id}')" class="btn btn-outline" style="font-size:0.65rem;padding:0.15rem 0.4rem;">✏️ Edit</button>
-                        <button onclick="deleteQuestion('${tab}', '${q.id}')" class="btn btn-outline" style="font-size:0.65rem;padding:0.15rem 0.4rem;color:#ef4444;border-color:rgba(239,68,68,0.3);">🗑</button>
+                        <button onclick="event.stopPropagation(); viewQuestionDetails('${tab}', '${q.id || i}')" class="btn btn-outline" style="font-size:0.65rem;padding:0.15rem 0.45rem;background:#f0fdf4;color:#15803d;border-color:#bbf7d0;font-weight:600;">👁 View</button>
+                        <button onclick="event.stopPropagation(); openEditQuestionModal('${tab}', '${q.id}')" class="btn btn-outline" style="font-size:0.65rem;padding:0.15rem 0.4rem;">✏️ Edit</button>
+                        <button onclick="event.stopPropagation(); deleteQuestion('${tab}', '${q.id}')" class="btn btn-outline" style="font-size:0.65rem;padding:0.15rem 0.4rem;color:#ef4444;border-color:rgba(239,68,68,0.3);">🗑</button>
                     </div>
                 </td>
             </tr>`).join('')}</tbody></table>
@@ -2217,6 +2599,147 @@ function renderContentTab() {
     `;
 }
 window.switchContentTab = switchContentTab;
+
+function viewQuestionDetails(type, questionId) {
+    const keyMap = { mcq: 'coding_mcq', coding: 'coding', aptitude: 'aptitude' };
+    const questions = state.questions ? (state.questions[keyMap[type]] || []) : [];
+    const q = questions.find(item => (item.id === questionId || item._id === questionId)) || questions[parseInt(questionId)] || {};
+    const isMcq = type === 'mcq' || type === 'aptitude';
+
+    let modal = document.getElementById('questionDetailModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'questionDetailModal';
+        modal.className = 'modal-backdrop';
+        modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99999;display:flex;align-items:center;justify-content:center;padding:1rem;';
+        document.body.appendChild(modal);
+    }
+
+    const diffColor = q.difficulty === 'Easy' ? '#10b981' : q.difficulty === 'Medium' ? '#d97706' : '#ef4444';
+    const diffBg = q.difficulty === 'Easy' ? 'rgba(16,185,129,0.1)' : q.difficulty === 'Medium' ? 'rgba(217,119,6,0.1)' : 'rgba(239,68,68,0.1)';
+
+    modal.innerHTML = `
+        <div style="background:var(--card-bg, white);border-radius:16px;max-width:680px;width:100%;max-height:90vh;overflow-y:auto;padding:1.75rem;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);border:1px solid var(--border-color);" onclick="event.stopPropagation();">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.25rem;border-bottom:1px solid var(--border-color);padding-bottom:1rem;">
+                <div>
+                    <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.25rem;">
+                        <h2 style="margin:0;font-size:1.25rem;color:var(--text-main);">${sanitize(q.title || 'Question Details')}</h2>
+                        <span style="font-size:0.75rem;font-weight:700;padding:0.2rem 0.6rem;border-radius:999px;color:${diffColor};background:${diffBg};">${q.difficulty || 'Medium'}</span>
+                    </div>
+                    <div style="font-size:0.85rem;color:var(--text-muted);">
+                        ${q.topic ? '🏷️ ' + sanitize(q.topic) : ''} ${q.company ? '· 🏢 ' + sanitize(q.company) : ''} · <span style="text-transform:uppercase;font-weight:600;">${type}</span>
+                    </div>
+                </div>
+                <button onclick="document.getElementById('questionDetailModal').style.display='none'" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--text-muted);">&times;</button>
+            </div>
+
+            <div style="margin-bottom:1.25rem;">
+                <h4 style="margin:0 0 0.5rem;font-size:0.85rem;color:var(--text-muted);text-transform:uppercase;">${isMcq ? '❓ Question Prompt' : '📝 Problem Statement'}</h4>
+                <div style="background:#f8fafc;padding:1rem;border-radius:8px;border:1px solid var(--border-color);font-size:0.9rem;line-height:1.6;white-space:pre-wrap;color:var(--text-main);">${sanitize(isMcq ? q.question : q.description || '')}</div>
+            </div>
+
+            ${isMcq && q.options ? `
+                <div style="margin-bottom:1.25rem;">
+                    <h4 style="margin:0 0 0.5rem;font-size:0.85rem;color:var(--text-muted);text-transform:uppercase;">📋 Options & Answer</h4>
+                    <div style="display:flex;flex-direction:column;gap:0.5rem;">
+                        ${q.options.map((opt, idx) => {
+                            const isCorrect = idx === (q.correctAnswer || 0);
+                            return `
+                                <div style="display:flex;align-items:center;gap:0.75rem;padding:0.75rem 1rem;border-radius:8px;border:1px solid ${isCorrect ? '#86efac' : 'var(--border-color)'};background:${isCorrect ? '#f0fdf4' : 'var(--bg-muted, #f8fafc)'};font-size:0.85rem;">
+                                    <div style="width:24px;height:24px;border-radius:50%;background:${isCorrect ? '#10b981' : '#cbd5e1'};color:white;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;flex-shrink:0;">
+                                        ${String.fromCharCode(65 + idx)}
+                                    </div>
+                                    <div style="flex:1;color:var(--text-main);font-weight:${isCorrect ? '600' : '400'};">${sanitize(opt)}</div>
+                                    ${isCorrect ? '<span style="color:#15803d;font-weight:700;font-size:0.8rem;">✓ Correct Answer</span>' : ''}
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            ` : ''}
+
+            ${!isMcq && q.starterCode ? `
+                <div style="margin-bottom:1.25rem;">
+                    <h4 style="margin:0 0 0.5rem;font-size:0.85rem;color:var(--text-muted);text-transform:uppercase;">💻 Starter Code Template</h4>
+                    <pre style="background:#0f172a;color:#38bdf8;padding:1rem;border-radius:8px;font-family:monospace;font-size:0.8rem;overflow-x:auto;">${sanitize(q.starterCode)}</pre>
+                </div>
+            ` : ''}
+
+            ${q.explanation ? `
+                <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:1rem;margin-bottom:1.25rem;">
+                    <h4 style="margin:0 0 0.4rem;font-size:0.85rem;color:#1e40af;">💡 Solution Explanation</h4>
+                    <div style="font-size:0.85rem;color:#1e3a8a;line-height:1.5;">${sanitize(q.explanation)}</div>
+                </div>
+            ` : ''}
+
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--border-color);">
+                <div style="display:flex;gap:0.5rem;">
+                    <button onclick="document.getElementById('questionDetailModal').style.display='none'; openEditQuestionModal('${type}', '${q.id}');" class="btn btn-outline" style="font-size:0.85rem;">✏️ Edit</button>
+                    <button onclick="document.getElementById('questionDetailModal').style.display='none'; deleteQuestion('${type}', '${q.id}');" class="btn btn-outline" style="font-size:0.85rem;color:#ef4444;border-color:rgba(239,68,68,0.3);">🗑 Delete</button>
+                </div>
+                <button onclick="document.getElementById('questionDetailModal').style.display='none'" class="btn btn-primary" style="font-size:0.85rem;">Close</button>
+            </div>
+        </div>
+    `;
+    modal.style.display = 'flex';
+}
+window.viewQuestionDetails = viewQuestionDetails;
+
+function viewPrepDetails(prepId) {
+    const p = (state.prepCompanies || []).find(item => item._id === prepId) || {};
+    let modal = document.getElementById('prepDetailModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'prepDetailModal';
+        modal.className = 'modal-backdrop';
+        modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99999;display:flex;align-items:center;justify-content:center;padding:1rem;';
+        document.body.appendChild(modal);
+    }
+
+    modal.innerHTML = `
+        <div style="background:var(--card-bg, white);border-radius:16px;max-width:680px;width:100%;max-height:90vh;overflow-y:auto;padding:1.75rem;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);border:1px solid var(--border-color);" onclick="event.stopPropagation();">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.25rem;border-bottom:1px solid var(--border-color);padding-bottom:1rem;">
+                <div>
+                    <h2 style="margin:0;font-size:1.3rem;color:var(--text-main);">🏢 ${sanitize(p.companyName || 'Company Path')}</h2>
+                    <div style="font-size:0.85rem;color:var(--text-muted);">Difficulty: <b>${sanitize(p.difficulty || 'Medium')}</b> · Avg Package: <b>${sanitize(p.avgSalary || 'N/A')}</b></div>
+                </div>
+                <button onclick="document.getElementById('prepDetailModal').style.display='none'" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--text-muted);">&times;</button>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem;margin-bottom:1.25rem;">
+                <div style="background:#f8fafc;padding:0.75rem;border-radius:8px;border:1px solid var(--border-color);text-align:center;">
+                    <div style="font-size:0.7rem;color:var(--text-muted);font-weight:600;">Total Questions</div>
+                    <div style="font-size:1.25rem;font-weight:700;color:var(--primary);">${p.questionCount || 0}</div>
+                </div>
+                <div style="background:#f8fafc;padding:0.75rem;border-radius:8px;border:1px solid var(--border-color);text-align:center;">
+                    <div style="font-size:0.7rem;color:var(--text-muted);font-weight:600;">Interview Topics</div>
+                    <div style="font-size:1.25rem;font-weight:700;color:#8b5cf6;">${p.topicCount || 0}</div>
+                </div>
+                <div style="background:#f8fafc;padding:0.75rem;border-radius:8px;border:1px solid var(--border-color);text-align:center;">
+                    <div style="font-size:0.7rem;color:var(--text-muted);font-weight:600;">Hiring Roles</div>
+                    <div style="font-size:1.25rem;font-weight:700;color:#10b981;">${(p.roles || []).length}</div>
+                </div>
+            </div>
+
+            <div style="margin-bottom:1.25rem;">
+                <h4 style="margin:0 0 0.5rem;font-size:0.85rem;color:var(--text-muted);text-transform:uppercase;">💼 Target Job Roles</h4>
+                <div style="display:flex;flex-wrap:wrap;gap:0.4rem;">
+                    ${(p.roles || []).map(r => `<span style="background:rgba(59,130,246,0.1);color:#2563eb;padding:0.25rem 0.65rem;border-radius:999px;font-size:0.75rem;font-weight:600;">${sanitize(r)}</span>`).join('')}
+                </div>
+            </div>
+
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--border-color);">
+                <div style="display:flex;gap:0.5rem;">
+                    <button onclick="document.getElementById('prepDetailModal').style.display='none'; openEditPrepModal('${p._id}');" class="btn btn-outline" style="font-size:0.85rem;">✏️ Edit</button>
+                    <button onclick="document.getElementById('prepDetailModal').style.display='none'; deletePrep('${p._id}');" class="btn btn-outline" style="font-size:0.85rem;color:#ef4444;border-color:rgba(239,68,68,0.3);">🗑 Delete</button>
+                </div>
+                <button onclick="document.getElementById('prepDetailModal').style.display='none'" class="btn btn-primary" style="font-size:0.85rem;">Close</button>
+            </div>
+        </div>
+    `;
+    modal.style.display = 'flex';
+}
+window.viewPrepDetails = viewPrepDetails;
 
 // ── Add Question Modal ──
 function openAddQuestionModal(type) {
