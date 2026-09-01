@@ -21,17 +21,26 @@ document.addEventListener('DOMContentLoaded', async () => {
         adminAvatarEl.onclick = () => navigateToSection('profile');
     }
 
-    // Mobile sidebar drawer
+    // Mobile sidebar drawer & overlay
     const sidebarToggle = document.getElementById('adminSidebarToggle');
     const adminSidebar = document.getElementById('adminSidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
     if (sidebarToggle && adminSidebar) {
         sidebarToggle.onclick = (e) => {
             e.stopPropagation();
             adminSidebar.classList.toggle('open');
+            if (sidebarOverlay) sidebarOverlay.classList.toggle('open', adminSidebar.classList.contains('open'));
         };
+        if (sidebarOverlay) {
+            sidebarOverlay.onclick = () => {
+                adminSidebar.classList.remove('open');
+                sidebarOverlay.classList.remove('open');
+            };
+        }
         document.addEventListener('click', (e) => {
             if (!e.target.closest('#adminSidebar') && !e.target.closest('#adminSidebarToggle')) {
                 adminSidebar.classList.remove('open');
+                if (sidebarOverlay) sidebarOverlay.classList.remove('open');
             }
         });
     }
@@ -44,6 +53,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const s = item.dataset.section;
             document.getElementById('topbarTitle').textContent = item.textContent.trim();
             if (adminSidebar) adminSidebar.classList.remove('open');
+            if (sidebarOverlay) sidebarOverlay.classList.remove('open');
             loadSection(s);
         });
     });
@@ -54,20 +64,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.querySelector('[data-section="notifications"]').classList.add('active');
         document.getElementById('topbarTitle').textContent = '🔔 Notifications';
         if (adminSidebar) adminSidebar.classList.remove('open');
+        if (sidebarOverlay) sidebarOverlay.classList.remove('open');
         loadSection('notifications');
     };
 
     await loadSection('overview');
 });
 
-async function loadSection(section) {
+async function loadSection(section, options = {}) {
     const c = content();
     c.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--text-muted);">Loading...</div>';
     try {
         if (section === 'overview') await renderOverview(c);
         else if (section === 'analytics') await renderAnalytics(c);
         else if (section === 'profile') await renderAdminProfile(c);
-        else if (section === 'users') await renderUsers(c);
+        else if (section === 'users') await renderUsers(c, options.role || 'all');
         else if (section === 'companies') await renderCompanies(c);
         else if (section === 'jobs') await renderAdminJobs(c);
         else if (section === 'applications') await renderAdminApplications(c);
@@ -88,7 +99,7 @@ async function loadSection(section) {
 }
 
 // === NAVIGATION HELPERS ===
-function navigateToSection(section) {
+function navigateToSection(section, options = {}) {
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     const item = document.querySelector(`.nav-item[data-section="${section}"]`);
     if (item) {
@@ -96,22 +107,16 @@ function navigateToSection(section) {
         const titleEl = document.getElementById('topbarTitle');
         if (titleEl) titleEl.textContent = item.textContent.trim();
     }
-    loadSection(section);
+    const adminSidebar = document.getElementById('adminSidebar');
+    if (adminSidebar) adminSidebar.classList.remove('open');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    if (sidebarOverlay) sidebarOverlay.classList.remove('open');
+    loadSection(section, options);
 }
 window.navigateToSection = navigateToSection;
 
 function navigateToUsersWithRole(role = 'all') {
-    navigateToSection('users');
-    setTimeout(async () => {
-        const filter = document.getElementById('roleFilter');
-        if (filter) {
-            filter.value = role;
-            const q = document.getElementById('userSearch')?.value || '';
-            const d = await API.get(`/admin/users?search=${q}&role=${role}`);
-            state.users = d.users || [];
-            renderUserTable(content(), state.users);
-        }
-    }, 100);
+    navigateToSection('users', { role });
 }
 window.navigateToUsersWithRole = navigateToUsersWithRole;
 
@@ -127,33 +132,33 @@ async function renderOverview(c) {
     const s = state.stats;
     c.innerHTML = `
         <div class="metric-grid">
-            <div class="metric-card" onclick="navigateToUsersWithRole('student')" style="cursor:pointer;transition:transform 0.15s ease, box-shadow 0.15s ease;border-top:3px solid #f97316;" title="Click to inspect all student profiles">
-                <div class="label">👥 Students ↗</div>
+            <div class="metric-card" onclick="navigateToUsersWithRole('student')" role="button" tabindex="0" style="cursor:pointer;border-top:3px solid #f97316;" title="Click to inspect all student profiles">
+                <div class="label"><span>👥 Students</span> <span style="font-size:0.9rem;opacity:0.8;">↗</span></div>
                 <div class="value">${s.students || 0}</div>
                 <div class="sub" style="color:var(--primary);font-weight:600;">View all students & profiles →</div>
             </div>
-            <div class="metric-card" onclick="navigateToUsersWithRole('recruiter')" style="cursor:pointer;transition:transform 0.15s ease, box-shadow 0.15s ease;border-top:3px solid #3b82f6;" title="Click to view recruiter partners">
-                <div class="label">💼 Recruiters ↗</div>
+            <div class="metric-card" onclick="navigateToUsersWithRole('recruiter')" role="button" tabindex="0" style="cursor:pointer;border-top:3px solid #3b82f6;" title="Click to view recruiter partners">
+                <div class="label"><span>💼 Recruiters</span> <span style="font-size:0.9rem;opacity:0.8;">↗</span></div>
                 <div class="value">${s.recruiters || 0}</div>
                 <div class="sub" style="color:#3b82f6;font-weight:600;">View hiring partners →</div>
             </div>
-            <div class="metric-card" onclick="navigateToSection('companies')" style="cursor:pointer;transition:transform 0.15s ease, box-shadow 0.15s ease;border-top:3px solid #10b981;" title="Click to manage registered companies">
-                <div class="label">🏢 Companies ↗</div>
+            <div class="metric-card" onclick="navigateToSection('companies')" role="button" tabindex="0" style="cursor:pointer;border-top:3px solid #10b981;" title="Click to manage registered companies">
+                <div class="label"><span>🏢 Companies</span> <span style="font-size:0.9rem;opacity:0.8;">↗</span></div>
                 <div class="value">${s.companies || 0}</div>
                 <div class="sub" style="color:#10b981;font-weight:600;">${s.pendingVerifications || 0} pending verification →</div>
             </div>
-            <div class="metric-card" onclick="navigateToSection('jobs')" style="cursor:pointer;transition:transform 0.15s ease, box-shadow 0.15s ease;border-top:3px solid #8b5cf6;" title="Click to view job listings">
-                <div class="label">📋 Jobs ↗</div>
+            <div class="metric-card" onclick="navigateToSection('jobs')" role="button" tabindex="0" style="cursor:pointer;border-top:3px solid #8b5cf6;" title="Click to view job listings">
+                <div class="label"><span>📋 Jobs</span> <span style="font-size:0.9rem;opacity:0.8;">↗</span></div>
                 <div class="value">${s.jobs || 0}</div>
                 <div class="sub" style="color:#8b5cf6;font-weight:600;">${s.activeJobs || 0} active postings →</div>
             </div>
-            <div class="metric-card" onclick="navigateToSection('applications')" style="cursor:pointer;transition:transform 0.15s ease, box-shadow 0.15s ease;border-top:3px solid #ec4899;" title="Click to view all job applications">
-                <div class="label">📄 Applications ↗</div>
+            <div class="metric-card" onclick="navigateToSection('applications')" role="button" tabindex="0" style="cursor:pointer;border-top:3px solid #ec4899;" title="Click to view all job applications">
+                <div class="label"><span>📄 Applications</span> <span style="font-size:0.9rem;opacity:0.8;">↗</span></div>
                 <div class="value">${s.applications || 0}</div>
                 <div class="sub" style="color:#ec4899;font-weight:600;">${s.conversionRate || 0}% conversion rate →</div>
             </div>
-            <div class="metric-card" onclick="navigateToUsersWithRole('all')" style="cursor:pointer;transition:transform 0.15s ease, box-shadow 0.15s ease;border-top:3px solid #06b6d4;" title="Click to inspect all platform users">
-                <div class="label">✅ Active Users ↗</div>
+            <div class="metric-card" onclick="navigateToUsersWithRole('all')" role="button" tabindex="0" style="cursor:pointer;border-top:3px solid #06b6d4;" title="Click to inspect all platform users">
+                <div class="label"><span>✅ Active Users</span> <span style="font-size:0.9rem;opacity:0.8;">↗</span></div>
                 <div class="value">${s.activeUsers || 0}</div>
                 <div class="sub" style="color:#06b6d4;font-weight:600;">${s.inactiveUsers || 0} inactive (view all) →</div>
             </div>
@@ -265,53 +270,59 @@ async function switchGranularity(g) {
 }
 
 // === USERS ===
-async function renderUsers(c) {
+async function renderUsers(c, roleFilter = 'all') {
     c.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--text-muted);">Loading platform users...</div>';
     let data = { users: [] };
     try {
-        data = await API.get('/admin/users');
+        const url = roleFilter && roleFilter !== 'all' ? `/admin/users?role=${roleFilter}` : '/admin/users';
+        data = await API.get(url);
     } catch(e) {
         data = { users: [] };
     }
     state.users = data.users || [];
-    renderUserTable(c, state.users);
+    renderUserTable(c, state.users, roleFilter);
 }
 
-function renderUserTable(c, users) {
+function renderUserTable(c, users, currentRole = 'all') {
     c.innerHTML = `
         <div class="toolbar">
             <div class="filters">
-                <select id="roleFilter"><option value="all">All Roles</option><option value="student">Students</option><option value="recruiter">Recruiters</option><option value="admin">Admins</option></select>
+                <select id="roleFilter">
+                    <option value="all" ${currentRole === 'all' ? 'selected' : ''}>All Roles</option>
+                    <option value="student" ${currentRole === 'student' ? 'selected' : ''}>Students</option>
+                    <option value="recruiter" ${currentRole === 'recruiter' ? 'selected' : ''}>Recruiters</option>
+                    <option value="admin" ${currentRole === 'admin' ? 'selected' : ''}>Admins</option>
+                </select>
                 <input type="text" id="userSearch" placeholder="Search by name, email, skill..." style="min-width:220px;">
             </div>
             <div style="display:flex;gap:0.5rem;">
                 <button onclick="adminExportCSV('/api/admin/export/users','users')" class="btn btn-outline" style="font-size:0.8rem;">📥 Export CSV</button>
             </div>
         </div>
-        <div style="background:white;border-radius:12px;border:1px solid var(--border-color);overflow:hidden;">
+        <div class="table-responsive">
             <table class="data-table">
                 <thead><tr><th>User (Click to inspect profile)</th><th>Role</th><th>Skills</th><th>Resume</th><th>Joined</th><th>Actions</th></tr></thead>
                 <tbody>${users.length === 0 ? '<tr><td colspan="6" style="text-align:center;padding:2.5rem;color:var(--text-muted);">No users found.</td></tr>' : users.map(u => `<tr>
                     <td onclick="viewUserProfile('${u._id}')" style="cursor:pointer;" title="Click to view detailed student/user profile">
                         <div style="display:flex;align-items:center;gap:0.75rem;">
-                            <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:white;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:0.85rem;">
-                                ${sanitize(u.name.charAt(0).toUpperCase())}
+                            <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:white;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:0.85rem;flex-shrink:0;">
+                                ${sanitize((u.name || 'U').charAt(0).toUpperCase())}
                             </div>
                             <div>
-                                <div style="font-weight:600;color:var(--primary);">${sanitize(u.name)} <span style="font-size:0.75rem;opacity:0.8;">↗</span></div>
-                                <div style="font-size:0.75rem;color:var(--text-muted);">${sanitize(u.email)}</div>
+                                <div style="font-weight:600;color:var(--primary);">${sanitize(u.name || 'Unnamed')} <span style="font-size:0.75rem;opacity:0.8;">↗</span></div>
+                                <div style="font-size:0.75rem;color:var(--text-muted);">${sanitize(u.email || '')}</div>
                             </div>
                         </div>
                     </td>
                     <td><span class="role-pill role-${u.role}">${u.role}</span></td>
                     <td><span style="font-weight:600;">${u.skillCount || 0}</span></td>
                     <td><span style="font-weight:700;color:${(u.resumeScore||0)>=70?'#10b981':'#f59e0b'};">${u.resumeScore || 0}%</span></td>
-                    <td style="font-size:0.8rem;color:var(--text-muted);">${new Date(u.createdAt).toLocaleDateString()}</td>
+                    <td style="font-size:0.8rem;color:var(--text-muted);">${u.createdAt ? new Date(u.createdAt).toLocaleDateString() : 'N/A'}</td>
                     <td>
                         <div style="display:flex;gap:0.4rem;align-items:center;">
                             <button onclick="viewUserProfile('${u._id}')" class="btn btn-outline" style="font-size:0.72rem;padding:0.25rem 0.55rem;background:#f0fdf4;color:#15803d;border-color:#bbf7d0;font-weight:600;">👁 View Profile</button>
                             <button onclick="changeRole('${u._id}','${u.role}')" class="btn btn-outline" style="font-size:0.72rem;padding:0.25rem 0.5rem;">Role</button>
-                            <button onclick="deleteUser('${u._id}')" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:1rem;" title="Delete user">🗑</button>
+                            <button onclick="deleteUser('${u._id}')" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:1rem;padding:0.25rem;" title="Delete user">🗑</button>
                         </div>
                     </td>
                 </tr>`).join('')}</tbody>
@@ -324,14 +335,15 @@ function renderUserTable(c, users) {
         const q = e.target.value;
         const d = await API.get(`/admin/users?search=${q}&role=${role}`);
         state.users = d.users || [];
-        renderUserTable(c, state.users);
+        renderUserTable(c, state.users, role);
     });
 
     document.getElementById('roleFilter')?.addEventListener('change', async (e) => {
         const q = document.getElementById('userSearch')?.value || '';
-        const d = await API.get(`/admin/users?role=${e.target.value}&search=${q}`);
+        const role = e.target.value;
+        const d = await API.get(`/admin/users?role=${role}&search=${q}`);
         state.users = d.users || [];
-        renderUserTable(c, state.users);
+        renderUserTable(c, state.users, role);
     });
 }
 
@@ -879,14 +891,15 @@ async function renderPerformers(c) {
                 <h3 style="margin:0;font-size:1rem;">🏆 Student Rankings</h3>
                 <span style="font-size:0.8rem;color:var(--text-muted);">${state.performers.length} students</span>
             </div>
-            <table class="data-table"><thead><tr><th>#</th><th>Student</th><th>Score</th><th>Skills</th><th>Resume</th><th>Location</th><th>Actions</th></tr></thead>
+            <div class="table-responsive" style="border:none;border-radius:0;">
+                <table class="data-table"><thead><tr><th>#</th><th>Student</th><th>Score</th><th>Skills</th><th>Resume</th><th>Location</th><th>Actions</th></tr></thead>
             <tbody>${state.performers.map((p, i) => `<tr style="cursor:pointer;" onclick="showStudentDetailModal('${p._id}')">
                 <td style="font-weight:700;color:${i < 3 ? 'var(--primary)' : 'var(--text-muted)'};">${i + 1}</td>
                 <td><div><div style="font-weight:600;">${sanitize(p.name)}</div><div style="font-size:0.75rem;color:var(--text-muted);">${sanitize(p.email)}</div></div></td>
                 <td><span style="font-weight:700;color:${p.compositeScore >= 70 ? '#10b981' : p.compositeScore >= 40 ? '#d97706' : '#ef4444'};">${p.compositeScore}%</span></td>
                 <td>${p.skillCount}</td><td>${p.resumeScore}%</td><td style="font-size:0.8rem;color:var(--text-muted);">${sanitize(p.location || '-')}</td>
                 <td><button onclick="event.stopPropagation(); showStudentDetailModal('${p._id}')" class="btn btn-outline" style="font-size:0.75rem;padding:0.25rem 0.6rem;">👁 Profile</button></td>
-            </tr>`).join('')}</tbody></table>
+            </tr>`).join('')}</tbody></table></div>
         </div>
     `;
 }
@@ -1125,13 +1138,15 @@ async function renderActivity(c) {
                 <h3 style="margin:0;font-size:1rem;">📋 System Activity Log</h3>
                 <span style="font-size:0.8rem;color:var(--text-muted);">${logs.length} entries</span>
             </div>
-            <table class="data-table"><thead><tr><th>Action</th><th>User</th><th>Details</th><th>Time</th></tr></thead>
-            <tbody>${logs.length === 0 ? '<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--text-muted);">No activity logs yet. Actions like logins and applications will appear here.</td></tr>' : logs.map(l => `<tr>
-                <td><span style="font-size:0.75rem;font-weight:600;padding:0.15rem 0.5rem;border-radius:4px;background:#f1f5f9;">${sanitize(l.action||'event')}</span></td>
-                <td style="font-weight:500;">${sanitize(l.userId?.name||'System')}</td>
-                <td style="font-size:0.8rem;color:var(--text-muted);">${sanitize(l.details||'-')}</td>
-                <td style="font-size:0.75rem;color:var(--text-muted);">${new Date(l.createdAt).toLocaleString()}</td>
-            </tr>`).join('')}</tbody></table></div>`;
+            <div class="table-responsive" style="border:none;border-radius:0;">
+                <table class="data-table"><thead><tr><th>Action</th><th>User</th><th>Details</th><th>Time</th></tr></thead>
+                <tbody>${logs.length === 0 ? '<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--text-muted);">No activity logs yet. Actions like logins and applications will appear here.</td></tr>' : logs.map(l => `<tr>
+                    <td><span style="font-size:0.75rem;font-weight:600;padding:0.15rem 0.5rem;border-radius:4px;background:#f1f5f9;">${sanitize(l.action||'event')}</span></td>
+                    <td style="font-weight:500;">${sanitize(l.userId?.name||'System')}</td>
+                    <td style="font-size:0.8rem;color:var(--text-muted);">${sanitize(l.details||'-')}</td>
+                    <td style="font-size:0.75rem;color:var(--text-muted);">${new Date(l.createdAt).toLocaleString()}</td>
+                </tr>`).join('')}</tbody></table>
+            </div></div>`;
     } catch(e) { c.innerHTML = `<div style="padding:2rem;color:var(--text-muted);">Activity logging is available. Events will appear as users interact with the platform.</div>`; }
 }
 
@@ -1832,43 +1847,45 @@ async function renderAdminJobs(c) {
 
     <div class="chart-card">
         <h3>💼 Platform Job Postings (${totalJobs})</h3>
-        <table class="data-table" id="adminJobsTable">
-            <thead>
-                <tr>
-                    <th>Job Title</th>
-                    <th>Company</th>
-                    <th>Posted By</th>
-                    <th>Location / Type</th>
-                    <th>Applicants</th>
-                    <th>Status</th>
-                    <th style="text-align:right;">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${jobs.length === 0 ? '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:2rem;">No jobs posted yet.</td></tr>' : jobs.map(j => `
-                    <tr data-status="${j.status}" data-text="${sanitize((j.title + ' ' + (j.companyName || '') + ' ' + (j.location || '')).toLowerCase())}">
-                        <td style="font-weight:600;color:var(--text-main);">${sanitize(j.title)}</td>
-                        <td>${sanitize(j.companyName || 'N/A')}</td>
-                        <td style="font-size:0.8rem;color:var(--text-muted);">${sanitize(j.postedBy?.name || 'Recruiter')}<br><small>${sanitize(j.postedBy?.email || '')}</small></td>
-                        <td><span style="font-size:0.8rem;">${sanitize(j.location || 'Remote')}</span><br><small style="color:var(--text-muted);text-transform:capitalize;">${sanitize(j.type || 'Full-time')}</small></td>
-                        <td><span style="font-weight:700;color:var(--primary);">${j.applicantCount || 0}</span></td>
-                        <td>
-                            <span class="role-pill" style="background:${j.status==='active'?'#dcfce7':'#fee2e2'};color:${j.status==='active'?'#15803d':'#991b1b'};">
-                                ● ${j.status.toUpperCase()}
-                            </span>
-                        </td>
-                        <td style="text-align:right;white-space:nowrap;">
-                            <button onclick="toggleAdminJobStatus('${j._id}', '${j.status}')" class="btn btn-outline" style="padding:0.25rem 0.6rem;font-size:0.75rem;margin-right:0.35rem;">
-                                ${j.status === 'active' ? '🔒 Close' : '🔓 Activate'}
-                            </button>
-                            <button onclick="deleteAdminJob('${j._id}', '${sanitize(j.title)}')" class="btn btn-outline" style="padding:0.25rem 0.6rem;font-size:0.75rem;color:#ef4444;border-color:rgba(239,68,68,0.3);">
-                                🗑
-                            </button>
-                        </td>
+        <div class="table-responsive" style="border:none;border-radius:0;margin-top:0.75rem;">
+            <table class="data-table" id="adminJobsTable">
+                <thead>
+                    <tr>
+                        <th>Job Title</th>
+                        <th>Company</th>
+                        <th>Posted By</th>
+                        <th>Location / Type</th>
+                        <th>Applicants</th>
+                        <th>Status</th>
+                        <th style="text-align:right;">Actions</th>
                     </tr>
-                `).join('')}
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    ${jobs.length === 0 ? '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:2rem;">No jobs posted yet.</td></tr>' : jobs.map(j => `
+                        <tr data-status="${j.status}" data-text="${sanitize((j.title + ' ' + (j.companyName || '') + ' ' + (j.location || '')).toLowerCase())}">
+                            <td style="font-weight:600;color:var(--text-main);">${sanitize(j.title)}</td>
+                            <td>${sanitize(j.companyName || 'N/A')}</td>
+                            <td style="font-size:0.8rem;color:var(--text-muted);">${sanitize(j.postedBy?.name || 'Recruiter')}<br><small>${sanitize(j.postedBy?.email || '')}</small></td>
+                            <td><span style="font-size:0.8rem;">${sanitize(j.location || 'Remote')}</span><br><small style="color:var(--text-muted);text-transform:capitalize;">${sanitize(j.type || 'Full-time')}</small></td>
+                            <td><span style="font-weight:700;color:var(--primary);">${j.applicantCount || 0}</span></td>
+                            <td>
+                                <span class="role-pill" style="background:${j.status==='active'?'#dcfce7':'#fee2e2'};color:${j.status==='active'?'#15803d':'#991b1b'};">
+                                    ● ${j.status.toUpperCase()}
+                                </span>
+                            </td>
+                            <td style="text-align:right;white-space:nowrap;">
+                                <button onclick="toggleAdminJobStatus('${j._id}', '${j.status}')" class="btn btn-outline" style="padding:0.25rem 0.6rem;font-size:0.75rem;margin-right:0.35rem;">
+                                    ${j.status === 'active' ? '🔒 Close' : '🔓 Activate'}
+                                </button>
+                                <button onclick="deleteAdminJob('${j._id}', '${sanitize(j.title)}')" class="btn btn-outline" style="padding:0.25rem 0.6rem;font-size:0.75rem;color:#ef4444;border-color:rgba(239,68,68,0.3);">
+                                    🗑
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
     </div>`;
 }
 
@@ -1944,57 +1961,59 @@ async function renderAdminApplications(c) {
 
     <div class="chart-card">
         <h3>📄 All Candidate Applications (${total})</h3>
-        <table class="data-table" id="adminAppsTable">
-            <thead>
-                <tr>
-                    <th>Candidate</th>
-                    <th>Job Title & Company</th>
-                    <th>Skill Match</th>
-                    <th>Hire Probability</th>
-                    <th>Stage / Status</th>
-                    <th>Applied Date</th>
-                    <th style="text-align:right;">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${apps.length === 0 ? '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:2rem;">No applications submitted yet.</td></tr>' : apps.map(a => `
-                    <tr data-status="${a.status}" data-text="${sanitize(((a.studentId?.name||'') + ' ' + (a.studentId?.email||'') + ' ' + (a.jobId?.title||'') + ' ' + (a.jobId?.companyName||'')).toLowerCase())}">
-                        <td>
-                            <div style="font-weight:600;color:var(--text-main);">${sanitize(a.studentId?.name || 'Student')}</div>
-                            <div style="font-size:0.75rem;color:var(--text-muted);">${sanitize(a.studentId?.email || '')}</div>
-                        </td>
-                        <td>
-                            <div style="font-weight:600;">${sanitize(a.jobId?.title || 'Job Posting')}</div>
-                            <div style="font-size:0.75rem;color:var(--text-muted);">${sanitize(a.jobId?.companyName || 'Company')}</div>
-                        </td>
-                        <td>
-                            <div style="display:flex;align-items:center;gap:0.5rem;">
-                                <div style="font-weight:700;color:${a.skillMatch>=75?'#10b981':a.skillMatch>=50?'#3b82f6':'#f59e0b'};">${a.skillMatch || 0}%</div>
-                            </div>
-                        </td>
-                        <td>
-                            <div style="font-weight:700;color:${a.hiringProbability>=70?'#10b981':'#64748b'};">${a.hiringProbability || 0}%</div>
-                        </td>
-                        <td>
-                            <select onchange="updateAdminAppStatus('${a._id}', this.value)" style="padding:0.3rem 0.5rem;font-size:0.75rem;border-radius:6px;border:1px solid var(--border-color);background:var(--input-bg);font-weight:600;">
-                                <option value="applied" ${a.status==='applied'?'selected':''}>Applied</option>
-                                <option value="in-review" ${a.status==='in-review'?'selected':''}>In Review</option>
-                                <option value="shortlisted" ${a.status==='shortlisted'?'selected':''}>Shortlisted</option>
-                                <option value="interview" ${a.status==='interview'?'selected':''}>Interview</option>
-                                <option value="selected" ${a.status==='selected'?'selected':''}>Selected</option>
-                                <option value="rejected" ${a.status==='rejected'?'selected':''}>Rejected</option>
-                            </select>
-                        </td>
-                        <td style="font-size:0.8rem;color:var(--text-muted);">${new Date(a.appliedAt).toLocaleDateString()}</td>
-                        <td style="text-align:right;">
-                            <button onclick="deleteAdminApplication('${a._id}')" class="btn btn-outline" style="padding:0.25rem 0.6rem;font-size:0.75rem;color:#ef4444;border-color:rgba(239,68,68,0.3);">
-                                🗑
-                            </button>
-                        </td>
+        <div class="table-responsive" style="border:none;border-radius:0;margin-top:0.75rem;">
+            <table class="data-table" id="adminAppsTable">
+                <thead>
+                    <tr>
+                        <th>Candidate</th>
+                        <th>Job Title & Company</th>
+                        <th>Skill Match</th>
+                        <th>Hire Probability</th>
+                        <th>Stage / Status</th>
+                        <th>Applied Date</th>
+                        <th style="text-align:right;">Actions</th>
                     </tr>
-                `).join('')}
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    ${apps.length === 0 ? '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:2rem;">No applications submitted yet.</td></tr>' : apps.map(a => `
+                        <tr data-status="${a.status}" data-text="${sanitize(((a.studentId?.name||'') + ' ' + (a.studentId?.email||'') + ' ' + (a.jobId?.title||'') + ' ' + (a.jobId?.companyName||'')).toLowerCase())}">
+                            <td>
+                                <div style="font-weight:600;color:var(--text-main);">${sanitize(a.studentId?.name || 'Student')}</div>
+                                <div style="font-size:0.75rem;color:var(--text-muted);">${sanitize(a.studentId?.email || '')}</div>
+                            </td>
+                            <td>
+                                <div style="font-weight:600;">${sanitize(a.jobId?.title || 'Job Posting')}</div>
+                                <div style="font-size:0.75rem;color:var(--text-muted);">${sanitize(a.jobId?.companyName || 'Company')}</div>
+                            </td>
+                            <td>
+                                <div style="display:flex;align-items:center;gap:0.5rem;">
+                                    <div style="font-weight:700;color:${a.skillMatch>=75?'#10b981':a.skillMatch>=50?'#3b82f6':'#f59e0b'};">${a.skillMatch || 0}%</div>
+                                </div>
+                            </td>
+                            <td>
+                                <div style="font-weight:700;color:${a.hiringProbability>=70?'#10b981':'#64748b'};">${a.hiringProbability || 0}%</div>
+                            </td>
+                            <td>
+                                <select onchange="updateAdminAppStatus('${a._id}', this.value)" style="padding:0.3rem 0.5rem;font-size:0.75rem;border-radius:6px;border:1px solid var(--border-color);background:var(--input-bg);font-weight:600;">
+                                    <option value="applied" ${a.status==='applied'?'selected':''}>Applied</option>
+                                    <option value="in-review" ${a.status==='in-review'?'selected':''}>In Review</option>
+                                    <option value="shortlisted" ${a.status==='shortlisted'?'selected':''}>Shortlisted</option>
+                                    <option value="interview" ${a.status==='interview'?'selected':''}>Interview</option>
+                                    <option value="selected" ${a.status==='selected'?'selected':''}>Selected</option>
+                                    <option value="rejected" ${a.status==='rejected'?'selected':''}>Rejected</option>
+                                </select>
+                            </td>
+                            <td style="font-size:0.8rem;color:var(--text-muted);">${new Date(a.appliedAt).toLocaleDateString()}</td>
+                            <td style="text-align:right;">
+                                <button onclick="deleteAdminApplication('${a._id}')" class="btn btn-outline" style="padding:0.25rem 0.6rem;font-size:0.75rem;color:#ef4444;border-color:rgba(239,68,68,0.3);">
+                                    🗑
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
     </div>`;
 }
 
@@ -2137,7 +2156,7 @@ function renderContentTab() {
                 <h3 style="margin:0;font-size:1rem;">Company Preparation Paths</h3>
                 <button onclick="openAddPrepModal()" class="btn btn-primary" style="font-size:0.8rem;padding:0.4rem 1rem;">+ Add Prep Path</button>
             </div>
-            <div style="background:var(--card-bg);border-radius:12px;border:1px solid var(--border-color);overflow:hidden;">
+            <div class="table-responsive">
                 <table class="data-table"><thead><tr><th>Company</th><th>Difficulty</th><th>Questions</th><th>Topics</th><th>Avg Salary</th><th>Roles</th><th>Actions</th></tr></thead>
                 <tbody>${state.prepCompanies.map(p => `<tr>
                     <td style="font-weight:600;">${sanitize(p.companyName)}</td>
@@ -2168,7 +2187,7 @@ function renderContentTab() {
             <h3 style="margin:0;font-size:1rem;">${tab === 'mcq' ? '🧪 MCQ' : tab === 'coding' ? '💻 Coding' : '🧠 Aptitude'} Questions (${questions.length} total, showing first ${displayQ.length})</h3>
             <button onclick="openAddQuestionModal('${tab}')" class="btn btn-primary" style="font-size:0.8rem;padding:0.4rem 1rem;">+ Add Question</button>
         </div>
-        <div style="background:var(--card-bg);border-radius:12px;border:1px solid var(--border-color);overflow:auto;max-height:600px;">
+        <div class="table-responsive" style="max-height:600px;overflow:auto;">
             <table class="data-table" style="font-size:0.8rem;"><thead><tr>
                 <th style="width:40px;">#</th>
                 <th>Title</th>

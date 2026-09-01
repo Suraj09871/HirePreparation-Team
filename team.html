@@ -23,13 +23,46 @@
         }
         .contribution-item {
             display: flex;
-            align-items: flex-start;
+            align-items: center;
             justify-content: space-between;
-            padding: 1rem 0;
+            padding: 0.85rem 1rem;
+            margin: 0.35rem 0;
+            border-radius: 10px;
             border-bottom: 1px solid var(--border-color);
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            -webkit-tap-highlight-color: rgba(249,115,22,0.1);
         }
         .contribution-item:last-child {
             border-bottom: none;
+        }
+        .contribution-item:hover, .contribution-item:active {
+            background: #f8fafc;
+            transform: translateX(4px);
+            border-color: rgba(0,0,0,0.08);
+        }
+        .contribution-arrow {
+            width: 32px;
+            height: 32px;
+            min-width: 32px;
+            min-height: 32px;
+            border-radius: 8px;
+            background: #f1f5f9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            font-weight: bold;
+            transition: all 0.2s ease;
+            margin-left: 0.75rem;
+        }
+        .contribution-item:hover .contribution-arrow, .contribution-item:active .contribution-arrow {
+            background: var(--primary);
+            color: white;
+            transform: scale(1.1);
         }
         .tech-pill {
             display: inline-flex;
@@ -95,46 +128,46 @@
                 
                 <h3 style="font-size: 1rem; font-weight: 600; color: #1e293b; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;"><span style="color: var(--primary);">⚡</span> Key Contributions</h3>
                 <div>
-                    <div class="contribution-item">
-                        <div style="display: flex; gap: 1rem;">
-                            <span style="color: #ec4899; margin-top: 0.25rem;">🎓</span>
+                    <a href="frontend/student/student-dashboard.html" class="contribution-item">
+                        <div style="display: flex; gap: 1rem; align-items: flex-start;">
+                            <span style="color: #ec4899; margin-top: 0.25rem; font-size: 1.1rem;">🎓</span>
                             <div>
                                 <div style="font-weight: 600; color: #1e293b; font-size: 0.875rem;">Student Dashboard & Profile</div>
                                 <div style="font-size: 0.875rem; color: var(--text-muted);">Welcome metrics, resume banner, skill matrix, recommended jobs</div>
                             </div>
                         </div>
-                        <a href="frontend/student/student-dashboard.html" style="color: var(--text-muted); text-decoration: none;">↗</a>
-                    </div>
-                    <div class="contribution-item">
-                        <div style="display: flex; gap: 1rem;">
-                            <span style="color: #ec4899; margin-top: 0.25rem;">💼</span>
+                        <span class="contribution-arrow">↗</span>
+                    </a>
+                    <a href="frontend/student/jobs.html" class="contribution-item">
+                        <div style="display: flex; gap: 1rem; align-items: flex-start;">
+                            <span style="color: #ec4899; margin-top: 0.25rem; font-size: 1.1rem;">💼</span>
                             <div>
                                 <div style="font-weight: 600; color: #1e293b; font-size: 0.875rem;">Job Browsing & Match Scoring</div>
                                 <div style="font-size: 0.875rem; color: var(--text-muted);">Job search, match preview, application submission & tracking</div>
                             </div>
                         </div>
-                        <a href="frontend/student/jobs.html" style="color: var(--text-muted); text-decoration: none;">↗</a>
-                    </div>
-                    <div class="contribution-item">
-                        <div style="display: flex; gap: 1rem;">
-                            <span style="color: #ec4899; margin-top: 0.25rem;">🧪</span>
+                        <span class="contribution-arrow">↗</span>
+                    </a>
+                    <a href="frontend/student/practice.html" class="contribution-item">
+                        <div style="display: flex; gap: 1rem; align-items: flex-start;">
+                            <span style="color: #ec4899; margin-top: 0.25rem; font-size: 1.1rem;">🧪</span>
                             <div>
                                 <div style="font-weight: 600; color: #1e293b; font-size: 0.875rem;">Practice, MCQ & Mock Tests</div>
                                 <div style="font-size: 0.875rem; color: var(--text-muted);">630+ problems, interactive quizzes, timed mock exams, code IDE</div>
                             </div>
                         </div>
-                        <a href="frontend/student/practice.html" style="color: var(--text-muted); text-decoration: none;">↗</a>
-                    </div>
-                    <div class="contribution-item">
-                        <div style="display: flex; gap: 1rem;">
-                            <span style="color: #ec4899; margin-top: 0.25rem;">📄</span>
+                        <span class="contribution-arrow">↗</span>
+                    </a>
+                    <a href="frontend/student/resume-builder.html" class="contribution-item">
+                        <div style="display: flex; gap: 1rem; align-items: flex-start;">
+                            <span style="color: #ec4899; margin-top: 0.25rem; font-size: 1.1rem;">📄</span>
                             <div>
                                 <div style="font-weight: 600; color: #1e293b; font-size: 0.875rem;">Resume Builder & Career Roadmap</div>
                                 <div style="font-size: 0.875rem; color: var(--text-muted);">Interactive resume builder with PDF export, 5-step career tracker</div>
                             </div>
                         </div>
-                        <a href="frontend/student/resume-builder.html" style="color: var(--text-muted); text-decoration: none;">↗</a>
-                    </div>
+                        <span class="contribution-arrow">↗</span>
+                    </a>
                 </div>
             </div>
 
@@ -159,46 +192,46 @@
                 
                 <h3 style="font-size: 1rem; font-weight: 600; color: #1e293b; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;"><span style="color: var(--primary);">⚡</span> Key Contributions</h3>
                 <div>
-                    <div class="contribution-item">
-                        <div style="display: flex; gap: 1rem;">
-                            <span style="color: #8b5cf6; margin-top: 0.25rem;">🏢</span>
+                    <a href="frontend/recruiter/recruiter-dashboard.html" class="contribution-item">
+                        <div style="display: flex; gap: 1rem; align-items: flex-start;">
+                            <span style="color: #8b5cf6; margin-top: 0.25rem; font-size: 1.1rem;">🏢</span>
                             <div>
                                 <div style="font-weight: 600; color: #1e293b; font-size: 0.875rem;">Recruiter Portal & Jobs</div>
                                 <div style="font-size: 0.875rem; color: var(--text-muted);">Job postings, company branding, applicant tracking</div>
                             </div>
                         </div>
-                        <a href="frontend/recruiter/recruiter-dashboard.html" style="color: var(--text-muted); text-decoration: none;">↗</a>
-                    </div>
-                    <div class="contribution-item">
-                        <div style="display: flex; gap: 1rem;">
-                            <span style="color: #8b5cf6; margin-top: 0.25rem;">📊</span>
+                        <span class="contribution-arrow">↗</span>
+                    </a>
+                    <a href="frontend/recruiter/applicant-list.html" class="contribution-item">
+                        <div style="display: flex; gap: 1rem; align-items: flex-start;">
+                            <span style="color: #8b5cf6; margin-top: 0.25rem; font-size: 1.1rem;">📊</span>
                             <div>
                                 <div style="font-weight: 600; color: #1e293b; font-size: 0.875rem;">Applicant Pipeline & Ranking</div>
                                 <div style="font-size: 0.875rem; color: var(--text-muted);">AI match scoring, candidate filter & status advancement</div>
                             </div>
                         </div>
-                        <a href="frontend/recruiter/applicant-list.html" style="color: var(--text-muted); text-decoration: none;">↗</a>
-                    </div>
-                    <div class="contribution-item">
-                        <div style="display: flex; gap: 1rem;">
-                            <span style="color: #8b5cf6; margin-top: 0.25rem;">📅</span>
+                        <span class="contribution-arrow">↗</span>
+                    </a>
+                    <a href="frontend/recruiter/recruiter-dashboard.html" class="contribution-item">
+                        <div style="display: flex; gap: 1rem; align-items: flex-start;">
+                            <span style="color: #8b5cf6; margin-top: 0.25rem; font-size: 1.1rem;">📅</span>
                             <div>
                                 <div style="font-weight: 600; color: #1e293b; font-size: 0.875rem;">Interview Scheduling Desk</div>
                                 <div style="font-size: 0.875rem; color: var(--text-muted);">Recruiter-only interview setup with Google Meet links</div>
                             </div>
                         </div>
-                        <a href="frontend/recruiter/recruiter-dashboard.html" style="color: var(--text-muted); text-decoration: none;">↗</a>
-                    </div>
-                    <div class="contribution-item">
-                        <div style="display: flex; gap: 1rem;">
-                            <span style="color: #8b5cf6; margin-top: 0.25rem;">🏗️</span>
+                        <span class="contribution-arrow">↗</span>
+                    </a>
+                    <a href="frontend/recruiter/recruiter-dashboard.html" class="contribution-item">
+                        <div style="display: flex; gap: 1rem; align-items: flex-start;">
+                            <span style="color: #8b5cf6; margin-top: 0.25rem; font-size: 1.1rem;">🏗️</span>
                             <div>
                                 <div style="font-weight: 600; color: #1e293b; font-size: 0.875rem;">Company Profile & Verification</div>
                                 <div style="font-size: 0.875rem; color: var(--text-muted);">Company details, hiring process, HR contact management</div>
                             </div>
                         </div>
-                        <a href="frontend/recruiter/recruiter-dashboard.html" style="color: var(--text-muted); text-decoration: none;">↗</a>
-                    </div>
+                        <span class="contribution-arrow">↗</span>
+                    </a>
                 </div>
             </div>
 
@@ -222,46 +255,46 @@
                 
                 <h3 style="font-size: 1rem; font-weight: 600; color: #1e293b; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;"><span style="color: var(--primary);">⚡</span> Key Contributions</h3>
                 <div>
-                    <div class="contribution-item">
-                        <div style="display: flex; gap: 1rem;">
-                            <span style="color: #f59e0b; margin-top: 0.25rem;">📊</span>
+                    <a href="frontend/admin/admin-dashboard.html" class="contribution-item">
+                        <div style="display: flex; gap: 1rem; align-items: flex-start;">
+                            <span style="color: #f59e0b; margin-top: 0.25rem; font-size: 1.1rem;">📊</span>
                             <div>
                                 <div style="font-weight: 600; color: #1e293b; font-size: 0.875rem;">Admin Dashboard & Analytics</div>
                                 <div style="font-size: 0.875rem; color: var(--text-muted);">Platform KPIs, user growth charts, conversion funnels</div>
                             </div>
                         </div>
-                        <a href="frontend/admin/admin-dashboard.html" style="color: var(--text-muted); text-decoration: none;">↗</a>
-                    </div>
-                    <div class="contribution-item">
-                        <div style="display: flex; gap: 1rem;">
-                            <span style="color: #f59e0b; margin-top: 0.25rem;">👥</span>
+                        <span class="contribution-arrow">↗</span>
+                    </a>
+                    <a href="frontend/admin/admin-dashboard.html" class="contribution-item">
+                        <div style="display: flex; gap: 1rem; align-items: flex-start;">
+                            <span style="color: #f59e0b; margin-top: 0.25rem; font-size: 1.1rem;">👥</span>
                             <div>
                                 <div style="font-weight: 600; color: #1e293b; font-size: 0.875rem;">User Management & Company Verification</div>
                                 <div style="font-size: 0.875rem; color: var(--text-muted);">User CRUD, role assignment, company approve/reject workflow</div>
                             </div>
                         </div>
-                        <a href="frontend/admin/admin-dashboard.html" style="color: var(--text-muted); text-decoration: none;">↗</a>
-                    </div>
-                    <div class="contribution-item">
-                        <div style="display: flex; gap: 1rem;">
-                            <span style="color: #f59e0b; margin-top: 0.25rem;">📝</span>
+                        <span class="contribution-arrow">↗</span>
+                    </a>
+                    <a href="frontend/admin/admin-panel.html" class="contribution-item">
+                        <div style="display: flex; gap: 1rem; align-items: flex-start;">
+                            <span style="color: #f59e0b; margin-top: 0.25rem; font-size: 1.1rem;">📝</span>
                             <div>
                                 <div style="font-weight: 600; color: #1e293b; font-size: 0.875rem;">Content CMS & Question Bank</div>
                                 <div style="font-size: 0.875rem; color: var(--text-muted);">Full CRUD question editor, preparation path management</div>
                             </div>
                         </div>
-                        <a href="frontend/admin/admin-panel.html" style="color: var(--text-muted); text-decoration: none;">↗</a>
-                    </div>
-                    <div class="contribution-item">
-                        <div style="display: flex; gap: 1rem;">
-                            <span style="color: #f59e0b; margin-top: 0.25rem;">🛡️</span>
+                        <span class="contribution-arrow">↗</span>
+                    </a>
+                    <a href="frontend/admin/admin-dashboard.html" class="contribution-item">
+                        <div style="display: flex; gap: 1rem; align-items: flex-start;">
+                            <span style="color: #f59e0b; margin-top: 0.25rem; font-size: 1.1rem;">🛡️</span>
                             <div>
                                 <div style="font-weight: 600; color: #1e293b; font-size: 0.875rem;">Site Health & Reports Export</div>
                                 <div style="font-size: 0.875rem; color: var(--text-muted);">System health monitoring, CSV exports, activity audit log</div>
                             </div>
                         </div>
-                        <a href="frontend/admin/admin-dashboard.html" style="color: var(--text-muted); text-decoration: none;">↗</a>
-                    </div>
+                        <span class="contribution-arrow">↗</span>
+                    </a>
                 </div>
             </div>
 
@@ -286,46 +319,46 @@
                 
                 <h3 style="font-size: 1rem; font-weight: 600; color: #1e293b; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;"><span style="color: var(--primary);">⚡</span> Key Contributions</h3>
                 <div>
-                    <div class="contribution-item">
-                        <div style="display: flex; gap: 1rem;">
-                            <span style="color: #10b981; margin-top: 0.25rem;">🧠</span>
+                    <a href="docs.html" class="contribution-item">
+                        <div style="display: flex; gap: 1rem; align-items: flex-start;">
+                            <span style="color: #10b981; margin-top: 0.25rem; font-size: 1.1rem;">🧠</span>
                             <div>
                                 <div style="font-weight: 600; color: #1e293b; font-size: 0.875rem;">REST APIs & Matching Engine</div>
                                 <div style="font-size: 0.875rem; color: var(--text-muted);">83+ API endpoints, fuzzy skill matching (60/20/20 formula)</div>
                             </div>
                         </div>
-                        <a href="docs.html" style="color: var(--text-muted); text-decoration: none;">↗</a>
-                    </div>
-                    <div class="contribution-item">
-                        <div style="display: flex; gap: 1rem;">
-                            <span style="color: #10b981; margin-top: 0.25rem;">🔐</span>
+                        <span class="contribution-arrow">↗</span>
+                    </a>
+                    <a href="frontend/auth.html" class="contribution-item">
+                        <div style="display: flex; gap: 1rem; align-items: flex-start;">
+                            <span style="color: #10b981; margin-top: 0.25rem; font-size: 1.1rem;">🔐</span>
                             <div>
                                 <div style="font-weight: 600; color: #1e293b; font-size: 0.875rem;">Auth & Security Infrastructure</div>
                                 <div style="font-size: 0.875rem; color: var(--text-muted);">JWT lifecycle, Bcrypt hashing, Google OAuth, RBAC middleware</div>
                             </div>
                         </div>
-                        <a href="frontend/auth.html" style="color: var(--text-muted); text-decoration: none;">↗</a>
-                    </div>
-                    <div class="contribution-item">
-                        <div style="display: flex; gap: 1rem;">
-                            <span style="color: #10b981; margin-top: 0.25rem;">🗄️</span>
+                        <span class="contribution-arrow">↗</span>
+                    </a>
+                    <a href="docs.html" class="contribution-item">
+                        <div style="display: flex; gap: 1rem; align-items: flex-start;">
+                            <span style="color: #10b981; margin-top: 0.25rem; font-size: 1.1rem;">🗄️</span>
                             <div>
                                 <div style="font-weight: 600; color: #1e293b; font-size: 0.875rem;">Database Architecture & Models</div>
                                 <div style="font-size: 0.875rem; color: var(--text-muted);">9 Mongoose models, MongoDB Atlas cluster, data seeding</div>
                             </div>
                         </div>
-                        <a href="docs.html" style="color: var(--text-muted); text-decoration: none;">↗</a>
-                    </div>
-                    <div class="contribution-item">
-                        <div style="display: flex; gap: 1rem;">
-                            <span style="color: #10b981; margin-top: 0.25rem;">☁️</span>
+                        <span class="contribution-arrow">↗</span>
+                    </a>
+                    <a href="docs.html" class="contribution-item">
+                        <div style="display: flex; gap: 1rem; align-items: flex-start;">
+                            <span style="color: #10b981; margin-top: 0.25rem; font-size: 1.1rem;">☁️</span>
                             <div>
                                 <div style="font-weight: 600; color: #1e293b; font-size: 0.875rem;">Cloud Deployment & Integration</div>
                                 <div style="font-size: 0.875rem; color: var(--text-muted);">Render backend, Netlify edge proxy, shared frontend coordination</div>
                             </div>
                         </div>
-                        <a href="docs.html" style="color: var(--text-muted); text-decoration: none;">↗</a>
-                    </div>
+                        <span class="contribution-arrow">↗</span>
+                    </a>
                 </div>
             </div>
 
