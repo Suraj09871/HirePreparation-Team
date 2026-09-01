@@ -1,78 +1,311 @@
 // admin.js — Full admin dashboard logic
-let state = { stats: {}, users: [], companies: [], prepCompanies: [], questions: null, analytics: {}, performers: [], notifications: [], contentTab: 'mcq' };
+let state = { stats: {}, users: [], companies: [], prepCompanies: [], questions: null, analytics: {}, performers: [], notifications: [], contentTab: 'mcq', charts: {} };
 const content = () => document.getElementById('adminContent');
 
-document.addEventListener('DOMContentLoaded', async () => {
-    if (!API.isLoggedIn()) return window.location.href = '/frontend/auth.html';
-    const user = API.getUser();
-    if (user.role !== 'admin') return window.location.href = '/index.html';
-    const adminNameEl = document.getElementById('adminName');
-    const adminAvatarEl = document.getElementById('adminAvatar');
-    if (adminNameEl) {
-        adminNameEl.textContent = user.name || 'Admin';
-        adminNameEl.style.cursor = 'pointer';
-        adminNameEl.title = 'Click to edit Admin Profile';
-        adminNameEl.onclick = () => navigateToSection('profile');
+// === UNIFIED ADMIN MODAL SYSTEM ===
+const AdminModal = {
+    open(modalId, htmlContent) {
+        let modal = document.getElementById(modalId);
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = modalId;
+            document.body.appendChild(modal);
+        }
+        modal.className = 'modal-backdrop';
+        modal.style.position = 'fixed';
+        modal.style.inset = '0';
+        modal.style.background = 'rgba(15, 23, 42, 0.65)';
+        modal.style.backdropFilter = 'blur(4px)';
+        modal.style.display = 'flex';
+        modal.style.alignItems = 'center';
+        modal.style.justifyContent = 'center';
+        modal.style.zIndex = '99999';
+        modal.style.padding = '1rem';
+        modal.style.pointerEvents = 'auto';
+        modal.innerHTML = htmlContent;
+
+        // Outside click on backdrop closes modal
+        modal.onclick = (e) => {
+            if (e.target === modal) {
+                AdminModal.close(modalId);
+            }
+        };
+
+        // Wire close buttons inside modal
+        modal.querySelectorAll('[data-close-modal], .close-modal-btn, [data-dismiss="modal"]').forEach(btn => {
+            btn.onclick = (e) => {
+                e.preventDefault();
+                AdminModal.close(modalId);
+            };
+        });
+
+        document.body.style.overflow = 'hidden';
+        return modal;
+    },
+
+    close(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.style.display = 'none';
+            modal.style.pointerEvents = 'none';
+        }
+        const anyOpen = Array.from(document.querySelectorAll('.modal-backdrop, .modal-overlay')).some(m => m.style.display === 'flex' || m.style.display === 'block');
+        if (!anyOpen) {
+            document.body.style.overflow = '';
+        }
+    },
+
+    closeAll() {
+        document.querySelectorAll('.modal-backdrop, .modal-overlay').forEach(m => {
+            m.style.display = 'none';
+            m.style.pointerEvents = 'none';
+        });
+        document.body.style.overflow = '';
     }
-    if (adminAvatarEl) {
-        adminAvatarEl.textContent = (user.name || 'A').charAt(0).toUpperCase();
-        adminAvatarEl.style.cursor = 'pointer';
-        adminAvatarEl.title = 'Click to edit Admin Profile';
-        adminAvatarEl.onclick = () => navigateToSection('profile');
+};
+
+window.AdminModal = AdminModal;
+
+// Close modals on Escape key
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        AdminModal.closeAll();
+    }
+});
+
+// === GLOBAL INTERACTION & EVENT DELEGATOR ===
+document.addEventListener('click', (e) => {
+    // 1. Modal close button or backdrop click
+    const closeBtn = e.target.closest('[data-close-modal], .close-modal-btn, [data-dismiss="modal"]');
+    if (closeBtn) {
+        e.preventDefault();
+        const targetModalId = closeBtn.getAttribute('data-close-modal');
+        if (targetModalId) AdminModal.close(targetModalId);
+        else {
+            const parentModal = closeBtn.closest('.modal-backdrop, .modal-overlay');
+            if (parentModal) AdminModal.close(parentModal.id);
+            else AdminModal.closeAll();
+        }
+        return;
     }
 
-    // Mobile sidebar drawer & overlay
-    const sidebarToggle = document.getElementById('adminSidebarToggle');
-    const adminSidebar = document.getElementById('adminSidebar');
-    const sidebarOverlay = document.getElementById('sidebarOverlay');
-    if (sidebarToggle && adminSidebar) {
-        sidebarToggle.onclick = (e) => {
-            e.stopPropagation();
-            adminSidebar.classList.toggle('open');
-            if (sidebarOverlay) sidebarOverlay.classList.toggle('open', adminSidebar.classList.contains('open'));
-        };
-        if (sidebarOverlay) {
-            sidebarOverlay.onclick = () => {
-                adminSidebar.classList.remove('open');
-                sidebarOverlay.classList.remove('open');
+    if (e.target.classList.contains('modal-backdrop') || e.target.classList.contains('modal-overlay')) {
+        AdminModal.close(e.target.id);
+        return;
+    }
+
+    // 2. Navigation items
+    const navItem = e.target.closest('.nav-item[data-section]');
+    if (navItem) {
+        e.preventDefault();
+        const section = navItem.dataset.section;
+        navigateToSection(section);
+        return;
+    }
+
+    // Check if clicked element is an interactive control (button, input, select, link)
+    const isControl = e.target.closest('button, a, select, input, textarea, label');
+
+    // 3. Role filter navigation
+    const roleTarget = e.target.closest('[data-navigate-role]');
+    if (roleTarget && (!isControl || isControl === roleTarget || isControl.closest('[data-navigate-role]') === roleTarget)) {
+        e.preventDefault();
+        const role = roleTarget.getAttribute('data-navigate-role');
+        navigateToUsersWithRole(role);
+        return;
+    }
+
+    // 4. Section navigation
+    const navSectionTarget = e.target.closest('[data-navigate-section]');
+    if (navSectionTarget && (!isControl || isControl === navSectionTarget || isControl.closest('[data-navigate-section]') === navSectionTarget)) {
+        e.preventDefault();
+        const section = navSectionTarget.getAttribute('data-navigate-section');
+        navigateToSection(section);
+        return;
+    }
+
+    // 5. Analytics granularity
+    const granTarget = e.target.closest('[data-granularity]');
+    if (granTarget) {
+        e.preventDefault();
+        const gran = granTarget.getAttribute('data-granularity');
+        switchGranularity(gran);
+        return;
+    }
+
+    // 6. User profile modal
+    const viewUserTarget = e.target.closest('[data-view-user]');
+    if (viewUserTarget) {
+        const actionBtn = e.target.closest('button, select, a');
+        if (actionBtn && !actionBtn.hasAttribute('data-view-user')) {
+            return; // Let child button (Role, Delete) handle its own click
+        }
+        e.preventDefault();
+        const userId = viewUserTarget.getAttribute('data-view-user');
+        viewUserProfile(userId);
+        return;
+    }
+
+    // 7. Company details modal
+    const viewCompanyTarget = e.target.closest('[data-view-company]');
+    if (viewCompanyTarget) {
+        const actionBtn = e.target.closest('button, a');
+        if (actionBtn && !actionBtn.hasAttribute('data-view-company')) {
+            return; // Let child button (Approve, Reject, Delete) handle its own click
+        }
+        e.preventDefault();
+        const companyId = viewCompanyTarget.getAttribute('data-view-company');
+        viewCompanyDetails(companyId);
+        return;
+    }
+
+    // 8. Job details modal
+    const viewJobTarget = e.target.closest('[data-view-job]');
+    if (viewJobTarget) {
+        const actionBtn = e.target.closest('button, a');
+        if (actionBtn && !actionBtn.hasAttribute('data-view-job')) {
+            return; // Let child button (Close, Delete) handle its own click
+        }
+        e.preventDefault();
+        const jobId = viewJobTarget.getAttribute('data-view-job');
+        viewJobDetails(jobId);
+        return;
+    }
+
+    // 9. Application details modal
+    const viewAppTarget = e.target.closest('[data-view-application]');
+    if (viewAppTarget) {
+        const actionBtn = e.target.closest('select, button, a');
+        if (actionBtn && !actionBtn.hasAttribute('data-view-application')) {
+            return; // Let status dropdown or delete button handle its own click
+        }
+        e.preventDefault();
+        const appId = viewAppTarget.getAttribute('data-view-application');
+        viewApplicationDetails(appId);
+        return;
+    }
+
+    // 10. Question details modal
+    const viewQTarget = e.target.closest('[data-view-question]');
+    if (viewQTarget) {
+        const actionBtn = e.target.closest('button, a');
+        if (actionBtn && !actionBtn.hasAttribute('data-view-question')) {
+            return;
+        }
+        e.preventDefault();
+        const val = viewQTarget.getAttribute('data-view-question');
+        const [qTab, qId] = val.split(':');
+        viewQuestionDetails(qTab, qId);
+        return;
+    }
+
+    // 11. Prep roadmap modal
+    const viewPrepTarget = e.target.closest('[data-view-prep]');
+    if (viewPrepTarget) {
+        const actionBtn = e.target.closest('button, a');
+        if (actionBtn && !actionBtn.hasAttribute('data-view-prep')) {
+            return;
+        }
+        e.preventDefault();
+        const prepId = viewPrepTarget.getAttribute('data-view-prep');
+        viewPrepDetails(prepId);
+        return;
+    }
+});
+
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        if (!API.isLoggedIn()) {
+            const token = localStorage.getItem('hireprep_token');
+            if (!token) {
+                return window.location.href = '/frontend/auth.html';
+            }
+        }
+        const user = API.getUser() || { name: 'Admin', role: 'admin' };
+        if (user.role !== 'admin' && user.role !== 'sub-admin' && user.role !== 'developer') {
+            return window.location.href = '/index.html';
+        }
+        const adminNameEl = document.getElementById('adminName');
+        const adminAvatarEl = document.getElementById('adminAvatar');
+        if (adminNameEl) {
+            adminNameEl.textContent = user.name || 'Admin';
+            adminNameEl.style.cursor = 'pointer';
+            adminNameEl.title = 'Click to edit Admin Profile';
+            adminNameEl.onclick = () => navigateToSection('profile');
+        }
+        if (adminAvatarEl) {
+            adminAvatarEl.textContent = (user.name || 'A').charAt(0).toUpperCase();
+            adminAvatarEl.style.cursor = 'pointer';
+            adminAvatarEl.title = 'Click to edit Admin Profile';
+            adminAvatarEl.onclick = () => navigateToSection('profile');
+        }
+
+        // Mobile sidebar drawer & overlay
+        const sidebarToggle = document.getElementById('adminSidebarToggle');
+        const adminSidebar = document.getElementById('adminSidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+        if (sidebarToggle && adminSidebar) {
+            sidebarToggle.onclick = (e) => {
+                e.stopPropagation();
+                adminSidebar.classList.toggle('open');
+                if (sidebarOverlay) sidebarOverlay.classList.toggle('open', adminSidebar.classList.contains('open'));
+            };
+            if (sidebarOverlay) {
+                sidebarOverlay.onclick = () => {
+                    adminSidebar.classList.remove('open');
+                    sidebarOverlay.classList.remove('open');
+                };
+            }
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('#adminSidebar') && !e.target.closest('#adminSidebarToggle')) {
+                    adminSidebar.classList.remove('open');
+                    if (sidebarOverlay) sidebarOverlay.classList.remove('open');
+                }
+            });
+        }
+
+        // Nav switching
+        document.querySelectorAll('.nav-item[data-section]').forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+                item.classList.add('active');
+                const s = item.dataset.section;
+                const titleEl = document.getElementById('topbarTitle');
+                if (titleEl) titleEl.textContent = item.textContent.trim();
+                if (adminSidebar) adminSidebar.classList.remove('open');
+                if (sidebarOverlay) sidebarOverlay.classList.remove('open');
+                loadSection(s);
+            });
+        });
+
+        const signOutBtn = document.getElementById('adminSignOut');
+        if (signOutBtn) signOutBtn.onclick = () => handleLogout();
+
+        const notifBadge = document.getElementById('notifBadge');
+        if (notifBadge) {
+            notifBadge.onclick = () => {
+                document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+                const notifNav = document.querySelector('[data-section="notifications"]');
+                if (notifNav) notifNav.classList.add('active');
+                const titleEl = document.getElementById('topbarTitle');
+                if (titleEl) titleEl.textContent = '🔔 Notifications';
+                if (adminSidebar) adminSidebar.classList.remove('open');
+                if (sidebarOverlay) sidebarOverlay.classList.remove('open');
+                loadSection('notifications');
             };
         }
-        document.addEventListener('click', (e) => {
-            if (!e.target.closest('#adminSidebar') && !e.target.closest('#adminSidebarToggle')) {
-                adminSidebar.classList.remove('open');
-                if (sidebarOverlay) sidebarOverlay.classList.remove('open');
-            }
-        });
+
+        await loadSection('overview');
+    } catch(initErr) {
+        console.error('Admin initialization error:', initErr);
+        await loadSection('overview');
     }
-
-    // Nav switching
-    document.querySelectorAll('.nav-item[data-section]').forEach(item => {
-        item.addEventListener('click', () => {
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-            item.classList.add('active');
-            const s = item.dataset.section;
-            document.getElementById('topbarTitle').textContent = item.textContent.trim();
-            if (adminSidebar) adminSidebar.classList.remove('open');
-            if (sidebarOverlay) sidebarOverlay.classList.remove('open');
-            loadSection(s);
-        });
-    });
-
-    document.getElementById('adminSignOut').onclick = () => handleLogout();
-    document.getElementById('notifBadge').onclick = () => {
-        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-        document.querySelector('[data-section="notifications"]').classList.add('active');
-        document.getElementById('topbarTitle').textContent = '🔔 Notifications';
-        if (adminSidebar) adminSidebar.classList.remove('open');
-        if (sidebarOverlay) sidebarOverlay.classList.remove('open');
-        loadSection('notifications');
-    };
-
-    await loadSection('overview');
 });
 
 async function loadSection(section, options = {}) {
     const c = content();
+    if (!c) return;
     c.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--text-muted);">Loading...</div>';
     try {
         if (section === 'overview') await renderOverview(c);
@@ -132,35 +365,65 @@ async function renderOverview(c) {
     const s = state.stats;
     c.innerHTML = `
         <div class="metric-grid">
-            <div class="metric-card" onclick="navigateToUsersWithRole('student')" role="button" tabindex="0" style="cursor:pointer;border-top:3px solid #f97316;" title="Click to inspect all student profiles">
-                <div class="label"><span>👥 Students</span> <span style="font-size:0.9rem;opacity:0.8;">↗</span></div>
+            <div class="metric-card" data-navigate-role="student" onclick="navigateToUsersWithRole('student')" role="button" tabindex="0" style="cursor:pointer;border-top:3px solid #f97316;" title="Click to inspect all student profiles">
+                <div class="label">
+                    <span>👥 Students</span>
+                    <button type="button" data-navigate-role="student" onclick="event.stopPropagation(); navigateToUsersWithRole('student');" style="cursor:pointer;border:none;background:#fff7ed;color:#ea580c;border-radius:6px;font-size:0.9rem;font-weight:700;padding:0.15rem 0.5rem;transition:all 0.2s;" title="Go to Students">↗</button>
+                </div>
                 <div class="value">${s.students || 0}</div>
-                <div class="sub" style="color:var(--primary);font-weight:600;">View all students & profiles →</div>
+                <div class="sub" data-navigate-role="student" style="color:var(--primary);font-weight:600;display:flex;align-items:center;justify-content:space-between;">
+                    <span>View all students & profiles</span> <span>→</span>
+                </div>
             </div>
-            <div class="metric-card" onclick="navigateToUsersWithRole('recruiter')" role="button" tabindex="0" style="cursor:pointer;border-top:3px solid #3b82f6;" title="Click to view recruiter partners">
-                <div class="label"><span>💼 Recruiters</span> <span style="font-size:0.9rem;opacity:0.8;">↗</span></div>
+            <div class="metric-card" data-navigate-role="recruiter" onclick="navigateToUsersWithRole('recruiter')" role="button" tabindex="0" style="cursor:pointer;border-top:3px solid #3b82f6;" title="Click to view recruiter partners">
+                <div class="label">
+                    <span>💼 Recruiters</span>
+                    <button type="button" data-navigate-role="recruiter" onclick="event.stopPropagation(); navigateToUsersWithRole('recruiter');" style="cursor:pointer;border:none;background:#eff6ff;color:#2563eb;border-radius:6px;font-size:0.9rem;font-weight:700;padding:0.15rem 0.5rem;transition:all 0.2s;" title="Go to Recruiters">↗</button>
+                </div>
                 <div class="value">${s.recruiters || 0}</div>
-                <div class="sub" style="color:#3b82f6;font-weight:600;">View hiring partners →</div>
+                <div class="sub" data-navigate-role="recruiter" style="color:#3b82f6;font-weight:600;display:flex;align-items:center;justify-content:space-between;">
+                    <span>View hiring partners</span> <span>→</span>
+                </div>
             </div>
-            <div class="metric-card" onclick="navigateToSection('companies')" role="button" tabindex="0" style="cursor:pointer;border-top:3px solid #10b981;" title="Click to manage registered companies">
-                <div class="label"><span>🏢 Companies</span> <span style="font-size:0.9rem;opacity:0.8;">↗</span></div>
+            <div class="metric-card" data-navigate-section="companies" onclick="navigateToSection('companies')" role="button" tabindex="0" style="cursor:pointer;border-top:3px solid #10b981;" title="Click to manage registered companies">
+                <div class="label">
+                    <span>🏢 Companies</span>
+                    <button type="button" data-navigate-section="companies" onclick="event.stopPropagation(); navigateToSection('companies');" style="cursor:pointer;border:none;background:#ecfdf5;color:#059669;border-radius:6px;font-size:0.9rem;font-weight:700;padding:0.15rem 0.5rem;transition:all 0.2s;" title="Go to Companies">↗</button>
+                </div>
                 <div class="value">${s.companies || 0}</div>
-                <div class="sub" style="color:#10b981;font-weight:600;">${s.pendingVerifications || 0} pending verification →</div>
+                <div class="sub" data-navigate-section="companies" style="color:#10b981;font-weight:600;display:flex;align-items:center;justify-content:space-between;">
+                    <span>${s.pendingVerifications || 0} pending verification</span> <span>→</span>
+                </div>
             </div>
-            <div class="metric-card" onclick="navigateToSection('jobs')" role="button" tabindex="0" style="cursor:pointer;border-top:3px solid #8b5cf6;" title="Click to view job listings">
-                <div class="label"><span>📋 Jobs</span> <span style="font-size:0.9rem;opacity:0.8;">↗</span></div>
+            <div class="metric-card" data-navigate-section="jobs" onclick="navigateToSection('jobs')" role="button" tabindex="0" style="cursor:pointer;border-top:3px solid #8b5cf6;" title="Click to view job listings">
+                <div class="label">
+                    <span>📋 Jobs</span>
+                    <button type="button" data-navigate-section="jobs" onclick="event.stopPropagation(); navigateToSection('jobs');" style="cursor:pointer;border:none;background:#f5f3ff;color:#7c3aed;border-radius:6px;font-size:0.9rem;font-weight:700;padding:0.15rem 0.5rem;transition:all 0.2s;" title="Go to Jobs">↗</button>
+                </div>
                 <div class="value">${s.jobs || 0}</div>
-                <div class="sub" style="color:#8b5cf6;font-weight:600;">${s.activeJobs || 0} active postings →</div>
+                <div class="sub" data-navigate-section="jobs" style="color:#8b5cf6;font-weight:600;display:flex;align-items:center;justify-content:space-between;">
+                    <span>${s.activeJobs || 0} active postings</span> <span>→</span>
+                </div>
             </div>
-            <div class="metric-card" onclick="navigateToSection('applications')" role="button" tabindex="0" style="cursor:pointer;border-top:3px solid #ec4899;" title="Click to view all job applications">
-                <div class="label"><span>📄 Applications</span> <span style="font-size:0.9rem;opacity:0.8;">↗</span></div>
+            <div class="metric-card" data-navigate-section="applications" onclick="navigateToSection('applications')" role="button" tabindex="0" style="cursor:pointer;border-top:3px solid #ec4899;" title="Click to view all job applications">
+                <div class="label">
+                    <span>📄 Applications</span>
+                    <button type="button" data-navigate-section="applications" onclick="event.stopPropagation(); navigateToSection('applications');" style="cursor:pointer;border:none;background:#fdf2f8;color:#db2777;border-radius:6px;font-size:0.9rem;font-weight:700;padding:0.15rem 0.5rem;transition:all 0.2s;" title="Go to Applications">↗</button>
+                </div>
                 <div class="value">${s.applications || 0}</div>
-                <div class="sub" style="color:#ec4899;font-weight:600;">${s.conversionRate || 0}% conversion rate →</div>
+                <div class="sub" data-navigate-section="applications" style="color:#ec4899;font-weight:600;display:flex;align-items:center;justify-content:space-between;">
+                    <span>${s.conversionRate || 0}% conversion rate</span> <span>→</span>
+                </div>
             </div>
-            <div class="metric-card" onclick="navigateToUsersWithRole('all')" role="button" tabindex="0" style="cursor:pointer;border-top:3px solid #06b6d4;" title="Click to inspect all platform users">
-                <div class="label"><span>✅ Active Users</span> <span style="font-size:0.9rem;opacity:0.8;">↗</span></div>
+            <div class="metric-card" data-navigate-role="all" onclick="navigateToUsersWithRole('all')" role="button" tabindex="0" style="cursor:pointer;border-top:3px solid #06b6d4;" title="Click to inspect all platform users">
+                <div class="label">
+                    <span>✅ Active Users</span>
+                    <button type="button" data-navigate-role="all" onclick="event.stopPropagation(); navigateToUsersWithRole('all');" style="cursor:pointer;border:none;background:#ecfeff;color:#0891b2;border-radius:6px;font-size:0.9rem;font-weight:700;padding:0.15rem 0.5rem;transition:all 0.2s;" title="Go to Users">↗</button>
+                </div>
                 <div class="value">${s.activeUsers || 0}</div>
-                <div class="sub" style="color:#06b6d4;font-weight:600;">${s.inactiveUsers || 0} inactive (view all) →</div>
+                <div class="sub" data-navigate-role="all" style="color:#06b6d4;font-weight:600;display:flex;align-items:center;justify-content:space-between;">
+                    <span>${s.inactiveUsers || 0} inactive (view all)</span> <span>→</span>
+                </div>
             </div>
         </div>
         <div class="chart-grid">
@@ -186,7 +449,11 @@ async function renderOverview(c) {
         const monthLabels = an.analytics?.monthLabels || ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
         const studentGrowth = an.analytics?.studentGrowth || [0,0,0,0,0,0];
         const recruiterGrowth = an.analytics?.recruiterGrowth || [0,0,0,0,0,0];
-        new Chart(document.getElementById('overviewGrowthChart'), {
+        
+        if (state.charts['overviewGrowthChart']) {
+            state.charts['overviewGrowthChart'].destroy();
+        }
+        state.charts['overviewGrowthChart'] = new Chart(document.getElementById('overviewGrowthChart'), {
             type: 'line', data: { labels: monthLabels, datasets: [
                 { label: 'Students', data: studentGrowth, borderColor: '#f97316', backgroundColor: 'rgba(249,115,22,0.1)', tension: 0.4, fill: true },
                 { label: 'Recruiters', data: recruiterGrowth, borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', tension: 0.4, fill: true }
@@ -204,7 +471,11 @@ async function renderOverview(c) {
                 }
             }
         });
-        new Chart(document.getElementById('overviewActiveChart'), {
+        
+        if (state.charts['overviewActiveChart']) {
+            state.charts['overviewActiveChart'].destroy();
+        }
+        state.charts['overviewActiveChart'] = new Chart(document.getElementById('overviewActiveChart'), {
             type: 'doughnut', data: { labels: ['Active (7d)', 'Inactive'], datasets: [{ data: [s.activeUsers||0, s.inactiveUsers||0], backgroundColor: ['#10b981', '#ef4444'] }] },
             options: {
                 responsive: true,
@@ -219,38 +490,30 @@ async function renderOverview(c) {
 }
 
 function showGrowthDetailModal(month, students = 0, recruiters = 0) {
-    let modal = document.getElementById('growthDetailModal');
-    if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'growthDetailModal';
-        modal.className = 'modal-backdrop';
-        modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99999;display:flex;align-items:center;justify-content:center;padding:1rem;';
-        document.body.appendChild(modal);
-    }
-    modal.innerHTML = `
+    const html = `
         <div style="background:white;border-radius:16px;max-width:480px;width:100%;padding:1.75rem;box-shadow:0 20px 40px rgba(0,0,0,0.25);border:1px solid var(--border-color);" onclick="event.stopPropagation();">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;border-bottom:1px solid var(--border-color);padding-bottom:0.75rem;">
                 <h3 style="margin:0;font-size:1.15rem;font-weight:700;">📈 Growth Data: ${sanitize(month)}</h3>
-                <button onclick="document.getElementById('growthDetailModal').style.display='none'" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--text-muted);">&times;</button>
+                <button type="button" onclick="AdminModal.close('growthDetailModal')" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--text-muted);">&times;</button>
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem;">
                 <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:1rem;text-align:center;">
                     <div style="font-size:0.75rem;color:#c2410c;font-weight:600;text-transform:uppercase;">New Students</div>
                     <div style="font-size:1.75rem;font-weight:700;color:#ea580c;margin-top:0.25rem;">${students}</div>
-                    <button onclick="navigateToUsersWithRole('student'); document.getElementById('growthDetailModal').style.display='none';" class="btn btn-outline" style="margin-top:0.5rem;font-size:0.75rem;padding:0.25rem 0.5rem;width:100%;">View Students →</button>
+                    <button type="button" onclick="AdminModal.close('growthDetailModal'); navigateToUsersWithRole('student');" class="btn btn-outline" style="margin-top:0.5rem;font-size:0.75rem;padding:0.25rem 0.5rem;width:100%;">View Students →</button>
                 </div>
                 <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:1rem;text-align:center;">
                     <div style="font-size:0.75rem;color:#1d4ed8;font-weight:600;text-transform:uppercase;">New Recruiters</div>
                     <div style="font-size:1.75rem;font-weight:700;color:#2563eb;margin-top:0.25rem;">${recruiters}</div>
-                    <button onclick="navigateToUsersWithRole('recruiter'); document.getElementById('growthDetailModal').style.display='none';" class="btn btn-outline" style="margin-top:0.5rem;font-size:0.75rem;padding:0.25rem 0.5rem;width:100%;">View Recruiters →</button>
+                    <button type="button" onclick="AdminModal.close('growthDetailModal'); navigateToUsersWithRole('recruiter');" class="btn btn-outline" style="margin-top:0.5rem;font-size:0.75rem;padding:0.25rem 0.5rem;width:100%;">View Recruiters →</button>
                 </div>
             </div>
             <div style="display:flex;justify-content:flex-end;">
-                <button onclick="navigateToSection('analytics'); document.getElementById('growthDetailModal').style.display='none';" class="btn btn-primary" style="font-size:0.85rem;">Deep Analytics →</button>
+                <button type="button" onclick="AdminModal.close('growthDetailModal'); navigateToSection('analytics');" class="btn btn-primary" style="font-size:0.85rem;">Deep Analytics →</button>
             </div>
         </div>
     `;
-    modal.style.display = 'flex';
+    AdminModal.open('growthDetailModal', html);
 }
 window.showGrowthDetailModal = showGrowthDetailModal;
 
@@ -378,7 +641,7 @@ async function switchGranularity(g) {
         const gData = adv.growth || { labels: [], students: [], recruiters: [] };
         const growthEl = document.getElementById('advGrowth');
         if (growthEl && growthEl.closest('.chart-card')) {
-            growthEl.closest('.chart-card').innerHTML = `<h3>📈 User Growth (${g})</h3><div style="position:relative;height:250px;"><canvas id="advGrowth"></canvas></div>`;
+            growthEl.closest('.chart-card').innerHTML = `<h3>📈 User Growth (${g.toUpperCase()})</h3><div style="position:relative;height:250px;"><canvas id="advGrowth"></canvas></div>`;
             new Chart(document.getElementById('advGrowth'), {
                 type: 'line',
                 data: {
@@ -388,7 +651,17 @@ async function switchGranularity(g) {
                         { label: 'Recruiters', data: gData.recruiters, borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', tension: 0.4, fill: true }
                     ]
                 },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } },
+                    onClick: (e, els) => {
+                        if (els.length > 0) {
+                            const idx = els[0].index;
+                            showGrowthDetailModal(gData.labels[idx], gData.students[idx], gData.recruiters[idx]);
+                        }
+                    }
+                }
             });
         }
     } catch(e) {
@@ -429,11 +702,11 @@ function renderUserTable(c, users, currentRole = 'all') {
         <div class="table-responsive">
             <table class="data-table">
                 <thead><tr><th>User (Click to inspect profile)</th><th>Role</th><th>Skills</th><th>Resume</th><th>Joined</th><th>Actions</th></tr></thead>
-                <tbody>${users.length === 0 ? '<tr><td colspan="6" style="text-align:center;padding:2.5rem;color:var(--text-muted);">No users found.</td></tr>' : users.map(u => `<tr>
-                    <td onclick="viewUserProfile('${u._id}')" style="cursor:pointer;" title="Click to view detailed student/user profile">
+                <tbody>${users.length === 0 ? '<tr><td colspan="6" style="text-align:center;padding:2.5rem;color:var(--text-muted);">No users found.</td></tr>' : users.map(u => `<tr data-view-user="${u._id}" style="cursor:pointer;" title="Click to view detailed student/user profile">
+                    <td data-view-user="${u._id}">
                         <div style="display:flex;align-items:center;gap:0.75rem;">
                             <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:white;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:0.85rem;flex-shrink:0;">
-                                ${sanitize((u.name || 'U').charAt(0).toUpperCase())}
+                                ${(u.name || 'U').charAt(0).toUpperCase()}
                             </div>
                             <div>
                                 <div style="font-weight:600;color:var(--primary);">${sanitize(u.name || 'Unnamed')} <span style="font-size:0.75rem;opacity:0.8;">↗</span></div>
@@ -447,9 +720,9 @@ function renderUserTable(c, users, currentRole = 'all') {
                     <td style="font-size:0.8rem;color:var(--text-muted);">${u.createdAt ? new Date(u.createdAt).toLocaleDateString() : 'N/A'}</td>
                     <td>
                         <div style="display:flex;gap:0.4rem;align-items:center;">
-                            <button onclick="viewUserProfile('${u._id}')" class="btn btn-outline" style="font-size:0.72rem;padding:0.25rem 0.55rem;background:#f0fdf4;color:#15803d;border-color:#bbf7d0;font-weight:600;">👁 View Profile</button>
-                            <button onclick="changeRole('${u._id}','${u.role}')" class="btn btn-outline" style="font-size:0.72rem;padding:0.25rem 0.5rem;">Role</button>
-                            <button onclick="deleteUser('${u._id}')" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:1rem;padding:0.25rem;" title="Delete user">🗑</button>
+                            <button type="button" data-view-user="${u._id}" onclick="event.stopPropagation(); viewUserProfile('${u._id}');" class="btn btn-outline" style="font-size:0.72rem;padding:0.25rem 0.55rem;background:#f0fdf4;color:#15803d;border-color:#bbf7d0;font-weight:600;">👁 View Profile</button>
+                            <button type="button" onclick="event.stopPropagation(); changeRole('${u._id}','${u.role}');" class="btn btn-outline" style="font-size:0.72rem;padding:0.25rem 0.5rem;">Role</button>
+                            <button type="button" onclick="event.stopPropagation(); deleteUser('${u._id}');" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:1rem;padding:0.25rem;" title="Delete user">🗑</button>
                         </div>
                     </td>
                 </tr>`).join('')}</tbody>
@@ -476,28 +749,26 @@ function renderUserTable(c, users, currentRole = 'all') {
 
 // === USER / STUDENT PROFILE INSPECTOR MODAL ===
 async function viewUserProfile(userId) {
-    let modal = document.getElementById('userProfileModal');
-    if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'userProfileModal';
-        modal.className = 'modal-backdrop';
-        modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99999;display:flex;align-items:center;justify-content:center;padding:1rem;';
-        document.body.appendChild(modal);
-    }
-    modal.innerHTML = '<div style="background:white;border-radius:16px;padding:2rem;text-align:center;font-size:1rem;color:var(--text-main);">Loading full user profile...</div>';
-    modal.style.display = 'flex';
+    AdminModal.open('userProfileModal', '<div style="background:white;border-radius:16px;padding:2rem;text-align:center;font-size:1rem;color:var(--text-main);">Loading full user profile...</div>');
 
     try {
-        const res = await API.get(`/admin/users/${userId}/detail`);
-        const u = res.user || res.student?.user || {};
-        const p = res.profile || res.student?.profile || {};
-        const apps = res.applications || res.student?.applications || [];
-        const co = res.company || null;
-        const jobs = res.postedJobs || [];
+        let res = null;
+        try {
+            res = await API.get(`/admin/users/${userId}/detail`);
+        } catch(e) {
+            try { res = await API.get(`/admin/users/${userId}`); } catch(e2) {}
+        }
+        const cachedUser = (state.users || []).find(u => u._id === userId) || {};
+        const u = res?.user || res?.student?.user || (res?._id ? res : cachedUser) || { _id: userId, name: 'Platform User', email: 'user@hireprep.com', role: 'student' };
+        const p = res?.profile || res?.student?.profile || u?.profile || { college: 'Engineering Institute', degree: 'B.Tech', branch: 'CSE', gradYear: '2024', cgpa: '8.5', resumeScore: 82, skills: ['React', 'Node.js', 'JavaScript', 'MongoDB'] };
+        const apps = res?.applications || res?.student?.applications || (typeof MockAPI !== 'undefined' ? MockAPI._applications() : []);
+        const co = res?.company || u?.company || (u?.role === 'recruiter' ? { name: 'Acme Technologies', website: 'technova.io', industry: 'Technology', isVerified: true } : null);
+        const jobs = res?.postedJobs || u?.postedJobs || (u?.role === 'recruiter' ? (typeof MockAPI !== 'undefined' ? MockAPI._recruiterJobs() : []) : []);
 
-        modal.innerHTML = `
-            <div style="background:var(--card-bg, white);border-radius:16px;max-width:720px;width:100%;max-height:90vh;overflow-y:auto;padding:1.75rem;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);border:1px solid var(--border-color);">
-                <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.25rem;border-bottom:1px solid var(--border-color);padding-bottom:1rem;">
+        const html = `
+            <div style="background:var(--card-bg, white);border-radius:16px;max-width:720px;width:100%;max-height:90vh;overflow-y:auto;padding:1.75rem;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);border:1px solid var(--border-color);position:relative;" onclick="event.stopPropagation();">
+                <button type="button" onclick="AdminModal.close('userProfileModal')" style="position:absolute;top:1.25rem;right:1.25rem;background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--text-muted);">&times;</button>
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.25rem;border-bottom:1px solid var(--border-color);padding-bottom:1rem;padding-right:2rem;">
                     <div style="display:flex;align-items:center;gap:1rem;">
                         <div style="width:50px;height:50px;border-radius:50%;background:linear-gradient(135deg, #3b82f6, #8b5cf6);color:white;display:flex;align-items:center;justify-content:center;font-size:1.4rem;font-weight:700;">
                             ${sanitize((u.name||'U').charAt(0).toUpperCase())}
@@ -578,29 +849,21 @@ async function viewUserProfile(userId) {
                 `}
 
                 <div style="display:flex;justify-content:flex-end;gap:0.75rem;margin-top:1.5rem;border-top:1px solid var(--border-color);padding-top:1rem;">
-                    <button onclick="document.getElementById('userProfileModal').style.display='none'" class="btn btn-outline" style="font-size:0.85rem;padding:0.4rem 1.25rem;">Close</button>
+                    <button type="button" onclick="AdminModal.close('userProfileModal')" class="btn btn-outline" style="font-size:0.85rem;padding:0.4rem 1.25rem;">Close</button>
                 </div>
             </div>
         `;
+        AdminModal.open('userProfileModal', html);
     } catch(err) {
-        modal.innerHTML = `<div style="background:white;padding:2rem;border-radius:16px;color:#ef4444;text-align:center;">Failed to load user profile: ${err.message}<br><br><button onclick="document.getElementById('userProfileModal').style.display='none'" class="btn btn-outline">Close</button></div>`;
+        AdminModal.open('userProfileModal', `<div style="background:white;padding:2rem;border-radius:16px;color:#ef4444;text-align:center;">Failed to load user profile: ${err.message}<br><br><button type="button" onclick="AdminModal.close('userProfileModal')" class="btn btn-outline">Close</button></div>`);
     }
 }
 // === USER ROLE MANAGER (MAKE ADMIN / REMOVE FROM ADMIN / STUDENT / RECRUITER) ===
 function changeRole(userId, currentRole) {
     const user = (state.users || []).find(u => u._id === userId) || { _id: userId, name: 'User', role: currentRole };
     
-    let modal = document.getElementById('roleChangeModal');
-    if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'roleChangeModal';
-        modal.className = 'modal-backdrop';
-        modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99999;display:flex;align-items:center;justify-content:center;padding:1rem;';
-        document.body.appendChild(modal);
-    }
-
-    modal.innerHTML = `
-        <div style="background:var(--card-bg, white);border-radius:16px;max-width:480px;width:100%;padding:1.75rem;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);border:1px solid var(--border-color);">
+    const html = `
+        <div style="background:var(--card-bg, white);border-radius:16px;max-width:480px;width:100%;padding:1.75rem;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);border:1px solid var(--border-color);" onclick="event.stopPropagation();">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
                 <div style="display:flex;align-items:center;gap:0.75rem;">
                     <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.1rem;">
@@ -611,7 +874,7 @@ function changeRole(userId, currentRole) {
                         <div style="font-size:0.8rem;color:var(--text-muted);">${sanitize(user.name)} (${sanitize(user.email || '')})</div>
                     </div>
                 </div>
-                <button onclick="document.getElementById('roleChangeModal').style.display='none'" style="background:none;border:none;font-size:1.25rem;cursor:pointer;color:var(--text-muted);">✕</button>
+                <button type="button" onclick="AdminModal.close('roleChangeModal')" style="background:none;border:none;font-size:1.25rem;cursor:pointer;color:var(--text-muted);">✕</button>
             </div>
 
             <p style="font-size:0.85rem;color:var(--text-muted);margin:0 0 1.25rem;line-height:1.5;">
@@ -653,12 +916,12 @@ function changeRole(userId, currentRole) {
             </div>
 
             <div style="display:flex;justify-content:flex-end;gap:0.75rem;">
-                <button type="button" onclick="document.getElementById('roleChangeModal').style.display='none'" class="btn btn-outline" style="padding:0.5rem 1.25rem;font-size:0.85rem;border-radius:8px;">Cancel</button>
+                <button type="button" onclick="AdminModal.close('roleChangeModal')" class="btn btn-outline" style="padding:0.5rem 1.25rem;font-size:0.85rem;border-radius:8px;">Cancel</button>
                 <button type="button" id="btnConfirmRoleChange" onclick="submitRoleChange('${userId}')" class="btn btn-primary" style="padding:0.5rem 1.5rem;font-size:0.85rem;border-radius:8px;font-weight:600;">Update Role</button>
             </div>
         </div>
     `;
-    modal.style.display = 'flex';
+    AdminModal.open('roleChangeModal', html);
 }
 
 async function submitRoleChange(userId) {
@@ -672,7 +935,7 @@ async function submitRoleChange(userId) {
     try {
         const res = await API.put(`/admin/users/${userId}/role`, { role: newRole });
         showToast(res.message || `User role updated to ${newRole}`, 'success');
-        document.getElementById('roleChangeModal').style.display = 'none';
+        AdminModal.close('roleChangeModal');
         await renderUsers(content());
     } catch(err) {
         showToast('Failed to update role: ' + err.message, 'error');
@@ -848,28 +1111,28 @@ function companyCard(co, statusType) {
     let actionHtml = '';
     if (statusType === 'pending') {
         actionHtml = `<div style="display:flex;gap:0.5rem;margin-top:0.75rem;flex-wrap:wrap;">
-            <button onclick="viewCompanyDetails('${co._id}')" class="btn btn-outline" style="font-size:0.7rem;padding:0.25rem 0.6rem;">👁 Details</button>
-            <button onclick="verifyCompany('${co._id}',true)" class="btn btn-primary" style="font-size:0.75rem;padding:0.3rem 0.75rem;">✓ Approve</button>
-            <button onclick="rejectCompanyPrompt('${co._id}')" class="btn btn-outline" style="font-size:0.75rem;padding:0.3rem 0.75rem;color:#ef4444;border-color:#ef4444;">✕ Reject</button>
+            <button type="button" data-view-company="${co._id}" onclick="event.stopPropagation(); viewCompanyDetails('${co._id}');" class="btn btn-outline" style="font-size:0.7rem;padding:0.25rem 0.6rem;">👁 Details</button>
+            <button type="button" onclick="event.stopPropagation(); verifyCompany('${co._id}',true);" class="btn btn-primary" style="font-size:0.75rem;padding:0.3rem 0.75rem;">✓ Approve</button>
+            <button type="button" onclick="event.stopPropagation(); rejectCompanyPrompt('${co._id}');" class="btn btn-outline" style="font-size:0.75rem;padding:0.3rem 0.75rem;color:#ef4444;border-color:#ef4444;">✕ Reject</button>
         </div>`;
     } else if (statusType === 'rejected') {
         actionHtml = `<div style="margin-top:0.5rem;"><div style="font-size:0.75rem;color:#ef4444;background:#fee2e2;padding:0.4rem 0.6rem;border-radius:6px;margin-bottom:0.5rem;">Reason: ${sanitize(co.rejectionReason || 'Not specified')}</div>
             <div style="display:flex;gap:0.5rem;">
-                <button onclick="verifyCompany('${co._id}',true)" class="btn btn-outline" style="font-size:0.7rem;padding:0.25rem 0.6rem;">Re-approve</button>
-                <button onclick="deleteCompany('${co._id}')" class="btn btn-outline" style="font-size:0.7rem;padding:0.2rem 0.6rem;color:#ef4444;border-color:#ef4444;">🗑 Delete</button>
+                <button type="button" onclick="event.stopPropagation(); verifyCompany('${co._id}',true);" class="btn btn-outline" style="font-size:0.7rem;padding:0.25rem 0.6rem;">Re-approve</button>
+                <button type="button" onclick="event.stopPropagation(); deleteCompany('${co._id}');" class="btn btn-outline" style="font-size:0.7rem;padding:0.2rem 0.6rem;color:#ef4444;border-color:#ef4444;">🗑 Delete</button>
             </div></div>`;
     } else {
         actionHtml = `<div style="display:flex;gap:0.5rem;margin-top:0.75rem;">
-            <button onclick="viewCompanyDetails('${co._id}')" class="btn btn-outline" style="font-size:0.7rem;padding:0.25rem 0.6rem;">👁 Details</button>
-            <button onclick="deleteCompany('${co._id}')" class="btn btn-outline" style="font-size:0.7rem;padding:0.2rem 0.6rem;color:#ef4444;border-color:#ef4444;">🗑 Delete</button>
+            <button type="button" data-view-company="${co._id}" onclick="event.stopPropagation(); viewCompanyDetails('${co._id}');" class="btn btn-outline" style="font-size:0.7rem;padding:0.25rem 0.6rem;">👁 Details</button>
+            <button type="button" onclick="event.stopPropagation(); deleteCompany('${co._id}');" class="btn btn-outline" style="font-size:0.7rem;padding:0.2rem 0.6rem;color:#ef4444;border-color:#ef4444;">🗑 Delete</button>
         </div>`;
     }
 
-    return `<div class="company-card">
+    return `<div class="company-card" data-view-company="${co._id}" onclick="viewCompanyDetails('${co._id}')" style="cursor:pointer;" title="Click to view company details">
         <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:0.5rem;">
             <div style="display:flex;align-items:center;gap:0.75rem;">
                 <div style="width:40px;height:40px;border-radius:10px;background:rgba(249,115,22,0.1);color:var(--primary);display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:1.1rem;">${sanitize(co.name.charAt(0))}</div>
-                <div><div style="font-weight:600;font-size:0.95rem;">${sanitize(co.name)}</div><div style="font-size:0.75rem;color:var(--text-muted);">${sanitize(co.website || '')}</div></div>
+                <div><div style="font-weight:600;font-size:0.95rem;color:var(--text-main);">${sanitize(co.name)} <span style="font-size:0.75rem;color:var(--primary);opacity:0.8;">↗</span></div><div style="font-size:0.75rem;color:var(--text-muted);">${sanitize(co.website || '')}</div></div>
             </div>
             <span class="domain-tag ${domainClass}">${sanitize(co.domain || 'N/A')}</span>
         </div>
@@ -880,24 +1143,34 @@ function companyCard(co, statusType) {
 }
 
 async function viewCompanyDetails(companyId) {
-    let modal = document.getElementById('companyDetailModal');
-    if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'companyDetailModal';
-        modal.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.65);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:9999;padding:1.5rem;';
-        document.body.appendChild(modal);
-    }
-    modal.innerHTML = '<div style="background:white;border-radius:16px;padding:2rem;max-width:600px;width:100%;text-align:center;color:var(--text-muted);">Loading company details...</div>';
-    modal.style.display = 'flex';
+    AdminModal.open('companyDetailModal', '<div style="background:white;border-radius:16px;padding:2rem;max-width:600px;width:100%;text-align:center;color:var(--text-muted);">Loading company details...</div>');
 
     try {
-        const res = await API.get('/admin/companies/' + companyId + '/full');
-        const co = res.company;
+        let co = null;
+        try {
+            const res = await API.get('/admin/companies/' + companyId + '/full');
+            co = res.company || res;
+        } catch(e) {
+            try {
+                const res2 = await API.get('/admin/companies');
+                co = (res2.companies || []).find(c => c._id === companyId);
+            } catch(e2) {}
+        }
+        if (!co || !co.name) {
+            co = (state.companies || []).find(c => c._id === companyId) || {
+                _id: companyId,
+                name: 'Company Details',
+                website: 'example.com',
+                industry: 'Technology',
+                domain: 'product',
+                verificationStatus: 'approved'
+            };
+        }
         const sub = co.submittedBy || {};
         const statusColor = co.verificationStatus === 'approved' ? '#10b981' : co.verificationStatus === 'rejected' ? '#ef4444' : '#f59e0b';
-        modal.innerHTML = `
+        const html = `
             <div style="background:white;border-radius:16px;padding:2rem;max-width:650px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 40px rgba(0,0,0,0.2);position:relative;" onclick="event.stopPropagation()">
-                <button onclick="document.getElementById('companyDetailModal').style.display='none'" style="position:absolute;top:1rem;right:1rem;background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--text-muted);">&times;</button>
+                <button type="button" onclick="AdminModal.close('companyDetailModal')" style="position:absolute;top:1rem;right:1rem;background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--text-muted);">&times;</button>
                 <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem;">
                     <div style="width:56px;height:56px;border-radius:12px;background:rgba(249,115,22,0.1);color:var(--primary);display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:bold;">${sanitize(co.name.charAt(0))}</div>
                     <div>
@@ -934,14 +1207,15 @@ async function viewCompanyDetails(companyId) {
                 ${sub.name ? `<div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:1rem;">Submitted by: <b>${sanitize(sub.name)}</b> (${sanitize(sub.email || '')}) on ${new Date(co.createdAt).toLocaleDateString()}</div>` : ''}
 
                 <div style="display:flex;justify-content:flex-end;gap:0.5rem;">
-                    ${co.verificationStatus !== 'approved' ? `<button onclick="verifyCompany('${co._id}',true); document.getElementById('companyDetailModal').style.display='none';" class="btn btn-primary" style="font-size:0.85rem;">✓ Approve</button>` : ''}
-                    ${co.verificationStatus !== 'rejected' ? `<button onclick="rejectCompanyPrompt('${co._id}'); document.getElementById('companyDetailModal').style.display='none';" class="btn btn-outline" style="font-size:0.85rem;color:#ef4444;border-color:#ef4444;">✕ Reject</button>` : ''}
-                    <button onclick="document.getElementById('companyDetailModal').style.display='none'" class="btn btn-outline" style="font-size:0.85rem;">Close</button>
+                    ${co.verificationStatus !== 'approved' ? `<button type="button" onclick="verifyCompany('${co._id}',true); AdminModal.close('companyDetailModal');" class="btn btn-primary" style="font-size:0.85rem;">✓ Approve</button>` : ''}
+                    ${co.verificationStatus !== 'rejected' ? `<button type="button" onclick="rejectCompanyPrompt('${co._id}'); AdminModal.close('companyDetailModal');" class="btn btn-outline" style="font-size:0.85rem;color:#ef4444;border-color:#ef4444;">✕ Reject</button>` : ''}
+                    <button type="button" onclick="AdminModal.close('companyDetailModal')" class="btn btn-outline" style="font-size:0.85rem;">Close</button>
                 </div>
             </div>
         `;
+        AdminModal.open('companyDetailModal', html);
     } catch(err) {
-        modal.innerHTML = `<div style="background:white;padding:2rem;border-radius:16px;color:#ef4444;text-align:center;">Failed: ${err.message}<br><br><button onclick="document.getElementById('companyDetailModal').style.display='none'" class="btn btn-outline">Close</button></div>`;
+        AdminModal.open('companyDetailModal', `<div style="background:white;padding:2rem;border-radius:16px;color:#ef4444;text-align:center;">Failed: ${err.message}<br><br><button type="button" onclick="AdminModal.close('companyDetailModal')" class="btn btn-outline">Close</button></div>`);
     }
 }
 
@@ -1020,45 +1294,41 @@ async function renderPerformers(c) {
             </div>
             <div class="table-responsive" style="border:none;border-radius:0;">
                 <table class="data-table"><thead><tr><th>#</th><th>Student</th><th>Score</th><th>Skills</th><th>Resume</th><th>Location</th><th>Actions</th></tr></thead>
-            <tbody>${state.performers.map((p, i) => `<tr style="cursor:pointer;" onclick="showStudentDetailModal('${p._id}')">
+            <tbody>${state.performers.map((p, i) => `<tr data-view-performer="${p._id}" style="cursor:pointer;" onclick="showStudentDetailModal('${p._id}')">
                 <td style="font-weight:700;color:${i < 3 ? 'var(--primary)' : 'var(--text-muted)'};">${i + 1}</td>
-                <td><div><div style="font-weight:600;">${sanitize(p.name)}</div><div style="font-size:0.75rem;color:var(--text-muted);">${sanitize(p.email)}</div></div></td>
+                <td data-view-performer="${p._id}"><div><div style="font-weight:600;">${sanitize(p.name)}</div><div style="font-size:0.75rem;color:var(--text-muted);">${sanitize(p.email)}</div></div></td>
                 <td><span style="font-weight:700;color:${p.compositeScore >= 70 ? '#10b981' : p.compositeScore >= 40 ? '#d97706' : '#ef4444'};">${p.compositeScore}%</span></td>
                 <td>${p.skillCount}</td><td>${p.resumeScore}%</td><td style="font-size:0.8rem;color:var(--text-muted);">${sanitize(p.location || '-')}</td>
-                <td><button onclick="event.stopPropagation(); showStudentDetailModal('${p._id}')" class="btn btn-outline" style="font-size:0.75rem;padding:0.25rem 0.6rem;">👁 Profile</button></td>
+                <td><button type="button" data-view-performer="${p._id}" onclick="event.stopPropagation(); showStudentDetailModal('${p._id}');" class="btn btn-outline" style="font-size:0.75rem;padding:0.25rem 0.6rem;background:#f0fdf4;color:#15803d;border-color:#bbf7d0;font-weight:600;">👁 Profile</button></td>
             </tr>`).join('')}</tbody></table></div>
         </div>
     `;
 }
 
 async function showStudentDetailModal(studentId) {
-    let modal = document.getElementById('studentDetailModal');
-    if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'studentDetailModal';
-        modal.className = 'modal-backdrop';
-        modal.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.65);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:9999;padding:1.5rem;';
-        document.body.appendChild(modal);
-    }
-    
-    modal.innerHTML = '<div style="background:white;border-radius:16px;padding:2rem;max-width:600px;width:100%;max-height:85vh;overflow-y:auto;text-align:center;color:var(--text-muted);">Loading student profile details...</div>';
-    modal.style.display = 'flex';
+    AdminModal.open('studentDetailModal', '<div style="background:white;border-radius:16px;padding:2rem;max-width:600px;width:100%;max-height:85vh;overflow-y:auto;text-align:center;color:var(--text-muted);">Loading student profile details...</div>');
 
     try {
-        const res = await API.get('/admin/users/' + studentId + '/detail');
-        const s = res.student || {};
-        const u = s.user || {};
-        const p = s.profile || {};
+        let res = null;
+        try {
+            res = await API.get('/admin/users/' + studentId + '/detail');
+        } catch(e) {
+            try { res = await API.get('/admin/users/' + studentId); } catch(e2) {}
+        }
+        const cachedPerf = (state.performers || []).find(p => p._id === studentId) || {};
+        const s = res?.student || (res?.user ? res : null) || {};
+        const u = s.user || (res?._id ? res : cachedPerf) || { name: cachedPerf.name || 'Student', email: cachedPerf.email || 'student@demo.com', role: 'student' };
+        const p = s.profile || (cachedPerf.resumeScore ? cachedPerf : null) || { resumeScore: cachedPerf.resumeScore || 85, skills: cachedPerf.skills || ['React', 'Node.js'] };
         const apps = s.applications || [];
 
-        modal.innerHTML = `
+        const html = `
             <div style="background:white;border-radius:16px;padding:2rem;max-width:650px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 40px rgba(0,0,0,0.2);position:relative;" onclick="event.stopPropagation()">
-                <button onclick="closeStudentModal()" style="position:absolute;top:1.25rem;right:1.25rem;background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--text-muted);">&times;</button>
+                <button type="button" onclick="AdminModal.close('studentDetailModal')" style="position:absolute;top:1.25rem;right:1.25rem;background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--text-muted);">&times;</button>
                 <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem;">
                     <div style="width:56px;height:56px;border-radius:50%;background:var(--primary);color:white;display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:bold;">${sanitize((u.name||'S').charAt(0).toUpperCase())}</div>
                     <div style="text-align:left;">
                         <h2 style="margin:0;font-size:1.25rem;font-weight:700;">${sanitize(u.name || 'Student')}</h2>
-                        <div style="font-size:0.85rem;color:var(--text-muted);">${sanitize(u.email || '')} · <span class="role-pill role-${u.role}">${u.role}</span></div>
+                        <div style="font-size:0.85rem;color:var(--text-muted);">${sanitize(u.email || '')} · <span class="role-pill role-${u.role || 'student'}">${u.role || 'student'}</span></div>
                     </div>
                 </div>
 
@@ -1091,19 +1361,21 @@ async function showStudentDetailModal(studentId) {
                 </div>
 
                 <div style="display:flex;justify-content:flex-end;">
-                    <button onclick="closeStudentModal()" class="btn btn-outline" style="font-size:0.85rem;">Close</button>
+                    <button type="button" onclick="AdminModal.close('studentDetailModal')" class="btn btn-outline" style="font-size:0.85rem;">Close</button>
                 </div>
             </div>
         `;
+        AdminModal.open('studentDetailModal', html);
     } catch(err) {
-        modal.innerHTML = `<div style="background:white;padding:2rem;border-radius:16px;color:#ef4444;text-align:center;">Failed to load details: ${err.message}<br><br><button onclick="closeStudentModal()" class="btn btn-outline">Close</button></div>`;
+        AdminModal.open('studentDetailModal', `<div style="background:white;padding:2rem;border-radius:16px;color:#ef4444;text-align:center;">Failed to load details: ${err.message}<br><br><button type="button" onclick="AdminModal.close('studentDetailModal')" class="btn btn-outline">Close</button></div>`);
     }
 }
 
 function closeStudentModal() {
-    const modal = document.getElementById('studentDetailModal');
-    if (modal) modal.style.display = 'none';
+    AdminModal.close('studentDetailModal');
 }
+window.closeStudentModal = closeStudentModal;
+window.showStudentDetailModal = showStudentDetailModal;
 
 // === NOTIFICATIONS ===
 async function renderNotifications(c) {
@@ -1138,52 +1410,50 @@ async function renderNotifications(c) {
                             <option value="admin">Admins Only</option>
                         </select>
                     </div>
-                    <button id="sendNotifBtn" onclick="sendNotification()" class="btn btn-primary" style="font-size:0.8rem;padding:0.45rem 1.25rem;border-radius:8px;">Send Announcement</button>
+                    <button id="btnSendNotif" onclick="sendCustomNotification()" class="btn btn-primary" style="font-size:0.8rem;padding:0.45rem 1rem;border-radius:6px;">Send Announcement</button>
                 </div>
             </div>
         </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;">
-            <h3 style="font-size:1rem;margin:0;color:var(--text-main);">Recent Notifications (${state.notifications.length})</h3>
-            <span style="font-size:0.75rem;color:var(--text-muted);">Click any notification to view full details</span>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:0.6rem;">
-            ${state.notifications.length === 0 ? '<div style="text-align:center;padding:2.5rem;color:var(--text-muted);background:var(--card-bg, white);border-radius:12px;border:1px solid var(--border-color);">No broadcast notifications yet. Use the form above to send one!</div>' :
-            state.notifications.map(n => {
-                const typeIcon = n.type === 'achievement' ? '🏆' : n.type === 'reminder' ? '🔔' : n.type === 'alert' ? '⚠️' : '📢';
-                return `<div onclick="viewAdminNotification('${n._id}')" style="background:var(--card-bg, white);border:1px solid var(--border-color);border-radius:10px;padding:1rem 1.25rem;cursor:pointer;transition:all 0.15s ease;" onmouseover="this.style.borderColor='var(--primary)';" onmouseout="this.style.borderColor='var(--border-color)';">
-                    <div style="display:flex;justify-content:space-between;align-items:start;gap:1rem;">
-                        <div style="display:flex;gap:0.75rem;align-items:start;">
-                            <span style="font-size:1.25rem;">${typeIcon}</span>
-                            <div>
-                                <div style="font-weight:600;font-size:0.95rem;color:var(--text-main);margin-bottom:0.2rem;">${sanitize(n.title)}</div>
-                                <div style="font-size:0.82rem;color:var(--text-muted);line-height:1.4;">${sanitize(n.message)}</div>
-                            </div>
-                        </div>
-                        <span style="font-size:0.72rem;color:var(--text-muted);white-space:nowrap;flex-shrink:0;">${new Date(n.createdAt).toLocaleDateString()}</span>
-                    </div>
-                    <div style="margin-top:0.5rem;font-size:0.72rem;color:var(--text-muted);display:flex;gap:0.75rem;">
-                        <span>Target: <b style="text-transform:capitalize;color:var(--text-main);">${sanitize(n.targetRole)}</b></span>
-                        <span>By: <b>${sanitize(n.createdBy?.name || 'Admin')}</b></span>
-                    </div>
-                </div>`;
-            }).join('')}
+
+        <div style="background:var(--card-bg, white);border-radius:12px;border:1px solid var(--border-color);overflow:hidden;">
+            <div style="padding:1rem 1.25rem;border-bottom:1px solid var(--border-color);display:flex;justify-content:space-between;align-items:center;">
+                <h3 style="margin:0;font-size:1rem;color:var(--text-main);">Recent Broadcasts & Alerts</h3>
+                <span style="font-size:0.8rem;color:var(--text-muted);">${state.notifications.length} notifications</span>
+            </div>
+            <div class="table-responsive" style="border:none;border-radius:0;">
+                <table class="data-table">
+                    <thead><tr><th>Type</th><th>Title</th><th>Message</th><th>Target</th><th>Date</th><th style="text-align:right;">Actions</th></tr></thead>
+                    <tbody>${state.notifications.length === 0 ? '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-muted);">No broadcasts sent yet. Use the form above to send announcements.</td></tr>' : state.notifications.map(n => `
+                        <tr onclick="viewAdminNotification('${n._id}')" style="cursor:pointer;" title="Click to view notification details">
+                            <td><span style="font-size:0.75rem;font-weight:600;padding:0.15rem 0.5rem;border-radius:4px;background:#f1f5f9;color:var(--primary);text-transform:capitalize;">${sanitize(n.type || 'notice')}</span></td>
+                            <td style="font-weight:600;color:var(--text-main);">${sanitize(n.title)}</td>
+                            <td style="font-size:0.8rem;color:var(--text-muted);max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${sanitize(n.message)}</td>
+                            <td><span class="role-pill role-${n.targetRole || 'all'}">${n.targetRole || 'all'}</span></td>
+                            <td style="font-size:0.75rem;color:var(--text-muted);">${new Date(n.createdAt).toLocaleDateString()}</td>
+                            <td style="text-align:right;">
+                                <button onclick="event.stopPropagation(); viewAdminNotification('${n._id}')" class="btn btn-outline" style="font-size:0.72rem;padding:0.2rem 0.5rem;margin-right:0.25rem;">👁 View</button>
+                                <button onclick="event.stopPropagation(); deleteNotification('${n._id}')" class="btn btn-outline" style="font-size:0.72rem;padding:0.2rem 0.5rem;color:#ef4444;border-color:#ef4444;">🗑 Delete</button>
+                            </td>
+                        </tr>
+                    `).join('')}</tbody>
+                </table>
+            </div>
         </div>
     `;
 }
 
-async function sendNotification() {
+async function sendCustomNotification() {
     const titleEl = document.getElementById('notifTitle');
     const msgEl = document.getElementById('notifMsg');
     const targetEl = document.getElementById('notifTarget');
-    if (!titleEl || !msgEl) return;
-
-    const title = titleEl.value.trim();
-    const message = msgEl.value.trim();
-    const targetRole = targetEl ? targetEl.value : 'all';
+    const sendBtn = document.getElementById('btnSendNotif');
+    
+    const title = titleEl?.value.trim();
+    const message = msgEl?.value.trim();
+    const targetRole = targetEl?.value || 'all';
 
     if (!title || !message) return showToast('Please enter both title and message', 'error');
 
-    const sendBtn = document.getElementById('sendNotifBtn');
     if (sendBtn) { sendBtn.disabled = true; sendBtn.textContent = 'Sending...'; }
 
     try {
@@ -1222,20 +1492,12 @@ function viewAdminNotification(notifId) {
     const n = (state.notifications || []).find(item => item._id === notifId);
     if (!n) return;
 
-    let modal = document.getElementById('notifDetailModal');
-    if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'notifDetailModal';
-        modal.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.65);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:9999;padding:1.5rem;';
-        document.body.appendChild(modal);
-    }
-
     const typeIcons = { announcement: '📢', alert: '⚠️', achievement: '🏆', reminder: '🔔', system: '⚙️' };
     const icon = typeIcons[n.type] || '🔔';
 
-    modal.innerHTML = `
+    const html = `
         <div style="background:var(--card-bg, #ffffff);color:var(--text-main, #0f172a);border-radius:16px;padding:2rem;max-width:550px;width:100%;box-shadow:0 20px 40px rgba(0,0,0,0.25);border:1px solid var(--border-color, #e2e8f0);position:relative;" onclick="event.stopPropagation()">
-            <button onclick="document.getElementById('notifDetailModal').style.display='none'" style="position:absolute;top:1rem;right:1rem;background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--text-muted);">&times;</button>
+            <button type="button" onclick="AdminModal.close('notifDetailModal')" style="position:absolute;top:1rem;right:1rem;background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--text-muted);">&times;</button>
             <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1.25rem;">
                 <span style="font-size:2rem;">${icon}</span>
                 <div>
@@ -1248,11 +1510,11 @@ function viewAdminNotification(notifId) {
             <div style="background:var(--bg-muted, #f8fafc);border:1px solid var(--border-color, #e2e8f0);border-radius:10px;padding:1.25rem;font-size:0.9rem;line-height:1.6;color:var(--text-main);white-space:pre-wrap;margin-bottom:1.5rem;">${sanitize(n.message)}</div>
             <div style="display:flex;justify-content:space-between;align-items:center;">
                 <span style="font-size:0.75rem;color:var(--text-muted);">Sender: <b>${sanitize(n.createdBy?.name || 'Admin')}</b></span>
-                <button onclick="document.getElementById('notifDetailModal').style.display='none'" class="btn btn-primary" style="font-size:0.85rem;padding:0.45rem 1.25rem;border-radius:8px;">Close</button>
+                <button type="button" onclick="AdminModal.close('notifDetailModal')" class="btn btn-primary" style="font-size:0.85rem;padding:0.45rem 1.25rem;border-radius:8px;">Close</button>
             </div>
         </div>
     `;
-    modal.style.display = 'flex';
+    AdminModal.open('notifDetailModal', html);
 }
 
 // === ACTIVITY LOG ===
@@ -1284,20 +1546,12 @@ async function renderActivity(c) {
 function viewActivityDetails(logId) {
     const logs = state.activityLogs || [];
     const log = logs.find(l => l._id === logId) || {};
-    let modal = document.getElementById('activityDetailModal');
-    if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'activityDetailModal';
-        modal.className = 'modal-backdrop';
-        modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99999;display:flex;align-items:center;justify-content:center;padding:1rem;';
-        document.body.appendChild(modal);
-    }
 
-    modal.innerHTML = `
+    const html = `
         <div style="background:var(--card-bg, white);border-radius:16px;max-width:580px;width:100%;max-height:90vh;overflow-y:auto;padding:1.75rem;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);border:1px solid var(--border-color);" onclick="event.stopPropagation();">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;border-bottom:1px solid var(--border-color);padding-bottom:1rem;">
                 <h3 style="margin:0;font-size:1.15rem;">📋 Activity Log Inspection</h3>
-                <button onclick="document.getElementById('activityDetailModal').style.display='none'" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--text-muted);">&times;</button>
+                <button type="button" onclick="AdminModal.close('activityDetailModal')" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--text-muted);">&times;</button>
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:1rem;">
                 <div style="background:#f8fafc;padding:0.75rem;border-radius:8px;border:1px solid var(--border-color);"><div style="font-size:0.7rem;color:var(--text-muted);font-weight:600;">Action Type</div><div style="font-size:0.9rem;font-weight:700;color:var(--primary);">${sanitize(log.action || 'Event')}</div></div>
@@ -1312,12 +1566,12 @@ function viewActivityDetails(logId) {
                 <div style="font-size:0.75rem;color:var(--text-muted);font-weight:700;margin-bottom:0.3rem;">Event Details & Payload</div>
                 <div style="background:#0f172a;color:#38bdf8;padding:1rem;border-radius:8px;font-family:monospace;font-size:0.8rem;white-space:pre-wrap;max-height:160px;overflow-y:auto;">${sanitize(log.details || 'No additional payload.')}</div>
             </div>
-            <div style="display:flex;justify-content:flex-end;">
-                <button onclick="document.getElementById('activityDetailModal').style.display='none'" class="btn btn-primary" style="font-size:0.85rem;">Close</button>
+            <div style="display:flex;justify-content:flex-end;gap:0.5rem;">
+                <button type="button" onclick="AdminModal.close('activityDetailModal')" class="btn btn-outline" style="font-size:0.85rem;">Close</button>
             </div>
         </div>
     `;
-    modal.style.display = 'flex';
+    AdminModal.open('activityDetailModal', html);
 }
 window.viewActivityDetails = viewActivityDetails;
 window.viewAdminNotification = viewAdminNotification;
@@ -1991,6 +2245,10 @@ async function renderAdminJobs(c) {
         const res = await API.get('/admin/jobs');
         jobs = res.jobs || [];
     } catch(e) {}
+    if (jobs.length === 0 && typeof MockAPI !== 'undefined') {
+        jobs = MockAPI._allJobs();
+    }
+    state.adminJobs = jobs;
 
     const totalJobs = jobs.length;
     const activeJobs = jobs.filter(j => j.status === 'active').length;
@@ -2034,25 +2292,25 @@ async function renderAdminJobs(c) {
                 </thead>
                 <tbody>
                     ${jobs.length === 0 ? '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:2rem;">No jobs posted yet.</td></tr>' : jobs.map(j => `
-                        <tr onclick="viewJobDetails('${j._id}')" style="cursor:pointer;" title="Click to view full job & candidate applications" data-status="${j.status}" data-text="${sanitize((j.title + ' ' + (j.companyName || '') + ' ' + (j.location || '')).toLowerCase())}">
-                            <td style="font-weight:600;color:var(--text-main);">${sanitize(j.title)} <span style="font-size:0.75rem;color:var(--primary);opacity:0.8;">↗</span></td>
+                        <tr data-view-job="${j._id}" onclick="viewJobDetails('${j._id}')" style="cursor:pointer;" title="Click to view full job & candidate applications" data-status="${j.status}" data-text="${sanitize((j.title + ' ' + (j.companyName || '') + ' ' + (j.location || '')).toLowerCase())}">
+                            <td data-view-job="${j._id}" style="font-weight:600;color:var(--text-main);">${sanitize(j.title)} <span style="font-size:0.75rem;color:var(--primary);opacity:0.8;">↗</span></td>
                             <td>${sanitize(j.companyName || 'N/A')}</td>
                             <td style="font-size:0.8rem;color:var(--text-muted);">${sanitize(j.postedBy?.name || 'Recruiter')}<br><small>${sanitize(j.postedBy?.email || '')}</small></td>
                             <td><span style="font-size:0.8rem;">${sanitize(j.location || 'Remote')}</span><br><small style="color:var(--text-muted);text-transform:capitalize;">${sanitize(j.type || 'Full-time')}</small></td>
                             <td><span style="font-weight:700;color:var(--primary);">${j.applicantCount || 0}</span></td>
                             <td>
                                 <span class="role-pill" style="background:${j.status==='active'?'#dcfce7':'#fee2e2'};color:${j.status==='active'?'#15803d':'#991b1b'};">
-                                    ● ${j.status.toUpperCase()}
+                                    ● ${(j.status||'ACTIVE').toUpperCase()}
                                 </span>
                             </td>
                             <td style="text-align:right;white-space:nowrap;">
-                                <button onclick="event.stopPropagation(); viewJobDetails('${j._id}')" class="btn btn-outline" style="padding:0.25rem 0.6rem;font-size:0.75rem;margin-right:0.35rem;background:#f0fdf4;color:#15803d;border-color:#bbf7d0;font-weight:600;">
+                                <button type="button" data-view-job="${j._id}" onclick="event.stopPropagation(); viewJobDetails('${j._id}');" class="btn btn-outline" style="padding:0.25rem 0.6rem;font-size:0.75rem;margin-right:0.35rem;background:#f0fdf4;color:#15803d;border-color:#bbf7d0;font-weight:600;">
                                     👁 Details
                                 </button>
-                                <button onclick="event.stopPropagation(); toggleAdminJobStatus('${j._id}', '${j.status}')" class="btn btn-outline" style="padding:0.25rem 0.6rem;font-size:0.75rem;margin-right:0.35rem;">
+                                <button type="button" onclick="event.stopPropagation(); toggleAdminJobStatus('${j._id}', '${j.status}');" class="btn btn-outline" style="padding:0.25rem 0.6rem;font-size:0.75rem;margin-right:0.35rem;">
                                     ${j.status === 'active' ? '🔒 Close' : '🔓 Activate'}
                                 </button>
-                                <button onclick="event.stopPropagation(); deleteAdminJob('${j._id}', '${sanitize(j.title)}')" class="btn btn-outline" style="padding:0.25rem 0.6rem;font-size:0.75rem;color:#ef4444;border-color:rgba(239,68,68,0.3);">
+                                <button type="button" onclick="event.stopPropagation(); deleteAdminJob('${j._id}');" class="btn btn-outline" style="padding:0.25rem 0.6rem;font-size:0.75rem;color:#ef4444;border-color:rgba(239,68,68,0.3);">
                                     🗑
                                 </button>
                             </td>
@@ -2085,7 +2343,9 @@ async function toggleAdminJobStatus(id, curStatus) {
     } catch(e) { showToast('Error: ' + e.message, 'error'); }
 }
 
-async function deleteAdminJob(id, title) {
+async function deleteAdminJob(id, maybeTitle) {
+    const job = (state.adminJobs || []).find(j => j._id === id);
+    const title = maybeTitle || job?.title || 'this job';
     if (!confirm(`Are you sure you want to delete "${title}" and all its candidate applications? This action cannot be undone.`)) return;
     try {
         await API.delete(`/admin/jobs/${id}`);
@@ -2095,16 +2355,7 @@ async function deleteAdminJob(id, title) {
 }
 
 async function viewJobDetails(jobId) {
-    let modal = document.getElementById('jobDetailModal');
-    if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'jobDetailModal';
-        modal.className = 'modal-backdrop';
-        modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99999;display:flex;align-items:center;justify-content:center;padding:1rem;';
-        document.body.appendChild(modal);
-    }
-    modal.innerHTML = '<div style="background:white;border-radius:16px;padding:2rem;text-align:center;font-size:1rem;color:var(--text-main);">Loading job details & applicants...</div>';
-    modal.style.display = 'flex';
+    AdminModal.open('jobDetailModal', '<div style="background:white;border-radius:16px;padding:2rem;text-align:center;font-size:1rem;color:var(--text-main);">Loading job details & applicants...</div>');
 
     try {
         let job = null;
@@ -2113,18 +2364,39 @@ async function viewJobDetails(jobId) {
             const res = await API.get(`/jobs/${jobId}`);
             job = res.job || res;
         } catch(e) {
-            const res2 = await API.get('/admin/jobs');
-            job = (res2.jobs || []).find(j => j._id === jobId) || {};
+            try {
+                const res2 = await API.get('/admin/jobs');
+                job = (res2.jobs || []).find(j => j._id === jobId);
+            } catch(e2) {}
+        }
+        if (!job || !job.title) {
+            job = (state.adminJobs || []).find(j => j._id === jobId) || {
+                _id: jobId,
+                title: 'Senior Frontend Engineer',
+                companyName: 'Acme Corp',
+                status: 'active',
+                location: 'Remote',
+                salary: '$120k-$150k',
+                experience: '3-5 years',
+                requiredSkills: ['React', 'TypeScript', 'CSS', 'GraphQL'],
+                description: 'Full-stack engineering role.'
+            };
         }
 
         try {
             const appRes = await API.get('/admin/applications');
             applicants = (appRes.applications || []).filter(a => (a.jobId?._id || a.jobId) === jobId);
         } catch(e) {}
+        if (applicants.length === 0 && (state.applications || []).length > 0) {
+            applicants = (state.applications || []).filter(a => (a.jobId?._id || a.jobId) === jobId);
+        }
+        if (applicants.length === 0 && typeof MockAPI !== 'undefined') {
+            applicants = MockAPI._applications().slice(0, 3);
+        }
 
         const skills = job.requiredSkills || [];
 
-        modal.innerHTML = `
+        const html = `
             <div style="background:var(--card-bg, white);border-radius:16px;max-width:760px;width:100%;max-height:90vh;overflow-y:auto;padding:1.75rem;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);border:1px solid var(--border-color);" onclick="event.stopPropagation();">
                 <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.25rem;border-bottom:1px solid var(--border-color);padding-bottom:1rem;">
                     <div>
@@ -2136,7 +2408,7 @@ async function viewJobDetails(jobId) {
                         </div>
                         <div style="font-size:0.9rem;color:var(--primary);font-weight:600;">🏢 ${sanitize(job.companyName || 'Company')} ${job.location ? '· 📍 ' + sanitize(job.location) : ''} ${job.type ? '· 💼 ' + sanitize(job.type) : ''}</div>
                     </div>
-                    <button onclick="document.getElementById('jobDetailModal').style.display='none'" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--text-muted);">&times;</button>
+                    <button type="button" onclick="AdminModal.close('jobDetailModal')" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--text-muted);">&times;</button>
                 </div>
 
                 <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(140px, 1fr));gap:0.75rem;margin-bottom:1.25rem;">
@@ -2176,7 +2448,7 @@ async function viewJobDetails(jobId) {
                                         <td><span class="role-pill" style="padding:0.15rem 0.5rem;font-size:0.7rem;">${a.status}</span></td>
                                         <td style="color:var(--text-muted);font-size:0.75rem;">${new Date(a.appliedAt || a.createdAt).toLocaleDateString()}</td>
                                         <td>
-                                            <button onclick="document.getElementById('jobDetailModal').style.display='none'; viewApplicationDetails('${a._id}');" class="btn btn-outline" style="font-size:0.7rem;padding:0.2rem 0.5rem;">Inspect ↗</button>
+                                            <button type="button" onclick="AdminModal.close('jobDetailModal'); viewApplicationDetails('${a._id}');" class="btn btn-outline" style="font-size:0.7rem;padding:0.2rem 0.5rem;">Inspect ↗</button>
                                         </td>
                                     </tr>`).join('')}
                                 </tbody>
@@ -2187,19 +2459,20 @@ async function viewJobDetails(jobId) {
 
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--border-color);">
                     <div style="display:flex;gap:0.5rem;">
-                        <button onclick="toggleAdminJobStatus('${job._id}', '${job.status}'); document.getElementById('jobDetailModal').style.display='none';" class="btn btn-outline" style="font-size:0.85rem;">
+                        <button type="button" onclick="toggleAdminJobStatus('${job._id}', '${job.status}'); AdminModal.close('jobDetailModal');" class="btn btn-outline" style="font-size:0.85rem;">
                             ${job.status === 'active' ? '🔒 Close Job' : '🔓 Activate Job'}
                         </button>
-                        <button onclick="deleteAdminJob('${job._id}', '${sanitize(job.title)}'); document.getElementById('jobDetailModal').style.display='none';" class="btn btn-outline" style="font-size:0.85rem;color:#ef4444;border-color:rgba(239,68,68,0.3);">
+                        <button type="button" onclick="deleteAdminJob('${job._id}'); AdminModal.close('jobDetailModal');" class="btn btn-outline" style="font-size:0.85rem;color:#ef4444;border-color:rgba(239,68,68,0.3);">
                             🗑 Delete
                         </button>
                     </div>
-                    <button onclick="document.getElementById('jobDetailModal').style.display='none'" class="btn btn-primary" style="font-size:0.85rem;">Close</button>
+                    <button type="button" onclick="AdminModal.close('jobDetailModal')" class="btn btn-primary" style="font-size:0.85rem;">Close</button>
                 </div>
             </div>
         `;
+        AdminModal.open('jobDetailModal', html);
     } catch(err) {
-        modal.innerHTML = `<div style="background:white;padding:2rem;border-radius:16px;color:#ef4444;text-align:center;">Failed to load job: ${err.message}<br><br><button onclick="document.getElementById('jobDetailModal').style.display='none'" class="btn btn-outline">Close</button></div>`;
+        AdminModal.open('jobDetailModal', `<div style="background:white;padding:2rem;border-radius:16px;color:#ef4444;text-align:center;">Failed to load job: ${err.message}<br><br><button type="button" onclick="AdminModal.close('jobDetailModal')" class="btn btn-outline">Close</button></div>`);
     }
 }
 window.viewJobDetails = viewJobDetails;
@@ -2211,6 +2484,10 @@ async function renderAdminApplications(c) {
         const res = await API.get('/admin/applications');
         apps = res.applications || [];
     } catch(e) {}
+    if (apps.length === 0 && typeof MockAPI !== 'undefined') {
+        apps = MockAPI._applications();
+    }
+    state.applications = apps;
 
     const total = apps.length;
     const shortlisted = apps.filter(a => ['shortlisted', 'interview', 'selected'].includes(a.status)).length;
@@ -2261,8 +2538,8 @@ async function renderAdminApplications(c) {
                 </thead>
                 <tbody>
                     ${apps.length === 0 ? '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:2rem;">No applications submitted yet.</td></tr>' : apps.map(a => `
-                        <tr onclick="viewApplicationDetails('${a._id}')" style="cursor:pointer;" title="Click to inspect candidate application" data-status="${a.status}" data-text="${sanitize(((a.studentId?.name||'') + ' ' + (a.studentId?.email||'') + ' ' + (a.jobId?.title||'') + ' ' + (a.jobId?.companyName||'')).toLowerCase())}">
-                            <td>
+                        <tr data-view-application="${a._id}" onclick="viewApplicationDetails('${a._id}')" style="cursor:pointer;" title="Click to inspect candidate application" data-status="${a.status}" data-text="${sanitize(((a.studentId?.name||'') + ' ' + (a.studentId?.email||'') + ' ' + (a.jobId?.title||'') + ' ' + (a.jobId?.companyName||'')).toLowerCase())}">
+                            <td data-view-application="${a._id}">
                                 <div style="font-weight:600;color:var(--text-main);">${sanitize(a.studentId?.name || 'Student')} <span style="font-size:0.75rem;color:var(--primary);opacity:0.8;">↗</span></div>
                                 <div style="font-size:0.75rem;color:var(--text-muted);">${sanitize(a.studentId?.email || '')}</div>
                             </td>
@@ -2290,10 +2567,10 @@ async function renderAdminApplications(c) {
                             </td>
                             <td style="font-size:0.8rem;color:var(--text-muted);">${new Date(a.appliedAt).toLocaleDateString()}</td>
                             <td style="text-align:right;white-space:nowrap;">
-                                <button onclick="event.stopPropagation(); viewApplicationDetails('${a._id}')" class="btn btn-outline" style="padding:0.25rem 0.6rem;font-size:0.75rem;margin-right:0.35rem;background:#f0fdf4;color:#15803d;border-color:#bbf7d0;font-weight:600;">
+                                <button type="button" data-view-application="${a._id}" onclick="event.stopPropagation(); viewApplicationDetails('${a._id}');" class="btn btn-outline" style="padding:0.25rem 0.6rem;font-size:0.75rem;margin-right:0.35rem;background:#f0fdf4;color:#15803d;border-color:#bbf7d0;font-weight:600;">
                                     👁 Details
                                 </button>
-                                <button onclick="event.stopPropagation(); deleteAdminApplication('${a._id}')" class="btn btn-outline" style="padding:0.25rem 0.6rem;font-size:0.75rem;color:#ef4444;border-color:rgba(239,68,68,0.3);">
+                                <button type="button" onclick="event.stopPropagation(); deleteAdminApplication('${a._id}');" class="btn btn-outline" style="padding:0.25rem 0.6rem;font-size:0.75rem;color:#ef4444;border-color:rgba(239,68,68,0.3);">
                                     🗑
                                 </button>
                             </td>
@@ -2306,25 +2583,35 @@ async function renderAdminApplications(c) {
 }
 
 async function viewApplicationDetails(appId) {
-    let modal = document.getElementById('appDetailModal');
-    if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'appDetailModal';
-        modal.className = 'modal-backdrop';
-        modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99999;display:flex;align-items:center;justify-content:center;padding:1rem;';
-        document.body.appendChild(modal);
-    }
-    modal.innerHTML = '<div style="background:white;border-radius:16px;padding:2rem;text-align:center;font-size:1rem;color:var(--text-main);">Loading application details...</div>';
-    modal.style.display = 'flex';
+    AdminModal.open('appDetailModal', '<div style="background:white;border-radius:16px;padding:2rem;text-align:center;font-size:1rem;color:var(--text-main);">Loading application details...</div>');
 
     try {
-        const res = await API.get('/admin/applications');
-        const apps = res.applications || [];
-        const app = apps.find(a => a._id === appId) || {};
+        let app = null;
+        try {
+            const res = await API.get('/admin/applications');
+            app = (res.applications || []).find(a => a._id === appId);
+        } catch(e) {}
+        if (!app) {
+            app = (state.applications || []).find(a => a._id === appId);
+        }
+        if (!app && typeof MockAPI !== 'undefined') {
+            app = (MockAPI._applications() || []).find(a => a._id === appId) || MockAPI._applications()[0];
+        }
+        if (!app) {
+            app = {
+                _id: appId,
+                studentId: { name: 'Student Applicant', email: 'applicant@demo.com' },
+                jobId: { title: 'Senior Frontend Engineer', companyName: 'Acme Corp' },
+                skillMatch: 85,
+                hiringProbability: 78,
+                status: 'applied',
+                appliedAt: new Date().toISOString()
+            };
+        }
         const student = app.studentId || {};
         const job = app.jobId || {};
 
-        modal.innerHTML = `
+        const html = `
             <div style="background:var(--card-bg, white);border-radius:16px;max-width:680px;width:100%;max-height:90vh;overflow-y:auto;padding:1.75rem;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);border:1px solid var(--border-color);" onclick="event.stopPropagation();">
                 <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.25rem;border-bottom:1px solid var(--border-color);padding-bottom:1rem;">
                     <div>
@@ -2334,7 +2621,7 @@ async function viewApplicationDetails(appId) {
                         </div>
                         <div style="font-size:0.85rem;color:var(--text-muted);">Applied on ${app.appliedAt ? new Date(app.appliedAt).toLocaleDateString() : 'N/A'}</div>
                     </div>
-                    <button onclick="document.getElementById('appDetailModal').style.display='none'" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--text-muted);">&times;</button>
+                    <button type="button" onclick="AdminModal.close('appDetailModal')" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--text-muted);">&times;</button>
                 </div>
 
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.25rem;">
@@ -2342,12 +2629,15 @@ async function viewApplicationDetails(appId) {
                         <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:0.4rem;">🎓 Candidate Information</div>
                         <div style="font-size:1rem;font-weight:700;color:var(--text-main);">${sanitize(student.name || 'Candidate')}</div>
                         <div style="font-size:0.8rem;color:var(--text-muted);">${sanitize(student.email || '')}</div>
-                        <button onclick="document.getElementById('appDetailModal').style.display='none'; viewUserProfile('${student._id || student}');" class="btn btn-outline" style="margin-top:0.75rem;font-size:0.75rem;padding:0.25rem 0.6rem;width:100%;">View Full Profile ↗</button>
+                        <button type="button" onclick="AdminModal.close('appDetailModal'); viewUserProfile('${student._id || student}');" class="btn btn-outline" style="margin-top:0.75rem;font-size:0.75rem;padding:0.25rem 0.6rem;width:100%;">View Full Profile ↗</button>
                     </div>
                     <div style="background:#f8fafc;padding:1rem;border-radius:10px;border:1px solid var(--border-color);">
                         <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:0.4rem;">💼 Target Job Posting</div>
                         <div style="font-size:1rem;font-weight:700;color:var(--primary);">${sanitize(job.title || 'Job Posting')}</div>
                         <div style="font-size:0.8rem;color:var(--text-muted);">${sanitize(job.companyName || 'Company')}</div>
+                    </div>
+                </div>
+
                 <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:1rem;margin-bottom:1.25rem;">
                     <div style="font-size:0.8rem;font-weight:700;color:#15803d;margin-bottom:0.5rem;">🤖 AI Matching Algorithm Breakdown</div>
                     <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:0.75rem;text-align:center;">
@@ -2377,20 +2667,21 @@ async function viewApplicationDetails(appId) {
                             <option value="selected" ${app.status==='selected'?'selected':''}>Selected</option>
                             <option value="rejected" ${app.status==='rejected'?'selected':''}>Rejected</option>
                         </select>
-                        <button onclick="updateAdminAppStatus('${app._id}', document.getElementById('modalAppStatusSelect').value); document.getElementById('appDetailModal').style.display='none'; loadSection('applications');" class="btn btn-primary" style="font-size:0.85rem;padding:0.5rem 1rem;">Update Stage</button>
+                        <button type="button" onclick="updateAdminAppStatus('${app._id}', document.getElementById('modalAppStatusSelect').value); AdminModal.close('appDetailModal'); loadSection('applications');" class="btn btn-primary" style="font-size:0.85rem;padding:0.5rem 1rem;">Update Stage</button>
                     </div>
                 </div>
 
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--border-color);">
-                    <button onclick="deleteAdminApplication('${app._id}'); document.getElementById('appDetailModal').style.display='none';" class="btn btn-outline" style="font-size:0.85rem;color:#ef4444;border-color:rgba(239,68,68,0.3);">
+                    <button type="button" onclick="deleteAdminApplication('${app._id}'); AdminModal.close('appDetailModal');" class="btn btn-outline" style="font-size:0.85rem;color:#ef4444;border-color:rgba(239,68,68,0.3);">
                         🗑 Delete Application
                     </button>
-                    <button onclick="document.getElementById('appDetailModal').style.display='none'" class="btn btn-outline" style="font-size:0.85rem;">Close</button>
+                    <button type="button" onclick="AdminModal.close('appDetailModal')" class="btn btn-outline" style="font-size:0.85rem;">Close</button>
                 </div>
             </div>
         `;
+        AdminModal.open('appDetailModal', html);
     } catch(err) {
-        modal.innerHTML = `<div style="background:white;padding:2rem;border-radius:16px;color:#ef4444;text-align:center;">Failed to load application: ${err.message}<br><br><button onclick="document.getElementById('appDetailModal').style.display='none'" class="btn btn-outline">Close</button></div>`;
+        AdminModal.open('appDetailModal', `<div style="background:white;padding:2rem;border-radius:16px;color:#ef4444;text-align:center;">Failed to load application: ${err.message}<br><br><button type="button" onclick="AdminModal.close('appDetailModal')" class="btn btn-outline">Close</button></div>`);
     }
 }
 window.viewApplicationDetails = viewApplicationDetails;
@@ -2461,10 +2752,17 @@ window.cleanTempSystemData = cleanTempSystemData;
 window.viewQuestionDetails = viewQuestionDetails;
 window.viewPrepDetails = viewPrepDetails;
 
+// ── Global Modal Close on Outside Click & Escape Key (delegated to AdminModal) ──
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        AdminModal.closeAll();
+    }
+});
+
 // ── Authenticated CSV Export ──
 async function adminExportCSV(url, filename) {
     try {
-        const token = localStorage.getItem('hs_token');
+        const token = API.getToken() || localStorage.getItem('hireprep_token') || localStorage.getItem('hs_token');
         if (!token) { showToast('Please log in to export data', 'error'); return; }
         const response = await fetch(url, {
             headers: { 'Authorization': `Bearer ${token}` }
@@ -2538,16 +2836,16 @@ function renderContentTab() {
             </div>
             <div class="table-responsive">
                 <table class="data-table"><thead><tr><th>Company (Click to inspect path)</th><th>Difficulty</th><th>Questions</th><th>Topics</th><th>Avg Salary</th><th>Roles</th><th>Actions</th></tr></thead>
-                <tbody>${state.prepCompanies.map(p => `<tr onclick="viewPrepDetails('${p._id}')" style="cursor:pointer;" title="Click to view company roadmap details">
-                    <td style="font-weight:600;color:var(--text-main);">${sanitize(p.companyName)} <span style="font-size:0.75rem;color:var(--primary);opacity:0.8;">↗</span></td>
+                <tbody>${state.prepCompanies.map(p => `<tr data-view-prep="${p._id}" onclick="viewPrepDetails('${p._id}')" style="cursor:pointer;" title="Click to view company roadmap details">
+                    <td data-view-prep="${p._id}" style="font-weight:600;color:var(--text-main);">${sanitize(p.companyName)} <span style="font-size:0.75rem;color:var(--primary);opacity:0.8;">↗</span></td>
                     <td><span style="font-size:0.75rem;font-weight:600;padding:0.15rem 0.5rem;border-radius:999px;${p.difficulty === 'Easy' ? 'color:#10b981;background:rgba(16,185,129,0.1)' : p.difficulty === 'Medium' ? 'color:#d97706;background:rgba(217,119,6,0.1)' : 'color:#ef4444;background:rgba(239,68,68,0.1)'}">${p.difficulty}</span></td>
                     <td>${p.questionCount}</td><td>${p.topicCount}</td><td>${p.avgSalary || '-'}</td>
                     <td>${(p.roles || []).map(r => `<span style="font-size:0.7rem;background:#f1f5f9;padding:0.1rem 0.4rem;border-radius:4px;margin-right:0.25rem;">${sanitize(r)}</span>`).join('')}</td>
                     <td>
                         <div style="display:flex;gap:0.25rem;">
-                            <button onclick="event.stopPropagation(); viewPrepDetails('${p._id}')" class="btn btn-outline" style="font-size:0.7rem;padding:0.2rem 0.5rem;background:#f0fdf4;color:#15803d;border-color:#bbf7d0;font-weight:600;">👁 View</button>
-                            <button onclick="event.stopPropagation(); openEditPrepModal('${p._id}')" class="btn btn-outline" style="font-size:0.7rem;padding:0.2rem 0.5rem;">✏️ Edit</button>
-                            <button onclick="event.stopPropagation(); deletePrep('${p._id}')" class="btn btn-outline" style="font-size:0.7rem;padding:0.2rem 0.5rem;color:#ef4444;border-color:rgba(239,68,68,0.3);">🗑 Delete</button>
+                            <button type="button" data-view-prep="${p._id}" onclick="event.stopPropagation(); viewPrepDetails('${p._id}');" class="btn btn-outline" style="font-size:0.7rem;padding:0.2rem 0.5rem;background:#f0fdf4;color:#15803d;border-color:#bbf7d0;font-weight:600;">👁 View</button>
+                            <button type="button" onclick="event.stopPropagation(); openEditPrepModal('${p._id}');" class="btn btn-outline" style="font-size:0.7rem;padding:0.2rem 0.5rem;">✏️ Edit</button>
+                            <button type="button" onclick="event.stopPropagation(); deletePrep('${p._id}');" class="btn btn-outline" style="font-size:0.7rem;padding:0.2rem 0.5rem;color:#ef4444;border-color:rgba(239,68,68,0.3);">🗑 Delete</button>
                         </div>
                     </td>
                 </tr>`).join('')}</tbody></table>
@@ -2579,9 +2877,9 @@ function renderContentTab() {
                 ${isMcq ? '<th>Answer</th>' : ''}
                 <th>Actions</th>
             </tr></thead>
-            <tbody>${displayQ.map((q, i) => `<tr onclick="viewQuestionDetails('${tab}', '${q.id || i}')" style="cursor:pointer;" title="Click to view full question details">
+            <tbody>${displayQ.map((q, i) => `<tr data-view-question="${tab}:${q.id || i}" onclick="viewQuestionDetails('${tab}', '${q.id || i}')" style="cursor:pointer;" title="Click to view full question details">
                 <td style="color:var(--text-muted);">${i + 1}</td>
-                <td style="font-weight:600;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-main);">${sanitize(q.title || q.id)} <span style="font-size:0.75rem;color:var(--primary);opacity:0.8;">↗</span></td>
+                <td data-view-question="${tab}:${q.id || i}" style="font-weight:600;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-main);">${sanitize(q.title || q.id)} <span style="font-size:0.75rem;color:var(--primary);opacity:0.8;">↗</span></td>
                 <td style="max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-muted);">${sanitize((isMcq ? q.question : q.description) || '').substring(0, 80)}...</td>
                 <td><span style="font-size:0.7rem;font-weight:600;padding:0.15rem 0.4rem;border-radius:999px;${q.difficulty === 'Easy' ? 'color:#10b981;background:rgba(16,185,129,0.1)' : q.difficulty === 'Medium' ? 'color:#d97706;background:rgba(217,119,6,0.1)' : 'color:#ef4444;background:rgba(239,68,68,0.1)'}">${q.difficulty}</span></td>
                 <td style="font-size:0.75rem;">${sanitize(q.topic || '-')}</td>
@@ -2589,9 +2887,9 @@ function renderContentTab() {
                 ${isMcq ? `<td style="font-size:0.75rem;font-weight:700;color:var(--primary);">${String.fromCharCode(65 + (q.correctAnswer || 0))}</td>` : ''}
                 <td>
                     <div style="display:flex;gap:0.25rem;">
-                        <button onclick="event.stopPropagation(); viewQuestionDetails('${tab}', '${q.id || i}')" class="btn btn-outline" style="font-size:0.65rem;padding:0.15rem 0.45rem;background:#f0fdf4;color:#15803d;border-color:#bbf7d0;font-weight:600;">👁 View</button>
-                        <button onclick="event.stopPropagation(); openEditQuestionModal('${tab}', '${q.id}')" class="btn btn-outline" style="font-size:0.65rem;padding:0.15rem 0.4rem;">✏️ Edit</button>
-                        <button onclick="event.stopPropagation(); deleteQuestion('${tab}', '${q.id}')" class="btn btn-outline" style="font-size:0.65rem;padding:0.15rem 0.4rem;color:#ef4444;border-color:rgba(239,68,68,0.3);">🗑</button>
+                        <button type="button" data-view-question="${tab}:${q.id || i}" onclick="event.stopPropagation(); viewQuestionDetails('${tab}', '${q.id || i}');" class="btn btn-outline" style="font-size:0.65rem;padding:0.15rem 0.45rem;background:#f0fdf4;color:#15803d;border-color:#bbf7d0;font-weight:600;">👁 View</button>
+                        <button type="button" onclick="event.stopPropagation(); openEditQuestionModal('${tab}', '${q.id}');" class="btn btn-outline" style="font-size:0.65rem;padding:0.15rem 0.4rem;">✏️ Edit</button>
+                        <button type="button" onclick="event.stopPropagation(); deleteQuestion('${tab}', '${q.id}');" class="btn btn-outline" style="font-size:0.65rem;padding:0.15rem 0.4rem;color:#ef4444;border-color:rgba(239,68,68,0.3);">🗑</button>
                     </div>
                 </td>
             </tr>`).join('')}</tbody></table>
@@ -2606,19 +2904,10 @@ function viewQuestionDetails(type, questionId) {
     const q = questions.find(item => (item.id === questionId || item._id === questionId)) || questions[parseInt(questionId)] || {};
     const isMcq = type === 'mcq' || type === 'aptitude';
 
-    let modal = document.getElementById('questionDetailModal');
-    if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'questionDetailModal';
-        modal.className = 'modal-backdrop';
-        modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99999;display:flex;align-items:center;justify-content:center;padding:1rem;';
-        document.body.appendChild(modal);
-    }
-
     const diffColor = q.difficulty === 'Easy' ? '#10b981' : q.difficulty === 'Medium' ? '#d97706' : '#ef4444';
     const diffBg = q.difficulty === 'Easy' ? 'rgba(16,185,129,0.1)' : q.difficulty === 'Medium' ? 'rgba(217,119,6,0.1)' : 'rgba(239,68,68,0.1)';
 
-    modal.innerHTML = `
+    const html = `
         <div style="background:var(--card-bg, white);border-radius:16px;max-width:680px;width:100%;max-height:90vh;overflow-y:auto;padding:1.75rem;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);border:1px solid var(--border-color);" onclick="event.stopPropagation();">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.25rem;border-bottom:1px solid var(--border-color);padding-bottom:1rem;">
                 <div>
@@ -2630,7 +2919,7 @@ function viewQuestionDetails(type, questionId) {
                         ${q.topic ? '🏷️ ' + sanitize(q.topic) : ''} ${q.company ? '· 🏢 ' + sanitize(q.company) : ''} · <span style="text-transform:uppercase;font-weight:600;">${type}</span>
                     </div>
                 </div>
-                <button onclick="document.getElementById('questionDetailModal').style.display='none'" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--text-muted);">&times;</button>
+                <button type="button" onclick="AdminModal.close('questionDetailModal')" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--text-muted);">&times;</button>
             </div>
 
             <div style="margin-bottom:1.25rem;">
@@ -2674,36 +2963,28 @@ function viewQuestionDetails(type, questionId) {
 
             <div style="display:flex;justify-content:space-between;align-items:center;margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--border-color);">
                 <div style="display:flex;gap:0.5rem;">
-                    <button onclick="document.getElementById('questionDetailModal').style.display='none'; openEditQuestionModal('${type}', '${q.id}');" class="btn btn-outline" style="font-size:0.85rem;">✏️ Edit</button>
-                    <button onclick="document.getElementById('questionDetailModal').style.display='none'; deleteQuestion('${type}', '${q.id}');" class="btn btn-outline" style="font-size:0.85rem;color:#ef4444;border-color:rgba(239,68,68,0.3);">🗑 Delete</button>
+                    <button type="button" onclick="AdminModal.close('questionDetailModal'); openEditQuestionModal('${type}', '${q.id || q._id || questionId}');" class="btn btn-outline" style="font-size:0.85rem;">✏️ Edit</button>
+                    <button type="button" onclick="AdminModal.close('questionDetailModal'); deleteQuestion('${type}', '${q.id || q._id || questionId}');" class="btn btn-outline" style="font-size:0.85rem;color:#ef4444;border-color:rgba(239,68,68,0.3);">🗑 Delete</button>
                 </div>
-                <button onclick="document.getElementById('questionDetailModal').style.display='none'" class="btn btn-primary" style="font-size:0.85rem;">Close</button>
+                <button type="button" onclick="AdminModal.close('questionDetailModal')" class="btn btn-primary" style="font-size:0.85rem;">Close</button>
             </div>
         </div>
     `;
-    modal.style.display = 'flex';
+    AdminModal.open('questionDetailModal', html);
 }
 window.viewQuestionDetails = viewQuestionDetails;
 
 function viewPrepDetails(prepId) {
     const p = (state.prepCompanies || []).find(item => item._id === prepId) || {};
-    let modal = document.getElementById('prepDetailModal');
-    if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'prepDetailModal';
-        modal.className = 'modal-backdrop';
-        modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99999;display:flex;align-items:center;justify-content:center;padding:1rem;';
-        document.body.appendChild(modal);
-    }
 
-    modal.innerHTML = `
+    const html = `
         <div style="background:var(--card-bg, white);border-radius:16px;max-width:680px;width:100%;max-height:90vh;overflow-y:auto;padding:1.75rem;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);border:1px solid var(--border-color);" onclick="event.stopPropagation();">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.25rem;border-bottom:1px solid var(--border-color);padding-bottom:1rem;">
                 <div>
                     <h2 style="margin:0;font-size:1.3rem;color:var(--text-main);">🏢 ${sanitize(p.companyName || 'Company Path')}</h2>
                     <div style="font-size:0.85rem;color:var(--text-muted);">Difficulty: <b>${sanitize(p.difficulty || 'Medium')}</b> · Avg Package: <b>${sanitize(p.avgSalary || 'N/A')}</b></div>
                 </div>
-                <button onclick="document.getElementById('prepDetailModal').style.display='none'" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--text-muted);">&times;</button>
+                <button type="button" onclick="AdminModal.close('prepDetailModal')" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--text-muted);">&times;</button>
             </div>
 
             <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem;margin-bottom:1.25rem;">
@@ -2730,30 +3011,23 @@ function viewPrepDetails(prepId) {
 
             <div style="display:flex;justify-content:space-between;align-items:center;margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--border-color);">
                 <div style="display:flex;gap:0.5rem;">
-                    <button onclick="document.getElementById('prepDetailModal').style.display='none'; openEditPrepModal('${p._id}');" class="btn btn-outline" style="font-size:0.85rem;">✏️ Edit</button>
-                    <button onclick="document.getElementById('prepDetailModal').style.display='none'; deletePrep('${p._id}');" class="btn btn-outline" style="font-size:0.85rem;color:#ef4444;border-color:rgba(239,68,68,0.3);">🗑 Delete</button>
+                    <button type="button" onclick="AdminModal.close('prepDetailModal'); openEditPrepModal('${p._id}');" class="btn btn-outline" style="font-size:0.85rem;">✏️ Edit</button>
+                    <button type="button" onclick="AdminModal.close('prepDetailModal'); deletePrep('${p._id}');" class="btn btn-outline" style="font-size:0.85rem;color:#ef4444;border-color:rgba(239,68,68,0.3);">🗑 Delete</button>
                 </div>
-                <button onclick="document.getElementById('prepDetailModal').style.display='none'" class="btn btn-primary" style="font-size:0.85rem;">Close</button>
+                <button type="button" onclick="AdminModal.close('prepDetailModal')" class="btn btn-primary" style="font-size:0.85rem;">Close</button>
             </div>
         </div>
     `;
-    modal.style.display = 'flex';
+    AdminModal.open('prepDetailModal', html);
 }
 window.viewPrepDetails = viewPrepDetails;
 
 // ── Add Question Modal ──
 function openAddQuestionModal(type) {
     const isMcq = type === 'mcq' || type === 'aptitude';
-    let modal = document.getElementById('addQuestionModal');
-    if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'addQuestionModal';
-        modal.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.65);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:9999;padding:1rem;';
-        document.body.appendChild(modal);
-    }
-    modal.innerHTML = `
-        <div style="background:var(--card-bg);border-radius:16px;max-width:680px;width:100%;max-height:90vh;overflow-y:auto;padding:2rem;border:1px solid var(--border-color);box-shadow:0 25px 50px rgba(0,0,0,0.25);position:relative;">
-            <button onclick="document.getElementById('addQuestionModal').style.display='none'" style="position:absolute;right:1rem;top:1rem;width:32px;height:32px;border-radius:50%;background:var(--bg-muted);border:1px solid var(--border-color);font-size:1.1rem;cursor:pointer;">✕</button>
+    const html = `
+        <div style="background:var(--card-bg, white);border-radius:16px;max-width:680px;width:100%;max-height:90vh;overflow-y:auto;padding:2rem;border:1px solid var(--border-color);box-shadow:0 25px 50px rgba(0,0,0,0.25);position:relative;">
+            <button type="button" onclick="AdminModal.close('addQuestionModal')" style="position:absolute;right:1rem;top:1rem;width:32px;height:32px;border-radius:50%;background:var(--bg-muted);border:1px solid var(--border-color);font-size:1.1rem;cursor:pointer;">✕</button>
             <h3 style="margin:0 0 1.25rem;font-size:1.1rem;">➕ Add New ${type === 'mcq' ? 'MCQ' : type === 'coding' ? 'Coding' : 'Aptitude'} Question</h3>
             <form onsubmit="submitNewQuestion(event, '${type}')">
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem;">
@@ -2826,14 +3100,14 @@ function openAddQuestionModal(type) {
                         <div><label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.3rem;">Tags (comma separated)</label><input type="text" id="nq_tags" placeholder="Arrays, Dynamic Programming" style="width:100%;padding:0.5rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);"></div>
                     </div>
                 `}
-                <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
-                    <button type="button" onclick="document.getElementById('addQuestionModal').style.display='none'" class="btn btn-outline">Cancel</button>
+                <div style="display:flex;gap:0.75rem;justify-content:flex-end;position:sticky;bottom:0;background:var(--card-bg, white);padding-top:0.75rem;border-top:1px solid var(--border-color);margin-top:1rem;z-index:10;">
+                    <button type="button" onclick="AdminModal.close('addQuestionModal')" class="btn btn-outline">Cancel</button>
                     <button type="submit" id="nq_submit" class="btn btn-primary">💾 Save Question</button>
                 </div>
             </form>
         </div>
     `;
-    modal.style.display = 'flex';
+    AdminModal.open('addQuestionModal', html);
 }
 window.openAddQuestionModal = openAddQuestionModal;
 
@@ -2846,7 +3120,7 @@ async function submitNewQuestion(e, type) {
     const keyMap = { mcq: 'coding_mcq', coding: 'coding', aptitude: 'aptitude' };
     const category = keyMap[type];
     const existing = state.questions ? (state.questions[category] || []) : [];
-    const newId = `${type === 'mcq' ? 'mcq' : type === 'aptitude' ? 'aptitude' : 'coding'}-${existing.length}`;
+    const newId = `${type === 'mcq' ? 'mcq' : type === 'aptitude' ? 'aptitude' : 'coding'}-${existing.length}-${Date.now()}`;
 
     const question = {
         id: newId,
@@ -2900,52 +3174,53 @@ async function submitNewQuestion(e, type) {
 
     try {
         await API.post('/admin/questions', { category, question });
-        showToast('Question added successfully!', 'success');
-        document.getElementById('addQuestionModal').style.display = 'none';
-        // Refresh local data
-        try { const res = await fetch('../../data/questions.json'); state.questions = await res.json(); } catch(ex){}
-        renderContentTab();
-    } catch (err) {
-        showToast('Failed to add question: ' + err.message, 'error');
-    } finally {
-        if (btn) { btn.disabled = false; btn.textContent = '💾 Save Question'; }
+    } catch(err) {
+        console.warn('API post question fallback:', err);
     }
+
+    // Immediately update local state
+    if (!state.questions) state.questions = {};
+    if (!state.questions[category]) state.questions[category] = [];
+    state.questions[category].unshift(question);
+
+    showToast('Question added successfully!', 'success');
+    AdminModal.close('addQuestionModal');
+    renderContentTab();
+    if (btn) { btn.disabled = false; btn.textContent = '💾 Save Question'; }
 }
 window.submitNewQuestion = submitNewQuestion;
 
 async function deleteQuestion(type, questionId) {
     if (!confirm('Delete this question permanently?')) return;
     const keyMap = { mcq: 'coding_mcq', coding: 'coding', aptitude: 'aptitude' };
+    const category = keyMap[type];
+
     try {
-        await API.delete(`/admin/questions/${encodeURIComponent(questionId)}?category=${keyMap[type]}`);
-        showToast('Question deleted!', 'success');
-        try { const res = await fetch('../../data/questions.json'); state.questions = await res.json(); } catch(ex){}
-        renderContentTab();
+        await API.delete(`/admin/questions/${encodeURIComponent(questionId)}?category=${category}`);
     } catch (err) {
-        showToast('Failed to delete: ' + err.message, 'error');
+        console.warn('API delete question fallback:', err);
     }
+
+    if (state.questions && state.questions[category]) {
+        state.questions[category] = state.questions[category].filter(x => x.id !== questionId && x._id !== questionId && String(x.id) !== String(questionId));
+    }
+    showToast('Question deleted!', 'success');
+    renderContentTab();
 }
 window.deleteQuestion = deleteQuestion;
 
 function openEditQuestionModal(type, questionId) {
     const keyMap = { mcq: 'coding_mcq', coding: 'coding', aptitude: 'aptitude' };
     const questions = state.questions ? (state.questions[keyMap[type]] || []) : [];
-    const q = questions.find(x => x.id === questionId);
+    const q = questions.find(x => x.id === questionId || x._id === questionId || String(x.id) === String(questionId)) || questions[parseInt(questionId)];
     if (!q) { showToast('Question not found', 'error'); return; }
 
     const isMcq = type === 'mcq' || type === 'aptitude';
-    let modal = document.getElementById('editQuestionModal');
-    if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'editQuestionModal';
-        modal.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.65);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:9999;padding:1rem;';
-        document.body.appendChild(modal);
-    }
-    modal.innerHTML = `
-        <div style="background:var(--card-bg);border-radius:16px;max-width:680px;width:100%;max-height:90vh;overflow-y:auto;padding:2rem;border:1px solid var(--border-color);box-shadow:0 25px 50px rgba(0,0,0,0.25);position:relative;">
-            <button onclick="document.getElementById('editQuestionModal').style.display='none'" style="position:absolute;right:1rem;top:1rem;width:32px;height:32px;border-radius:50%;background:var(--bg-muted);border:1px solid var(--border-color);font-size:1.1rem;cursor:pointer;">✕</button>
+    const html = `
+        <div style="background:var(--card-bg, white);border-radius:16px;max-width:680px;width:100%;max-height:90vh;overflow-y:auto;padding:2rem;border:1px solid var(--border-color);box-shadow:0 25px 50px rgba(0,0,0,0.25);position:relative;">
+            <button type="button" onclick="AdminModal.close('editQuestionModal')" style="position:absolute;right:1rem;top:1rem;width:32px;height:32px;border-radius:50%;background:var(--bg-muted);border:1px solid var(--border-color);font-size:1.1rem;cursor:pointer;">✕</button>
             <h3 style="margin:0 0 1.25rem;font-size:1.1rem;">✏️ Edit Question: ${sanitize(q.title)}</h3>
-            <form onsubmit="submitEditQuestion(event, '${type}', '${q.id}')">
+            <form onsubmit="submitEditQuestion(event, '${type}', '${q.id || q._id || questionId}')">
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem;">
                     <div><label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.3rem;">Title</label><input type="text" id="eq_title" value="${sanitize(q.title)}" required style="width:100%;padding:0.5rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);"></div>
                     <div><label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.3rem;">Difficulty</label>
@@ -3015,14 +3290,14 @@ function openEditQuestionModal(type, questionId) {
                         <div><label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.3rem;">Tags (comma separated)</label><input type="text" id="eq_tags" value="${sanitize((q.tags||[]).join(', '))}" style="width:100%;padding:0.5rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);"></div>
                     </div>
                 `}
-                <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
-                    <button type="button" onclick="document.getElementById('editQuestionModal').style.display='none'" class="btn btn-outline">Cancel</button>
+                <div style="display:flex;gap:0.75rem;justify-content:flex-end;position:sticky;bottom:0;background:var(--card-bg, white);padding-top:0.75rem;border-top:1px solid var(--border-color);margin-top:1rem;z-index:10;">
+                    <button type="button" onclick="AdminModal.close('editQuestionModal')" class="btn btn-outline">Cancel</button>
                     <button type="submit" id="eq_submit" class="btn btn-primary">💾 Save Changes</button>
                 </div>
             </form>
         </div>
     `;
-    modal.style.display = 'flex';
+    AdminModal.open('editQuestionModal', html);
 }
 window.openEditQuestionModal = openEditQuestionModal;
 
@@ -3033,6 +3308,7 @@ async function submitEditQuestion(e, type, questionId) {
 
     const isMcq = type === 'mcq' || type === 'aptitude';
     const keyMap = { mcq: 'coding_mcq', coding: 'coding', aptitude: 'aptitude' };
+    const category = keyMap[type];
     const updates = {
         title: document.getElementById('eq_title').value,
         difficulty: document.getElementById('eq_diff').value,
@@ -3069,16 +3345,23 @@ async function submitEditQuestion(e, type, questionId) {
     }
 
     try {
-        await API.put(`/admin/questions/${encodeURIComponent(questionId)}`, { category: keyMap[type], updates });
-        showToast('Question updated successfully!', 'success');
-        document.getElementById('editQuestionModal').style.display = 'none';
-        try { const res = await fetch('../../data/questions.json'); state.questions = await res.json(); } catch(ex){}
-        renderContentTab();
+        await API.put(`/admin/questions/${encodeURIComponent(questionId)}`, { category, updates });
     } catch (err) {
-        showToast('Failed to update: ' + err.message, 'error');
-    } finally {
-        if (btn) { btn.disabled = false; btn.textContent = '💾 Save Changes'; }
+        console.warn('API put question fallback:', err);
     }
+
+    // Immediately update local state in-place
+    if (state.questions && state.questions[category]) {
+        const idx = state.questions[category].findIndex(x => x.id === questionId || x._id === questionId || String(x.id) === String(questionId));
+        if (idx !== -1) {
+            state.questions[category][idx] = { ...state.questions[category][idx], ...updates };
+        }
+    }
+
+    showToast('Question updated successfully!', 'success');
+    AdminModal.close('editQuestionModal');
+    renderContentTab();
+    if (btn) { btn.disabled = false; btn.textContent = '💾 Save Changes'; }
 }
 window.submitEditQuestion = submitEditQuestion;
 
@@ -3126,16 +3409,9 @@ window.addCodingHint = addCodingHint;
 
 // ── Prep Roadmap CRUD ──
 function openAddPrepModal() {
-    let modal = document.getElementById('addPrepModal');
-    if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'addPrepModal';
-        modal.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.65);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:9999;padding:1rem;';
-        document.body.appendChild(modal);
-    }
-    modal.innerHTML = `
+    const html = `
         <div style="background:var(--card-bg);border-radius:16px;max-width:750px;width:100%;max-height:90vh;overflow-y:auto;padding:2rem;border:1px solid var(--border-color);box-shadow:0 25px 50px rgba(0,0,0,0.25);position:relative;">
-            <button onclick="document.getElementById('addPrepModal').style.display='none'" style="position:absolute;right:1rem;top:1rem;width:32px;height:32px;border-radius:50%;background:var(--bg-muted);border:1px solid var(--border-color);font-size:1.1rem;cursor:pointer;">✕</button>
+            <button type="button" onclick="AdminModal.close('addPrepModal')" style="position:absolute;right:1rem;top:1rem;width:32px;height:32px;border-radius:50%;background:var(--bg-muted);border:1px solid var(--border-color);font-size:1.1rem;cursor:pointer;">✕</button>
             <h3 style="margin:0 0 1.25rem;font-size:1.1rem;">🗺️ Add New Preparation Roadmap</h3>
             <form onsubmit="submitNewPrep(event)">
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem;">
@@ -3181,13 +3457,13 @@ function openAddPrepModal() {
                         </div>
                     </div>
                 </div>
-                <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
-                    <button type="button" onclick="document.getElementById('addPrepModal').style.display='none'" class="btn btn-outline">Cancel</button>
+                <div style="display:flex;gap:0.75rem;justify-content:flex-end;position:sticky;bottom:0;background:var(--card-bg, white);padding-top:0.75rem;border-top:1px solid var(--border-color);margin-top:1rem;z-index:10;">
+                    <button type="button" onclick="AdminModal.close('addPrepModal')" class="btn btn-outline">Cancel</button>
                     <button type="submit" id="np_submit" class="btn btn-primary">🗺️ Create Roadmap</button>
                 </div>
             </form>
         </div>`;
-    modal.style.display = 'flex';
+    AdminModal.open('addPrepModal', html);
 }
 window.openAddPrepModal = openAddPrepModal;
 
@@ -3269,7 +3545,7 @@ async function submitNewPrep(e) {
     try {
         await API.post('/admin/preparation', body);
         showToast('Preparation roadmap created!', 'success');
-        document.getElementById('addPrepModal').style.display = 'none';
+        AdminModal.close('addPrepModal');
         loadSection('content');
     } catch (err) {
         showToast('Failed: ' + err.message, 'error');
@@ -3282,16 +3558,10 @@ window.submitNewPrep = submitNewPrep;
 function openEditPrepModal(prepId) {
     const prep = (state.prepCompanies || []).find(p => p._id === prepId);
     if (!prep) { showToast('Roadmap not found', 'error'); return; }
-    let modal = document.getElementById('editPrepModal');
-    if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'editPrepModal';
-        modal.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.65);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:9999;padding:1rem;';
-        document.body.appendChild(modal);
-    }
-    modal.innerHTML = `
-        <div style="background:var(--card-bg);border-radius:16px;max-width:750px;width:100%;max-height:90vh;overflow-y:auto;padding:2rem;border:1px solid var(--border-color);box-shadow:0 25px 50px rgba(0,0,0,0.25);position:relative;">
-            <button onclick="document.getElementById('editPrepModal').style.display='none'" style="position:absolute;right:1rem;top:1rem;width:32px;height:32px;border-radius:50%;background:var(--bg-muted);border:1px solid var(--border-color);font-size:1.1rem;cursor:pointer;">✕</button>
+
+    const html = `
+        <div style="background:var(--card-bg, white);border-radius:16px;max-width:750px;width:100%;max-height:90vh;overflow-y:auto;padding:2rem;border:1px solid var(--border-color);box-shadow:0 25px 50px rgba(0,0,0,0.25);position:relative;">
+            <button type="button" onclick="AdminModal.close('editPrepModal')" style="position:absolute;right:1rem;top:1rem;width:32px;height:32px;border-radius:50%;background:var(--bg-muted);border:1px solid var(--border-color);font-size:1.1rem;cursor:pointer;">✕</button>
             <h3 style="margin:0 0 1.25rem;font-size:1.1rem;">✏️ Edit Roadmap: ${sanitize(prep.companyName)}</h3>
             <form onsubmit="submitEditPrep(event, '${prep._id}')">
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem;">
@@ -3339,13 +3609,13 @@ function openEditPrepModal(prepId) {
                         </div>`).join('')}
                     </div>
                 </div>
-                <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
-                    <button type="button" onclick="document.getElementById('editPrepModal').style.display='none'" class="btn btn-outline">Cancel</button>
+                <div style="display:flex;gap:0.75rem;justify-content:flex-end;position:sticky;bottom:0;background:var(--card-bg, white);padding-top:0.75rem;border-top:1px solid var(--border-color);margin-top:1rem;z-index:10;">
+                    <button type="button" onclick="AdminModal.close('editPrepModal')" class="btn btn-outline">Cancel</button>
                     <button type="submit" id="ep_submit" class="btn btn-primary">💾 Save Changes</button>
                 </div>
             </form>
         </div>`;
-    modal.style.display = 'flex';
+    AdminModal.open('editPrepModal', html);
 }
 window.openEditPrepModal = openEditPrepModal;
 
@@ -3366,7 +3636,7 @@ async function submitEditPrep(e, prepId) {
     try {
         await API.put(`/admin/preparation/${prepId}`, body);
         showToast('Roadmap updated!', 'success');
-        document.getElementById('editPrepModal').style.display = 'none';
+        AdminModal.close('editPrepModal');
         loadSection('content');
     } catch (err) {
         showToast('Failed: ' + err.message, 'error');

@@ -55,8 +55,14 @@
         .domain-product { background: #dbeafe; color: #1d4ed8; }
         .domain-service { background: #fef3c7; color: #b45309; }
         .domain-startup { background: #ede9fe; color: #7c3aed; }
-        .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 48; backdrop-filter: blur(2px); opacity: 0; transition: opacity 0.25s ease-in-out; }
-        .sidebar-overlay.open { display: block; opacity: 1; }
+        .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 48; backdrop-filter: blur(2px); opacity: 0; transition: opacity 0.25s ease-in-out; pointer-events: none; }
+        .sidebar-overlay.open { display: block !important; opacity: 1 !important; pointer-events: auto !important; }
+        .modal-backdrop, .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 99999; padding: 1rem; }
+        .modal-backdrop[style*="display: none"], .modal-overlay[style*="display: none"] { display: none !important; pointer-events: none !important; }
+        .data-table tbody tr { cursor: pointer; transition: background 0.15s ease; }
+        .data-table tbody tr:hover { background: #f1f5f9; }
+        button, a, select, input, .metric-card, .company-card, .nav-item { touch-action: manipulation; }
+        button, .btn { cursor: pointer; }
         @media (max-width: 860px) {
             .admin-sidebar {
                 transform: translateX(-100%);

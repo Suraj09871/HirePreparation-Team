@@ -57,11 +57,14 @@ const API = {
 
             const ct = res.headers.get("content-type");
             if (!res.ok) {
-                // Auto-logout on 401 (expired/invalid token)
+                // Auto-logout on 401 (expired/invalid token) - only if real JWT token is present
                 if (res.status === 401 && !isAuthEndpoint) {
-                    this.clearAuth();
-                    window.location.href = '/frontend/auth.html';
-                    throw new Error('Session expired. Please log in again.');
+                    const token = this.getToken();
+                    if (token && !token.startsWith('mock-')) {
+                        this.clearAuth();
+                        window.location.href = '/frontend/auth.html';
+                        throw new Error('Session expired. Please log in again.');
+                    }
                 }
                 if (ct && ct.includes("application/json")) { 
                     const d = await res.json(); 
@@ -170,20 +173,58 @@ const MockAPI = {
         }
 
         // Admin
-        if (endpoint.includes('/admin/stats')) return { stats: { students: 0, recruiters: 0, jobs: 0, applications: 0, admins: 1, companies: 0, pendingVerifications: 0, activeJobs: 0, activeUsers: 0, inactiveUsers: 0, totalUsers: 1, conversionRate: 0, shortlistRate: 0 } };
-        if (endpoint.includes('/admin/analytics/advanced')) return MockAPI._adminAdvancedAnalytics();
+        if (endpoint.includes('/admin/stats')) return { stats: { students: 4, recruiters: 3, jobs: 7, applications: 12, admins: 1, companies: 5, pendingVerifications: 1, activeJobs: 4, activeUsers: 4, inactiveUsers: 4, totalUsers: 8, conversionRate: 17, shortlistRate: 50 } };
+        if (endpoint.includes('/admin/analytics/advanced')) return MockAPI._adminAdvancedAnalytics(endpoint);
         if (endpoint.includes('/admin/matching-logic')) return MockAPI._matchingLogic();
         if (endpoint.includes('/admin/analytics')) return MockAPI._adminAnalytics();
-        if (endpoint.includes('/admin/companies') && endpoint.includes('/verify')) return { success: true };
-        if (endpoint.includes('/admin/companies')) return { companies: [] };
+        if (endpoint.includes('/admin/companies') && endpoint.includes('/verify')) return { success: true, message: 'Company status updated.' };
+        if (endpoint.includes('/admin/companies/') && endpoint.includes('/full')) {
+            const cid = endpoint.split('/')[3];
+            const co = MockAPI._companies().find(c => c._id === cid) || MockAPI._companies()[0];
+            return { success: true, company: { ...co, hrName: 'HR Manager', hrEmail: 'hr@' + (co.website || 'company.com'), hrPhone: '+91 98765 00000', employeeCount: '50-200', headquarter: 'Bangalore, India', domain: co.industry === 'Startup' ? 'startup' : 'product', description: `${co.name} is a high-growth tech organization.`, isVerified: co.isVerified, verificationStatus: co.isVerified ? 'approved' : 'pending' } };
+        }
+        if (endpoint.includes('/admin/companies') && options.method === 'DELETE') return { success: true, message: 'Company deleted.' };
+        if (endpoint.includes('/admin/companies')) return { success: true, companies: MockAPI._companies() };
         if (endpoint.includes('/admin/users') && endpoint.includes('/role')) return { success: true, message: 'Role updated' };
-        if (endpoint.includes('/admin/users') && options.method === 'DELETE') return { success: true };
-        if (endpoint.includes('/admin/users')) return { users: [] };
-        if (endpoint.includes('/admin/jobs')) return { jobs: [] };
-        if (endpoint.includes('/admin/top-performers')) return { performers: [] };
-        if (endpoint.includes('/admin/activity-log')) return { logs: [] };
-        if (endpoint.includes('/admin/notifications/bulk')) return { success: true, message: 'Bulk notification sent.' };
-        if (endpoint.includes('/admin/notifications/send')) return { success: true };
+        if (endpoint.includes('/admin/users') && options.method === 'DELETE') return { success: true, message: 'User deleted.' };
+        if (endpoint.includes('/admin/users/') && endpoint.includes('/detail')) {
+            const uid = endpoint.split('/')[3];
+            const user = MockAPI._adminUsers().find(u => u._id === uid) || MockAPI._adminUsers()[1];
+            return {
+                success: true,
+                user,
+                student: { user, profile: { college: 'IIT Delhi', degree: 'B.Tech', branch: 'Computer Science', gradYear: '2024', cgpa: '8.7', resumeScore: 82, skills: ['React', 'Node.js', 'JavaScript', 'MongoDB'], resumeUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf' }, applications: MockAPI._applications() },
+                profile: { college: 'IIT Delhi', degree: 'B.Tech', branch: 'Computer Science', gradYear: '2024', cgpa: '8.7', resumeScore: 82, skills: ['React', 'Node.js', 'JavaScript', 'MongoDB'], resumeUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf' },
+                applications: MockAPI._applications(),
+                company: user.role === 'recruiter' ? { name: 'Acme Technologies', website: 'technova.io', industry: 'Technology', isVerified: true } : null,
+                postedJobs: user.role === 'recruiter' ? MockAPI._recruiterJobs() : []
+            };
+        }
+        if (endpoint.includes('/admin/users')) {
+            let users = MockAPI._adminUsers();
+            if (endpoint.includes('role=student')) users = users.filter(u => u.role === 'student');
+            else if (endpoint.includes('role=recruiter')) users = users.filter(u => u.role === 'recruiter');
+            else if (endpoint.includes('role=admin')) users = users.filter(u => u.role === 'admin');
+            return { success: true, users: users.map(u => ({ ...u, skillCount: u.role === 'student' ? 4 : 0, resumeScore: u.role === 'student' ? 82 : 0 })) };
+        }
+        if (endpoint.includes('/admin/jobs')) return { success: true, jobs: MockAPI._allJobs() };
+        if (endpoint.includes('/admin/applications')) return { success: true, applications: MockAPI._applications() };
+        if (endpoint.includes('/admin/top-performers')) return { success: true, performers: MockAPI._topPerformers() };
+        if (endpoint.includes('/admin/activity-log')) return { success: true, logs: [
+            { _id: 'log1', action: 'user_login', details: 'Suraj Kumar logged in from Chrome (Windows)', userId: { name: 'Suraj Kumar', email: 'surajkr09871@gmail.com', role: 'admin' }, createdAt: new Date().toISOString() },
+            { _id: 'log2', action: 'job_create', details: 'Created job: Senior Frontend Engineer', userId: { name: 'Acme Corp HR', email: 'hr@acme.com', role: 'recruiter' }, createdAt: new Date(Date.now() - 3600000).toISOString() },
+            { _id: 'log3', action: 'application_submit', details: 'Applied to Backend Developer (Node.js)', userId: { name: 'Ujjwal Kumar', email: 'ujjwal@demo.com', role: 'student' }, createdAt: new Date(Date.now() - 7200000).toISOString() }
+        ] };
+        if (endpoint.includes('/admin/notifications')) return { success: true, notifications: [
+            { _id: 'notif1', title: 'Platform Maintenance Notice', message: 'Scheduled maintenance this Sunday at 2 AM IST.', targetRole: 'all', createdAt: new Date().toISOString() },
+            { _id: 'notif2', title: 'New Job Postings Available', message: '5 new top-tier engineering jobs have been posted.', targetRole: 'student', createdAt: new Date(Date.now() - 86400000).toISOString() }
+        ] };
+        if (endpoint.includes('/admin/questions')) {
+            if (options.method === 'POST') return { success: true, message: 'Question created successfully.' };
+            if (options.method === 'PUT') return { success: true, message: 'Question updated successfully.' };
+            if (options.method === 'DELETE') return { success: true, message: 'Question deleted successfully.' };
+            return { success: true, questions: [] };
+        }
         if (endpoint.includes('/admin/export')) return { success: true, message: 'Export started' };
 
         // Notifications
@@ -314,16 +355,43 @@ const MockAPI = {
         };
     },
 
-    _adminAdvancedAnalytics() {
+    _adminAdvancedAnalytics(endpoint = '') {
+        const isDaily = endpoint.includes('granularity=daily');
+        const isWeekly = endpoint.includes('granularity=weekly');
+        
+        let labels, students, recruiters;
+        if (isDaily) {
+            labels = Array.from({ length: 14 }, (_, i) => { const d = new Date(); d.setDate(d.getDate() - 13 + i); return `${d.getMonth() + 1}/${d.getDate()}`; });
+            students = [1, 2, 0, 3, 1, 4, 2, 1, 3, 2, 4, 3, 2, 4];
+            recruiters = [0, 1, 0, 1, 0, 2, 1, 0, 1, 1, 2, 1, 0, 3];
+        } else if (isWeekly) {
+            labels = ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6', 'Week 7', 'Week 8'];
+            students = [4, 6, 8, 12, 15, 18, 22, 28];
+            recruiters = [1, 2, 3, 4, 5, 7, 9, 12];
+        } else {
+            labels = ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sept'];
+            students = [0, 0, 0, 0, 4, 0];
+            recruiters = [0, 0, 0, 0, 3, 0];
+        }
+
         return {
             advanced: {
-                growth: { labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'], students: [0, 0, 0, 0, 0, 0], recruiters: [0, 0, 0, 0, 0, 0] },
-                activeVsInactive: { active: 1, inactive: 0 },
-                conversionFunnel: { applied: 0, inReview: 0, shortlisted: 0, interviewed: 0, selected: 0, rejected: 0 },
-                performanceDistribution: { buckets: [0, 0, 0, 0], labels: ['0-25%', '25-50%', '50-75%', '75-100%'], avgScore: 0, top10AvgScore: 0 },
-                resumeDistribution: { buckets: [0, 0, 0, 0, 0], labels: ['0-20', '20-40', '40-60', '60-80', '80-100'] },
-                skillGapTrends: [],
-                appsPerDay: { labels: Array.from({ length: 30 }, (_, i) => { const d = new Date(); d.setDate(d.getDate() - 29 + i); return `${d.getMonth() + 1}/${d.getDate()}`; }), data: Array(30).fill(0) }
+                growth: { labels, students, recruiters },
+                activeVsInactive: { active: 4, inactive: 4 },
+                conversionFunnel: { applied: 12, inReview: 2, shortlisted: 6, interviewed: 2, selected: 2, rejected: 2 },
+                performanceDistribution: { buckets: [1, 1, 3, 2], labels: ['0-25%', '25-50%', '50-75%', '75-100%'], avgScore: 68, top10AvgScore: 92 },
+                resumeDistribution: { buckets: [0, 1, 2, 3, 2], labels: ['0-20', '20-40', '40-60', '60-80', '80-100'] },
+                skillGapTrends: [
+                    { skill: 'GraphQL', count: 8 },
+                    { skill: 'Docker', count: 6 },
+                    { skill: 'Kubernetes', count: 5 },
+                    { skill: 'AWS', count: 4 },
+                    { skill: 'TypeScript', count: 3 }
+                ],
+                appsPerDay: {
+                    labels: Array.from({ length: 14 }, (_, i) => { const d = new Date(); d.setDate(d.getDate() - 13 + i); return `${d.getMonth() + 1}/${d.getDate()}`; }),
+                    data: [2, 4, 1, 5, 3, 8, 6, 4, 7, 5, 9, 8, 6, 12]
+                }
             }
         };
     },
