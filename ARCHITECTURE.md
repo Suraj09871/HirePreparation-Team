@@ -60,10 +60,10 @@ graph TD
 
 | Member | Role | Primary Modules & Contributions |
 | :--- | :--- | :--- |
-| **Reenu Yadav** | Recruiter Suite & Admin Lead | Recruiter Dashboard, Company Verification Flow, Interview Scheduling Desk (Google Meet), Applicant Pipeline, Admin Operations |
-| **Shikha Chaurasia** | Student Experience & UI Lead | Student Dashboard & Resume Banner, Profile & Skill Matrix, Interactive Resume Builder (PDF), Target Company Preparation Paths |
-| **Sunny Kumar** | Backend & Matching Lead | Fuzzy Skill Matching Engine (Exact, Partial, Alias), Weighted Applicant Ranking (60/20/20), JWT / Google OAuth Security, Notification Hub |
-| **Suraj Kumar** | System Architect & Fullstack Lead | Ace Code Editor Sandbox with Real-time Autosave, Interactive MCQ & Aptitude Quiz Engine with Dynamic Retry, Admin Content CMS, Render + Netlify Cloud Deployment |
+| **Suraj Kumar** | Backend, API, Auth & Integration Lead | Express REST APIs, MongoDB Atlas schemas & models, JWT & Google OAuth security, Fuzzy skill matching engine, Render + Netlify cloud deployment & integration |
+| **Sunny Kumar** | Admin Module Lead | Admin Dashboard (17 sections), User Management & Role controls, Company verification workflow, Question Bank CMS, CSV reports export, Site health monitoring |
+| **Shikha Chaurasia** | Recruiter Module Lead | Recruiter Dashboard & Auth, Job Posting & Management, Applicant Pipeline & AI Ranking, Interview Scheduling Desk (Google Meet), Company Profile |
+| **Reenu Yadav** | Student/User Module Lead | Student Dashboard & Profile, Job Browsing & Match scoring, 630+ Practice Hub (Ace Code IDE & MCQ Retry), Timed Mock Tests, Career Roadmap, Interactive Resume Builder (PDF) |
 
 ---
 
