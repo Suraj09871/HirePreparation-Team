@@ -1533,8 +1533,11 @@ async function renderRecInterviews(c) {
 
     const interviews = data.interviews || [];
 
+    // Store interviews data for reschedule modal access
+    window._recInterviews = interviews;
+
     c.innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:0.5rem;">
         <div>
             <h2 style="margin:0 0 0.25rem;font-size:1.25rem;">📅 Upcoming Candidate Interviews (${interviews.length})</h2>
             <small style="color:var(--text-muted);">Track scheduled rounds, meeting links, and candidate preparation status.</small>
@@ -1550,15 +1553,13 @@ async function renderRecInterviews(c) {
             <button onclick="loadRecSection('applicants')" class="btn btn-primary">Browse Applicants →</button>
         </div>
     ` : `
-        <div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(340px, 1fr));gap:1rem;">
-            ${interviews.map(inv => `
+        <div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(min(100%, 340px), 1fr));gap:1rem;">
+            ${interviews.map((inv, idx) => `
                 <div class="chart-card" style="border-left:4px solid #3b82f6;display:flex;flex-direction:column;justify-content:space-between;">
                     <div>
-                        <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:0.75rem;">
-                            <div>
-                                <span style="font-size:0.75rem;background:#dbeafe;color:#1e40af;padding:0.2rem 0.5rem;border-radius:4px;font-weight:700;">${sanitize(inv.roundName || 'Interview Round')}</span>
-                            </div>
-                            <span style="font-size:0.75rem;color:var(--text-muted);">${inv.interviewType?.toUpperCase() || 'VIDEO'}</span>
+                        <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:0.75rem;flex-wrap:wrap;gap:0.25rem;">
+                            <span style="font-size:0.75rem;background:#dbeafe;color:#1e40af;padding:0.2rem 0.5rem;border-radius:4px;font-weight:700;">${sanitize(inv.roundName || 'Interview Round')}</span>
+                            <span style="font-size:0.75rem;color:var(--text-muted);">${(inv.interviewType || 'video').toUpperCase()}</span>
                         </div>
                         <h3 style="margin:0 0 0.35rem;font-size:1.05rem;color:var(--text-main);">${sanitize(inv.studentId?.name || 'Candidate')}</h3>
                         <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.75rem;">
@@ -1576,15 +1577,44 @@ async function renderRecInterviews(c) {
                         ` : ''}
                         ${inv.interviewNotes ? `<div style="font-size:0.75rem;color:var(--text-muted);font-style:italic;">"${sanitize(inv.interviewNotes)}"</div>` : ''}
                     </div>
-                    <div style="display:flex;gap:0.5rem;margin-top:1rem;border-top:1px solid var(--border-color);padding-top:0.75rem;">
-                        <button onclick="updateRecAppStage('${inv._id}', 'selected'); loadRecSection('interviews');" class="btn btn-outline" style="flex:1;padding:0.35rem;font-size:0.75rem;color:#10b981;border-color:rgba(16,185,129,0.3);">✓ Select / Offer</button>
-                        <button onclick="updateRecAppStage('${inv._id}', 'rejected'); loadRecSection('interviews');" class="btn btn-outline" style="flex:1;padding:0.35rem;font-size:0.75rem;color:#ef4444;border-color:rgba(239,68,68,0.3);">✕ Reject</button>
+                    <div style="margin-top:1rem;border-top:1px solid var(--border-color);padding-top:0.75rem;">
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.4rem;">
+                            <button data-action="reschedule" data-idx="${idx}" class="btn btn-outline" style="padding:0.4rem;font-size:0.75rem;color:#3b82f6;border-color:rgba(59,130,246,0.3);">🕐 Reschedule</button>
+                            <button data-action="invite" data-id="${inv._id}" class="btn btn-outline" style="padding:0.4rem;font-size:0.75rem;color:#8b5cf6;border-color:rgba(139,92,246,0.3);">📩 Send Invite</button>
+                            <button data-action="select" data-id="${inv._id}" class="btn btn-outline" style="padding:0.4rem;font-size:0.75rem;color:#10b981;border-color:rgba(16,185,129,0.3);">✓ Select / Offer</button>
+                            <button data-action="reject" data-id="${inv._id}" class="btn btn-outline" style="padding:0.4rem;font-size:0.75rem;color:#ef4444;border-color:rgba(239,68,68,0.3);">✕ Reject</button>
+                        </div>
                     </div>
                 </div>
             `).join('')}
         </div>
     `}
+    <div id="scheduleInterviewModal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.65);backdrop-filter:blur(4px);align-items:center;justify-content:center;z-index:9999;padding:1rem;"></div>
     `;
+
+    // Event delegation for interview card buttons
+    c.addEventListener('click', async function(e) {
+        const btn = e.target.closest('[data-action]');
+        if (!btn) return;
+        const action = btn.dataset.action;
+        const appId = btn.dataset.id;
+        const idx = btn.dataset.idx;
+
+        if (action === 'reschedule') {
+            const inv = window._recInterviews[parseInt(idx)];
+            if (inv) openRescheduleFromData(inv);
+        } else if (action === 'invite') {
+            await resendInterviewInvitation(appId);
+        } else if (action === 'select') {
+            btn.disabled = true; btn.textContent = 'Updating...';
+            await updateRecAppStage(appId, 'selected');
+            await loadRecSection('interviews');
+        } else if (action === 'reject') {
+            btn.disabled = true; btn.textContent = 'Updating...';
+            await updateRecAppStage(appId, 'rejected');
+            await loadRecSection('interviews');
+        }
+    });
 }
 
 // Window Bindings for Recruiter Handlers
@@ -1635,3 +1665,143 @@ async function exportRecruiterCSV() {
 }
 window.exportRecruiterCSV = exportRecruiterCSV;
 
+// ── Reschedule from interview data object (safe, no string escaping) ──
+function openRescheduleFromData(inv) {
+    openRescheduleModal(
+        inv._id,
+        inv.studentId?.name || 'Candidate',
+        inv.jobId?.title || 'Job',
+        inv.interviewDate || '',
+        inv.roundName || '',
+        inv.interviewType || 'video',
+        inv.meetingLink || '',
+        inv.interviewNotes || ''
+    );
+}
+window.openRescheduleFromData = openRescheduleFromData;
+
+// ── Reschedule Interview Modal (prefilled with existing data) ──
+function openRescheduleModal(appId, candidateName, jobTitle, existingDate, existingRound, existingType, existingLink, existingNotes) {
+    const modal = document.getElementById('scheduleInterviewModal');
+    if (!modal) return;
+
+    modal.innerHTML = `
+        <div style="background:var(--card-bg, #ffffff);color:var(--text-main);border-radius:16px;max-width:520px;width:100%;padding:2rem;border:1px solid var(--border-color);box-shadow:0 25px 50px rgba(0,0,0,0.25);position:relative;">
+            <button onclick="document.getElementById('scheduleInterviewModal').style.display='none'" style="position:absolute;right:1.25rem;top:1.25rem;width:32px;height:32px;border-radius:50%;background:var(--bg-muted);border:1px solid var(--border-color);font-size:1.2rem;cursor:pointer;">✕</button>
+            
+            <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1.25rem;">
+                <div style="font-size:2rem;">🕐</div>
+                <div>
+                    <h3 style="margin:0;font-size:1.2rem;">Reschedule Interview</h3>
+                    <small style="color:var(--text-muted);">${sanitize(candidateName)} • ${sanitize(jobTitle)}</small>
+                </div>
+            </div>
+
+            <form id="rescheduleForm" onsubmit="submitReschedule(event, '${appId}')">
+                <div style="margin-bottom:1rem;">
+                    <label style="display:block;font-size:0.8rem;font-weight:600;margin-bottom:0.35rem;">Interview Round</label>
+                    <input type="text" id="resRoundName" value="${sanitize(existingRound || 'Technical Interview')}" required style="width:100%;padding:0.6rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);">
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:1rem;">
+                    <div>
+                        <label style="display:block;font-size:0.8rem;font-weight:600;margin-bottom:0.35rem;">New Date & Time</label>
+                        <input type="datetime-local" id="resDateTime" required style="width:100%;padding:0.6rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);">
+                    </div>
+                    <div>
+                        <label style="display:block;font-size:0.8rem;font-weight:600;margin-bottom:0.35rem;">Mode / Type</label>
+                        <select id="resType" style="width:100%;padding:0.6rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);">
+                            <option value="video" ${existingType === 'video' ? 'selected' : ''}>Online Video Call</option>
+                            <option value="technical" ${existingType === 'technical' ? 'selected' : ''}>Live Coding Assessment</option>
+                            <option value="phone" ${existingType === 'phone' ? 'selected' : ''}>Phone Screening</option>
+                            <option value="onsite" ${existingType === 'onsite' ? 'selected' : ''}>On-Site Office Interview</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="margin-bottom:1rem;">
+                    <label style="display:block;font-size:0.8rem;font-weight:600;margin-bottom:0.35rem;">Meeting Link / Venue</label>
+                    <input type="text" id="resMeetingLink" value="${sanitize(existingLink)}" placeholder="https://meet.google.com/xyz" style="width:100%;padding:0.6rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);">
+                </div>
+
+                <div style="margin-bottom:1.5rem;">
+                    <label style="display:block;font-size:0.8rem;font-weight:600;margin-bottom:0.35rem;">Notes for Candidate</label>
+                    <textarea id="resNotes" rows="3" style="width:100%;padding:0.6rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);resize:vertical;">${sanitize(existingNotes)}</textarea>
+                </div>
+
+                <div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:8px;padding:0.75rem;margin-bottom:1rem;font-size:0.8rem;color:#92400e;">
+                    ⚠️ The candidate will receive a <strong>new notification</strong> with the updated schedule automatically.
+                </div>
+
+                <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
+                    <button type="button" onclick="document.getElementById('scheduleInterviewModal').style.display='none'" class="btn btn-outline">Cancel</button>
+                    <button type="submit" id="resSubmitBtn" class="btn btn-primary">🕐 Update & Notify Candidate</button>
+                </div>
+            </form>
+        </div>
+    `;
+
+    // Prefill the existing date or default to tomorrow
+    const dateInput = document.getElementById('resDateTime');
+    if (dateInput) {
+        if (existingDate) {
+            try {
+                const d = new Date(existingDate);
+                const offset = d.getTimezoneOffset() * 60000;
+                const local = new Date(d.getTime() - offset);
+                dateInput.value = local.toISOString().slice(0, 16);
+            } catch(e) {
+                const tomorrow = new Date();
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                tomorrow.setHours(10, 0, 0, 0);
+                dateInput.value = tomorrow.toISOString().slice(0, 16);
+            }
+        } else {
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            tomorrow.setHours(10, 0, 0, 0);
+            dateInput.value = tomorrow.toISOString().slice(0, 16);
+        }
+    }
+
+    modal.style.display = 'flex';
+}
+window.openRescheduleModal = openRescheduleModal;
+
+async function submitReschedule(e, appId) {
+    e.preventDefault();
+    const btn = document.getElementById('resSubmitBtn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Updating...'; }
+
+    const payload = {
+        roundName: document.getElementById('resRoundName')?.value,
+        interviewDate: document.getElementById('resDateTime')?.value,
+        interviewType: document.getElementById('resType')?.value,
+        meetingLink: document.getElementById('resMeetingLink')?.value,
+        interviewNotes: document.getElementById('resNotes')?.value
+    };
+
+    try {
+        await API.post(`/applications/${appId}/schedule-interview`, payload);
+        showToast('Interview rescheduled! Updated notification sent to candidate.', 'success');
+        document.getElementById('scheduleInterviewModal').style.display = 'none';
+        await loadRecSection('interviews');
+    } catch(err) {
+        showToast('Failed to reschedule: ' + err.message, 'error');
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = '🕐 Update & Notify Candidate'; }
+    }
+}
+window.submitReschedule = submitReschedule;
+
+// ── Re-send Interview Invitation Notification ──
+async function resendInterviewInvitation(appId) {
+    if (!confirm('Re-send the interview invitation notification to this candidate?')) return;
+    try {
+        await API.post(`/applications/${appId}/resend-invitation`);
+        showToast('Interview invitation re-sent to the candidate!', 'success');
+    } catch(err) {
+        showToast('Failed to send invitation: ' + err.message, 'error');
+    }
+}
+window.resendInterviewInvitation = resendInterviewInvitation;

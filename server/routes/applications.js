@@ -612,6 +612,43 @@ router.post('/:id/schedule-interview', auth, roleCheck('recruiter', 'admin'), as
     }
 });
 
+// POST /api/applications/:id/resend-invitation - Re-send interview invitation notification
+router.post('/:id/resend-invitation', auth, roleCheck('recruiter', 'admin'), async (req, res) => {
+    try {
+        const application = await Application.findById(req.params.id)
+            .populate('studentId', 'name email')
+            .populate('jobId', 'title companyName');
+
+        if (!application) {
+            return res.status(404).json({ success: false, message: 'Application not found.' });
+        }
+
+        if (!application.interviewDate) {
+            return res.status(400).json({ success: false, message: 'No interview scheduled for this application yet.' });
+        }
+
+        // Re-create student notification
+        if (application.studentId) {
+            const formattedDate = new Date(application.interviewDate).toLocaleString();
+            const meetingInfo = application.meetingLink ? ` Meeting link: ${application.meetingLink}` : '';
+            await Notification.create({
+                type: 'alert',
+                title: `📩 Interview Reminder: ${application.jobId?.title || 'Job Application'}`,
+                message: `Hi ${application.studentId.name}! This is a reminder for your ${application.roundName || 'Interview'} scheduled on ${formattedDate}.${meetingInfo}${application.interviewNotes ? ' Notes: ' + application.interviewNotes : ''}`,
+                targetRole: 'student',
+                targetUserId: application.studentId._id,
+                createdBy: req.userId
+            });
+        }
+
+        await logActivity(req.userId, 'interview_reminder', `Resent interview invitation to ${application.studentId?.name || ''} for ${application.jobId?.title || ''}`);
+
+        res.json({ success: true, message: 'Interview invitation re-sent to candidate!' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
 // GET /api/applications/export/recruiter - Export recruiter applicants to CSV
 router.get('/export/recruiter', auth, roleCheck('recruiter', 'admin'), async (req, res) => {
     try {

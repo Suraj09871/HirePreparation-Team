@@ -1172,4 +1172,85 @@ router.delete('/preparation/:id', auth, roleCheck('admin', 'sub-admin'), async (
     }
 });
 
+// POST /api/admin/preparation - Create a new preparation path / roadmap
+router.post('/preparation', auth, roleCheck('admin', 'sub-admin'), async (req, res) => {
+    try {
+        const PreparationPath = require('../models/PreparationPath');
+        const { companyName, difficulty, description, questionCount, topicCount, avgSalary, roles, topics, questions } = req.body;
+        if (!companyName || !companyName.trim()) {
+            return res.status(400).json({ success: false, message: 'Company name is required.' });
+        }
+        const existing = await PreparationPath.findOne({ companyName: { $regex: new RegExp(`^${companyName.trim()}$`, 'i') } });
+        if (existing) {
+            return res.status(409).json({ success: false, message: `Preparation path for "${companyName}" already exists. Use edit instead.` });
+        }
+        const prepPath = new PreparationPath({
+            companyName: companyName.trim(),
+            difficulty: difficulty || 'Medium',
+            description: description || '',
+            questionCount: questionCount || (questions ? questions.length : 0),
+            topicCount: topicCount || (topics ? topics.length : 0),
+            avgSalary: avgSalary || '',
+            roles: roles || [],
+            topics: (topics || []).map((t, i) => ({
+                title: t.title || `Topic ${i + 1}`,
+                items: t.items || [],
+                order: t.order !== undefined ? t.order : i
+            })),
+            questions: (questions || []).map(q => ({
+                question: q.question || '',
+                answer: q.answer || '',
+                category: q.category || 'General',
+                difficulty: q.difficulty || 'Medium'
+            }))
+        });
+        await prepPath.save();
+        await logActivity(req.userId, 'content_update', `Created preparation path for "${companyName}"`);
+        res.status(201).json({ success: true, message: 'Preparation path created successfully.', preparation: prepPath });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// PUT /api/admin/preparation/:id - Update an existing preparation path / roadmap
+router.put('/preparation/:id', auth, roleCheck('admin', 'sub-admin'), async (req, res) => {
+    try {
+        const PreparationPath = require('../models/PreparationPath');
+        const prep = await PreparationPath.findById(req.params.id);
+        if (!prep) {
+            return res.status(404).json({ success: false, message: 'Preparation path not found.' });
+        }
+        const { companyName, difficulty, description, questionCount, topicCount, avgSalary, roles, topics, questions } = req.body;
+        if (companyName !== undefined) prep.companyName = companyName.trim();
+        if (difficulty !== undefined) prep.difficulty = difficulty;
+        if (description !== undefined) prep.description = description;
+        if (avgSalary !== undefined) prep.avgSalary = avgSalary;
+        if (roles !== undefined) prep.roles = roles;
+        if (topics !== undefined) {
+            prep.topics = topics.map((t, i) => ({
+                title: t.title || `Topic ${i + 1}`,
+                items: t.items || [],
+                order: t.order !== undefined ? t.order : i
+            }));
+            prep.topicCount = topics.length;
+        }
+        if (questions !== undefined) {
+            prep.questions = questions.map(q => ({
+                question: q.question || '',
+                answer: q.answer || '',
+                category: q.category || 'General',
+                difficulty: q.difficulty || 'Medium'
+            }));
+            prep.questionCount = questions.length;
+        }
+        if (questionCount !== undefined && questions === undefined) prep.questionCount = questionCount;
+        if (topicCount !== undefined && topics === undefined) prep.topicCount = topicCount;
+        await prep.save();
+        await logActivity(req.userId, 'content_update', `Updated preparation path for "${prep.companyName}"`);
+        res.json({ success: true, message: 'Preparation path updated successfully.', preparation: prep });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
 module.exports = router;

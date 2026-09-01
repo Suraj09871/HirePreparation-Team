@@ -2145,7 +2145,10 @@ function renderContentTab() {
                     <td>${p.questionCount}</td><td>${p.topicCount}</td><td>${p.avgSalary || '-'}</td>
                     <td>${(p.roles || []).map(r => `<span style="font-size:0.7rem;background:#f1f5f9;padding:0.1rem 0.4rem;border-radius:4px;margin-right:0.25rem;">${sanitize(r)}</span>`).join('')}</td>
                     <td>
-                        <button onclick="deletePrep('${p._id}')" class="btn btn-outline" style="font-size:0.7rem;padding:0.2rem 0.5rem;color:#ef4444;border-color:rgba(239,68,68,0.3);">🗑 Delete</button>
+                        <div style="display:flex;gap:0.25rem;">
+                            <button onclick="openEditPrepModal('${p._id}')" class="btn btn-outline" style="font-size:0.7rem;padding:0.2rem 0.5rem;">✏️ Edit</button>
+                            <button onclick="deletePrep('${p._id}')" class="btn btn-outline" style="font-size:0.7rem;padding:0.2rem 0.5rem;color:#ef4444;border-color:rgba(239,68,68,0.3);">🗑 Delete</button>
+                        </div>
                     </td>
                 </tr>`).join('')}</tbody></table>
             </div>
@@ -2242,8 +2245,44 @@ function openAddQuestionModal(type) {
                     </div>
                     <div style="margin-bottom:1rem;"><label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.3rem;">Explanation</label><textarea id="nq_explanation" rows="2" style="width:100%;padding:0.5rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);resize:vertical;"></textarea></div>
                 ` : `
-                    <div style="margin-bottom:0.75rem;"><label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.3rem;">Description</label><textarea id="nq_description" required rows="4" style="width:100%;padding:0.5rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);resize:vertical;"></textarea></div>
-                    <div style="margin-bottom:1rem;"><label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.3rem;">Tags (comma separated)</label><input type="text" id="nq_tags" placeholder="Arrays, Dynamic Programming" style="width:100%;padding:0.5rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);"></div>
+                    <div style="margin-bottom:0.75rem;"><label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.3rem;">Problem Description</label><textarea id="nq_description" required rows="4" style="width:100%;padding:0.5rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);resize:vertical;" placeholder="Given an array of integers nums and an integer target, return indices..."></textarea></div>
+                    <div style="margin-bottom:0.75rem;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.4rem;">
+                            <label style="font-size:0.8rem;font-weight:600;">🧪 Test Cases / Examples</label>
+                            <button type="button" onclick="addCodingTestCase()" style="padding:0.25rem 0.6rem;font-size:0.75rem;border-radius:6px;background:var(--primary);color:#fff;border:none;cursor:pointer;">+ Add Test Case</button>
+                        </div>
+                        <div id="nq_testcases_container">
+                            <div class="nq-testcase" style="border:1px solid var(--border-color);border-radius:8px;padding:0.6rem;margin-bottom:0.5rem;background:var(--bg-muted);position:relative;">
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
+                                    <div><label style="font-size:0.7rem;font-weight:600;display:block;margin-bottom:0.2rem;">Input</label><textarea class="tc_input" rows="2" placeholder="nums = [2,7,11,15], target = 9" style="width:100%;padding:0.4rem;border:1px solid var(--border-color);border-radius:6px;font-size:0.8rem;background:var(--input-bg);resize:vertical;"></textarea></div>
+                                    <div><label style="font-size:0.7rem;font-weight:600;display:block;margin-bottom:0.2rem;">Expected Output</label><textarea class="tc_output" rows="2" placeholder="[0, 1]" style="width:100%;padding:0.4rem;border:1px solid var(--border-color);border-radius:6px;font-size:0.8rem;background:var(--input-bg);resize:vertical;"></textarea></div>
+                                </div>
+                                <div style="margin-top:0.4rem;"><label style="font-size:0.7rem;font-weight:600;display:block;margin-bottom:0.2rem;">Explanation (optional)</label><input class="tc_explain" placeholder="Because nums[0] + nums[1] == 9" style="width:100%;padding:0.35rem;border:1px solid var(--border-color);border-radius:6px;font-size:0.8rem;background:var(--input-bg);"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="margin-bottom:0.75rem;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.4rem;">
+                            <label style="font-size:0.8rem;font-weight:600;">📏 Constraints</label>
+                            <button type="button" onclick="addCodingConstraint()" style="padding:0.25rem 0.6rem;font-size:0.75rem;border-radius:6px;background:var(--primary);color:#fff;border:none;cursor:pointer;">+ Add Constraint</button>
+                        </div>
+                        <div id="nq_constraints_container">
+                            <div style="display:flex;gap:0.4rem;margin-bottom:0.3rem;align-items:center;"><input class="constraint_input" placeholder="1 <= nums.length <= 10^4" style="flex:1;padding:0.35rem;border:1px solid var(--border-color);border-radius:6px;font-size:0.8rem;background:var(--input-bg);"><button type="button" onclick="this.parentElement.remove()" style="width:24px;height:24px;border-radius:50%;border:1px solid var(--border-color);background:var(--bg-muted);cursor:pointer;font-size:0.7rem;">✕</button></div>
+                        </div>
+                    </div>
+                    <div style="margin-bottom:0.75rem;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.4rem;">
+                            <label style="font-size:0.8rem;font-weight:600;">💡 Hints</label>
+                            <button type="button" onclick="addCodingHint()" style="padding:0.25rem 0.6rem;font-size:0.75rem;border-radius:6px;background:var(--primary);color:#fff;border:none;cursor:pointer;">+ Add Hint</button>
+                        </div>
+                        <div id="nq_hints_container">
+                            <div style="display:flex;gap:0.4rem;margin-bottom:0.3rem;align-items:center;"><input class="hint_input" placeholder="Try using a hash map..." style="flex:1;padding:0.35rem;border:1px solid var(--border-color);border-radius:6px;font-size:0.8rem;background:var(--input-bg);"><button type="button" onclick="this.parentElement.remove()" style="width:24px;height:24px;border-radius:50%;border:1px solid var(--border-color);background:var(--bg-muted);cursor:pointer;font-size:0.7rem;">✕</button></div>
+                        </div>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:1rem;">
+                        <div><label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.3rem;">Acceptance Rate</label><input type="text" id="nq_acceptance" placeholder="45.0%" value="45.0%" style="width:100%;padding:0.5rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);"></div>
+                        <div><label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.3rem;">Tags (comma separated)</label><input type="text" id="nq_tags" placeholder="Arrays, Dynamic Programming" style="width:100%;padding:0.5rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);"></div>
+                    </div>
                 `}
                 <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
                     <button type="button" onclick="document.getElementById('addQuestionModal').style.display='none'" class="btn btn-outline">Cancel</button>
@@ -2289,9 +2328,32 @@ async function submitNewQuestion(e, type) {
         question.explanation = document.getElementById('nq_explanation')?.value || '';
     } else {
         question.description = document.getElementById('nq_description').value;
-        question.acceptance = '45.0%';
-        question.examples = [{ input: 'example input', output: 'example output', explanation: 'Explanation here.' }];
-        question.constraints = ['Time complexity should be optimal'];
+        question.acceptance = document.getElementById('nq_acceptance')?.value || '45.0%';
+        // Collect test cases from dynamic cards
+        const tcCards = document.querySelectorAll('#nq_testcases_container .nq-testcase');
+        question.examples = [];
+        tcCards.forEach(card => {
+            const input = card.querySelector('.tc_input')?.value?.trim() || '';
+            const output = card.querySelector('.tc_output')?.value?.trim() || '';
+            if (input || output) {
+                question.examples.push({
+                    input,
+                    output,
+                    explanation: card.querySelector('.tc_explain')?.value?.trim() || ''
+                });
+            }
+        });
+        if (question.examples.length === 0) {
+            question.examples = [{ input: 'example input', output: 'example output', explanation: '' }];
+        }
+        // Collect constraints
+        const constraintEls = document.querySelectorAll('#nq_constraints_container .constraint_input');
+        question.constraints = [];
+        constraintEls.forEach(el => { if (el.value.trim()) question.constraints.push(el.value.trim()); });
+        // Collect hints
+        const hintEls = document.querySelectorAll('#nq_hints_container .hint_input');
+        question.hints = [];
+        hintEls.forEach(el => { if (el.value.trim()) question.hints.push(el.value.trim()); });
     }
 
     try {
@@ -2370,7 +2432,46 @@ function openEditQuestionModal(type, questionId) {
                     </div>
                     <div style="margin-bottom:1rem;"><label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.3rem;">Explanation</label><textarea id="eq_explanation" rows="2" style="width:100%;padding:0.5rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);resize:vertical;">${sanitize(q.explanation||'')}</textarea></div>
                 ` : `
-                    <div style="margin-bottom:1rem;"><label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.3rem;">Description</label><textarea id="eq_description" rows="4" style="width:100%;padding:0.5rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);resize:vertical;">${sanitize(q.description||'')}</textarea></div>
+                    <div style="margin-bottom:0.75rem;"><label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.3rem;">Problem Description</label><textarea id="eq_description" rows="4" style="width:100%;padding:0.5rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);resize:vertical;">${sanitize(q.description||'')}</textarea></div>
+                    <div style="margin-bottom:0.75rem;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.4rem;">
+                            <label style="font-size:0.8rem;font-weight:600;">🧪 Test Cases / Examples</label>
+                            <button type="button" onclick="addCodingTestCase('eq')" style="padding:0.25rem 0.6rem;font-size:0.75rem;border-radius:6px;background:var(--primary);color:#fff;border:none;cursor:pointer;">+ Add Test Case</button>
+                        </div>
+                        <div id="eq_testcases_container">
+                            ${(q.examples||[]).map((ex, i) => `
+                            <div class="eq-testcase" style="border:1px solid var(--border-color);border-radius:8px;padding:0.6rem;margin-bottom:0.5rem;background:var(--bg-muted);position:relative;">
+                                <button type="button" onclick="this.parentElement.remove()" style="position:absolute;right:0.4rem;top:0.4rem;width:20px;height:20px;border-radius:50%;border:1px solid var(--border-color);background:var(--bg-muted);cursor:pointer;font-size:0.6rem;">✕</button>
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
+                                    <div><label style="font-size:0.7rem;font-weight:600;display:block;margin-bottom:0.2rem;">Input</label><textarea class="tc_input" rows="2" style="width:100%;padding:0.4rem;border:1px solid var(--border-color);border-radius:6px;font-size:0.8rem;background:var(--input-bg);resize:vertical;">${sanitize(ex.input||'')}</textarea></div>
+                                    <div><label style="font-size:0.7rem;font-weight:600;display:block;margin-bottom:0.2rem;">Expected Output</label><textarea class="tc_output" rows="2" style="width:100%;padding:0.4rem;border:1px solid var(--border-color);border-radius:6px;font-size:0.8rem;background:var(--input-bg);resize:vertical;">${sanitize(ex.output||'')}</textarea></div>
+                                </div>
+                                <div style="margin-top:0.4rem;"><label style="font-size:0.7rem;font-weight:600;display:block;margin-bottom:0.2rem;">Explanation</label><input class="tc_explain" value="${sanitize(ex.explanation||'')}" style="width:100%;padding:0.35rem;border:1px solid var(--border-color);border-radius:6px;font-size:0.8rem;background:var(--input-bg);"></div>
+                            </div>`).join('')}
+                        </div>
+                    </div>
+                    <div style="margin-bottom:0.75rem;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.4rem;">
+                            <label style="font-size:0.8rem;font-weight:600;">📏 Constraints</label>
+                            <button type="button" onclick="addCodingConstraint('eq')" style="padding:0.25rem 0.6rem;font-size:0.75rem;border-radius:6px;background:var(--primary);color:#fff;border:none;cursor:pointer;">+ Add Constraint</button>
+                        </div>
+                        <div id="eq_constraints_container">
+                            ${(q.constraints||[]).map(c => `<div style="display:flex;gap:0.4rem;margin-bottom:0.3rem;align-items:center;"><input class="constraint_input" value="${sanitize(c)}" style="flex:1;padding:0.35rem;border:1px solid var(--border-color);border-radius:6px;font-size:0.8rem;background:var(--input-bg);"><button type="button" onclick="this.parentElement.remove()" style="width:24px;height:24px;border-radius:50%;border:1px solid var(--border-color);background:var(--bg-muted);cursor:pointer;font-size:0.7rem;">✕</button></div>`).join('')}
+                        </div>
+                    </div>
+                    <div style="margin-bottom:0.75rem;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.4rem;">
+                            <label style="font-size:0.8rem;font-weight:600;">💡 Hints</label>
+                            <button type="button" onclick="addCodingHint('eq')" style="padding:0.25rem 0.6rem;font-size:0.75rem;border-radius:6px;background:var(--primary);color:#fff;border:none;cursor:pointer;">+ Add Hint</button>
+                        </div>
+                        <div id="eq_hints_container">
+                            ${(q.hints||[]).map(h => `<div style="display:flex;gap:0.4rem;margin-bottom:0.3rem;align-items:center;"><input class="hint_input" value="${sanitize(h)}" style="flex:1;padding:0.35rem;border:1px solid var(--border-color);border-radius:6px;font-size:0.8rem;background:var(--input-bg);"><button type="button" onclick="this.parentElement.remove()" style="width:24px;height:24px;border-radius:50%;border:1px solid var(--border-color);background:var(--bg-muted);cursor:pointer;font-size:0.7rem;">✕</button></div>`).join('')}
+                        </div>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:1rem;">
+                        <div><label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.3rem;">Acceptance Rate</label><input type="text" id="eq_acceptance" value="${sanitize(q.acceptance||'45.0%')}" style="width:100%;padding:0.5rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);"></div>
+                        <div><label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.3rem;">Tags (comma separated)</label><input type="text" id="eq_tags" value="${sanitize((q.tags||[]).join(', '))}" style="width:100%;padding:0.5rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);"></div>
+                    </div>
                 `}
                 <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
                     <button type="button" onclick="document.getElementById('editQuestionModal').style.display='none'" class="btn btn-outline">Cancel</button>
@@ -2403,6 +2504,26 @@ async function submitEditQuestion(e, type, questionId) {
         updates.explanation = document.getElementById('eq_explanation')?.value || '';
     } else {
         updates.description = document.getElementById('eq_description')?.value || '';
+        updates.acceptance = document.getElementById('eq_acceptance')?.value || '45.0%';
+        updates.tags = (document.getElementById('eq_tags')?.value || '').split(',').map(t => t.trim()).filter(Boolean);
+        // Collect test cases
+        const tcCards = document.querySelectorAll('#eq_testcases_container .eq-testcase');
+        updates.examples = [];
+        tcCards.forEach(card => {
+            const input = card.querySelector('.tc_input')?.value?.trim() || '';
+            const output = card.querySelector('.tc_output')?.value?.trim() || '';
+            if (input || output) {
+                updates.examples.push({ input, output, explanation: card.querySelector('.tc_explain')?.value?.trim() || '' });
+            }
+        });
+        // Collect constraints
+        const constraintEls = document.querySelectorAll('#eq_constraints_container .constraint_input');
+        updates.constraints = [];
+        constraintEls.forEach(el => { if (el.value.trim()) updates.constraints.push(el.value.trim()); });
+        // Collect hints
+        const hintEls = document.querySelectorAll('#eq_hints_container .hint_input');
+        updates.hints = [];
+        hintEls.forEach(el => { if (el.value.trim()) updates.hints.push(el.value.trim()); });
     }
 
     try {
@@ -2419,11 +2540,299 @@ async function submitEditQuestion(e, type, questionId) {
 }
 window.submitEditQuestion = submitEditQuestion;
 
+// ── Dynamic Field Helpers for Coding Questions ──
+function addCodingTestCase(prefix) {
+    const pfx = prefix || 'nq';
+    const cls = pfx === 'eq' ? 'eq-testcase' : 'nq-testcase';
+    const container = document.getElementById(`${pfx}_testcases_container`);
+    if (!container) return;
+    const card = document.createElement('div');
+    card.className = cls;
+    card.style.cssText = 'border:1px solid var(--border-color);border-radius:8px;padding:0.6rem;margin-bottom:0.5rem;background:var(--bg-muted);position:relative;';
+    card.innerHTML = `
+        <button type="button" onclick="this.parentElement.remove()" style="position:absolute;right:0.4rem;top:0.4rem;width:20px;height:20px;border-radius:50%;border:1px solid var(--border-color);background:var(--bg-muted);cursor:pointer;font-size:0.6rem;">✕</button>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
+            <div><label style="font-size:0.7rem;font-weight:600;display:block;margin-bottom:0.2rem;">Input</label><textarea class="tc_input" rows="2" placeholder="nums = [1,2,3]" style="width:100%;padding:0.4rem;border:1px solid var(--border-color);border-radius:6px;font-size:0.8rem;background:var(--input-bg);resize:vertical;"></textarea></div>
+            <div><label style="font-size:0.7rem;font-weight:600;display:block;margin-bottom:0.2rem;">Expected Output</label><textarea class="tc_output" rows="2" placeholder="[3,2,1]" style="width:100%;padding:0.4rem;border:1px solid var(--border-color);border-radius:6px;font-size:0.8rem;background:var(--input-bg);resize:vertical;"></textarea></div>
+        </div>
+        <div style="margin-top:0.4rem;"><label style="font-size:0.7rem;font-weight:600;display:block;margin-bottom:0.2rem;">Explanation</label><input class="tc_explain" placeholder="Optional explanation" style="width:100%;padding:0.35rem;border:1px solid var(--border-color);border-radius:6px;font-size:0.8rem;background:var(--input-bg);"></div>`;
+    container.appendChild(card);
+}
+window.addCodingTestCase = addCodingTestCase;
+
+function addCodingConstraint(prefix) {
+    const pfx = prefix || 'nq';
+    const container = document.getElementById(`${pfx}_constraints_container`);
+    if (!container) return;
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;gap:0.4rem;margin-bottom:0.3rem;align-items:center;';
+    row.innerHTML = `<input class="constraint_input" placeholder="0 <= value <= 10^9" style="flex:1;padding:0.35rem;border:1px solid var(--border-color);border-radius:6px;font-size:0.8rem;background:var(--input-bg);"><button type="button" onclick="this.parentElement.remove()" style="width:24px;height:24px;border-radius:50%;border:1px solid var(--border-color);background:var(--bg-muted);cursor:pointer;font-size:0.7rem;">✕</button>`;
+    container.appendChild(row);
+}
+window.addCodingConstraint = addCodingConstraint;
+
+function addCodingHint(prefix) {
+    const pfx = prefix || 'nq';
+    const container = document.getElementById(`${pfx}_hints_container`);
+    if (!container) return;
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;gap:0.4rem;margin-bottom:0.3rem;align-items:center;';
+    row.innerHTML = `<input class="hint_input" placeholder="Think about edge cases..." style="flex:1;padding:0.35rem;border:1px solid var(--border-color);border-radius:6px;font-size:0.8rem;background:var(--input-bg);"><button type="button" onclick="this.parentElement.remove()" style="width:24px;height:24px;border-radius:50%;border:1px solid var(--border-color);background:var(--bg-muted);cursor:pointer;font-size:0.7rem;">✕</button>`;
+    container.appendChild(row);
+}
+window.addCodingHint = addCodingHint;
+
 // ── Prep Roadmap CRUD ──
 function openAddPrepModal() {
-    showToast('Use the "Company & Rounds" section in the Recruiter dashboard to create prep paths, or add via database seeding.', 'info');
+    let modal = document.getElementById('addPrepModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'addPrepModal';
+        modal.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.65);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:9999;padding:1rem;';
+        document.body.appendChild(modal);
+    }
+    modal.innerHTML = `
+        <div style="background:var(--card-bg);border-radius:16px;max-width:750px;width:100%;max-height:90vh;overflow-y:auto;padding:2rem;border:1px solid var(--border-color);box-shadow:0 25px 50px rgba(0,0,0,0.25);position:relative;">
+            <button onclick="document.getElementById('addPrepModal').style.display='none'" style="position:absolute;right:1rem;top:1rem;width:32px;height:32px;border-radius:50%;background:var(--bg-muted);border:1px solid var(--border-color);font-size:1.1rem;cursor:pointer;">✕</button>
+            <h3 style="margin:0 0 1.25rem;font-size:1.1rem;">🗺️ Add New Preparation Roadmap</h3>
+            <form onsubmit="submitNewPrep(event)">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem;">
+                    <div><label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.3rem;">Company Name *</label><input type="text" id="np_company" required placeholder="e.g. Google, Amazon" style="width:100%;padding:0.5rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);"></div>
+                    <div><label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.3rem;">Difficulty</label>
+                        <select id="np_difficulty" style="width:100%;padding:0.5rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);">
+                            <option value="Easy">Easy</option><option value="Medium" selected>Medium</option><option value="Hard">Hard</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="margin-bottom:0.75rem;"><label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.3rem;">Description</label><textarea id="np_desc" rows="2" placeholder="Overview of the company's hiring process..." style="width:100%;padding:0.5rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);resize:vertical;"></textarea></div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem;">
+                    <div><label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.3rem;">Average Salary</label><input type="text" id="np_salary" placeholder="e.g. $170K or ₹22L" style="width:100%;padding:0.5rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);"></div>
+                    <div><label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.3rem;">Roles (comma separated)</label><input type="text" id="np_roles" placeholder="SDE I, SDE II, SDE III" style="width:100%;padding:0.5rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);"></div>
+                </div>
+                <div style="margin-bottom:0.75rem;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.4rem;">
+                        <label style="font-size:0.8rem;font-weight:600;">📚 Topics & Syllabus</label>
+                        <button type="button" onclick="addPrepTopic('np')" style="padding:0.25rem 0.6rem;font-size:0.75rem;border-radius:6px;background:var(--primary);color:#fff;border:none;cursor:pointer;">+ Add Topic</button>
+                    </div>
+                    <div id="np_topics_container">
+                        <div class="prep-topic-card" style="border:1px solid var(--border-color);border-radius:8px;padding:0.6rem;margin-bottom:0.5rem;background:var(--bg-muted);position:relative;">
+                            <button type="button" onclick="this.parentElement.remove()" style="position:absolute;right:0.4rem;top:0.4rem;width:20px;height:20px;border-radius:50%;border:1px solid var(--border-color);background:var(--bg-muted);cursor:pointer;font-size:0.6rem;">✕</button>
+                            <input class="topic_title" placeholder="Topic Title (e.g. Data Structures & Algorithms)" style="width:calc(100% - 30px);padding:0.35rem;border:1px solid var(--border-color);border-radius:6px;font-size:0.8rem;background:var(--input-bg);margin-bottom:0.3rem;">
+                            <input class="topic_items" placeholder="Items: Arrays, Linked Lists, Trees (comma separated)" style="width:100%;padding:0.35rem;border:1px solid var(--border-color);border-radius:6px;font-size:0.8rem;background:var(--input-bg);">
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-bottom:1rem;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.4rem;">
+                        <label style="font-size:0.8rem;font-weight:600;">❓ Interview Questions</label>
+                        <button type="button" onclick="addPrepQuestion('np')" style="padding:0.25rem 0.6rem;font-size:0.75rem;border-radius:6px;background:var(--primary);color:#fff;border:none;cursor:pointer;">+ Add Question</button>
+                    </div>
+                    <div id="np_questions_container">
+                        <div class="prep-question-card" style="border:1px solid var(--border-color);border-radius:8px;padding:0.6rem;margin-bottom:0.5rem;background:var(--bg-muted);position:relative;">
+                            <button type="button" onclick="this.parentElement.remove()" style="position:absolute;right:0.4rem;top:0.4rem;width:20px;height:20px;border-radius:50%;border:1px solid var(--border-color);background:var(--bg-muted);cursor:pointer;font-size:0.6rem;">✕</button>
+                            <input class="pq_question" placeholder="Interview question text" style="width:calc(100% - 30px);padding:0.35rem;border:1px solid var(--border-color);border-radius:6px;font-size:0.8rem;background:var(--input-bg);margin-bottom:0.3rem;">
+                            <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:0.4rem;">
+                                <input class="pq_answer" placeholder="Model answer" style="padding:0.35rem;border:1px solid var(--border-color);border-radius:6px;font-size:0.8rem;background:var(--input-bg);">
+                                <input class="pq_category" placeholder="Category" value="General" style="padding:0.35rem;border:1px solid var(--border-color);border-radius:6px;font-size:0.8rem;background:var(--input-bg);">
+                                <select class="pq_diff" style="padding:0.35rem;border:1px solid var(--border-color);border-radius:6px;font-size:0.8rem;background:var(--input-bg);"><option value="Easy">Easy</option><option value="Medium" selected>Medium</option><option value="Hard">Hard</option></select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
+                    <button type="button" onclick="document.getElementById('addPrepModal').style.display='none'" class="btn btn-outline">Cancel</button>
+                    <button type="submit" id="np_submit" class="btn btn-primary">🗺️ Create Roadmap</button>
+                </div>
+            </form>
+        </div>`;
+    modal.style.display = 'flex';
 }
 window.openAddPrepModal = openAddPrepModal;
+
+function addPrepTopic(prefix) {
+    const container = document.getElementById(`${prefix}_topics_container`);
+    if (!container) return;
+    const card = document.createElement('div');
+    card.className = 'prep-topic-card';
+    card.style.cssText = 'border:1px solid var(--border-color);border-radius:8px;padding:0.6rem;margin-bottom:0.5rem;background:var(--bg-muted);position:relative;';
+    card.innerHTML = `
+        <button type="button" onclick="this.parentElement.remove()" style="position:absolute;right:0.4rem;top:0.4rem;width:20px;height:20px;border-radius:50%;border:1px solid var(--border-color);background:var(--bg-muted);cursor:pointer;font-size:0.6rem;">✕</button>
+        <input class="topic_title" placeholder="Topic Title" style="width:calc(100% - 30px);padding:0.35rem;border:1px solid var(--border-color);border-radius:6px;font-size:0.8rem;background:var(--input-bg);margin-bottom:0.3rem;">
+        <input class="topic_items" placeholder="Items (comma separated)" style="width:100%;padding:0.35rem;border:1px solid var(--border-color);border-radius:6px;font-size:0.8rem;background:var(--input-bg);">`;
+    container.appendChild(card);
+}
+window.addPrepTopic = addPrepTopic;
+
+function addPrepQuestion(prefix) {
+    const container = document.getElementById(`${prefix}_questions_container`);
+    if (!container) return;
+    const card = document.createElement('div');
+    card.className = 'prep-question-card';
+    card.style.cssText = 'border:1px solid var(--border-color);border-radius:8px;padding:0.6rem;margin-bottom:0.5rem;background:var(--bg-muted);position:relative;';
+    card.innerHTML = `
+        <button type="button" onclick="this.parentElement.remove()" style="position:absolute;right:0.4rem;top:0.4rem;width:20px;height:20px;border-radius:50%;border:1px solid var(--border-color);background:var(--bg-muted);cursor:pointer;font-size:0.6rem;">✕</button>
+        <input class="pq_question" placeholder="Interview question text" style="width:calc(100% - 30px);padding:0.35rem;border:1px solid var(--border-color);border-radius:6px;font-size:0.8rem;background:var(--input-bg);margin-bottom:0.3rem;">
+        <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:0.4rem;">
+            <input class="pq_answer" placeholder="Model answer" style="padding:0.35rem;border:1px solid var(--border-color);border-radius:6px;font-size:0.8rem;background:var(--input-bg);">
+            <input class="pq_category" placeholder="Category" value="General" style="padding:0.35rem;border:1px solid var(--border-color);border-radius:6px;font-size:0.8rem;background:var(--input-bg);">
+            <select class="pq_diff" style="padding:0.35rem;border:1px solid var(--border-color);border-radius:6px;font-size:0.8rem;background:var(--input-bg);"><option value="Easy">Easy</option><option value="Medium" selected>Medium</option><option value="Hard">Hard</option></select>
+        </div>`;
+    container.appendChild(card);
+}
+window.addPrepQuestion = addPrepQuestion;
+
+function collectPrepFormData(prefix) {
+    const topics = [];
+    document.querySelectorAll(`#${prefix}_topics_container .prep-topic-card`).forEach((card, i) => {
+        const title = card.querySelector('.topic_title')?.value?.trim();
+        if (title) {
+            topics.push({
+                title,
+                items: (card.querySelector('.topic_items')?.value || '').split(',').map(s => s.trim()).filter(Boolean),
+                order: i
+            });
+        }
+    });
+    const questions = [];
+    document.querySelectorAll(`#${prefix}_questions_container .prep-question-card`).forEach(card => {
+        const question = card.querySelector('.pq_question')?.value?.trim();
+        if (question) {
+            questions.push({
+                question,
+                answer: card.querySelector('.pq_answer')?.value?.trim() || '',
+                category: card.querySelector('.pq_category')?.value?.trim() || 'General',
+                difficulty: card.querySelector('.pq_diff')?.value || 'Medium'
+            });
+        }
+    });
+    return { topics, questions };
+}
+
+async function submitNewPrep(e) {
+    e.preventDefault();
+    const btn = document.getElementById('np_submit');
+    if (btn) { btn.disabled = true; btn.textContent = 'Creating...'; }
+    const { topics, questions } = collectPrepFormData('np');
+    const body = {
+        companyName: document.getElementById('np_company').value.trim(),
+        difficulty: document.getElementById('np_difficulty').value,
+        description: document.getElementById('np_desc')?.value?.trim() || '',
+        avgSalary: document.getElementById('np_salary')?.value?.trim() || '',
+        roles: (document.getElementById('np_roles')?.value || '').split(',').map(s => s.trim()).filter(Boolean),
+        topics,
+        questions,
+        topicCount: topics.length,
+        questionCount: questions.length
+    };
+    try {
+        await API.post('/admin/preparation', body);
+        showToast('Preparation roadmap created!', 'success');
+        document.getElementById('addPrepModal').style.display = 'none';
+        loadSection('content');
+    } catch (err) {
+        showToast('Failed: ' + err.message, 'error');
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = '🗺️ Create Roadmap'; }
+    }
+}
+window.submitNewPrep = submitNewPrep;
+
+function openEditPrepModal(prepId) {
+    const prep = (state.prepCompanies || []).find(p => p._id === prepId);
+    if (!prep) { showToast('Roadmap not found', 'error'); return; }
+    let modal = document.getElementById('editPrepModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'editPrepModal';
+        modal.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.65);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:9999;padding:1rem;';
+        document.body.appendChild(modal);
+    }
+    modal.innerHTML = `
+        <div style="background:var(--card-bg);border-radius:16px;max-width:750px;width:100%;max-height:90vh;overflow-y:auto;padding:2rem;border:1px solid var(--border-color);box-shadow:0 25px 50px rgba(0,0,0,0.25);position:relative;">
+            <button onclick="document.getElementById('editPrepModal').style.display='none'" style="position:absolute;right:1rem;top:1rem;width:32px;height:32px;border-radius:50%;background:var(--bg-muted);border:1px solid var(--border-color);font-size:1.1rem;cursor:pointer;">✕</button>
+            <h3 style="margin:0 0 1.25rem;font-size:1.1rem;">✏️ Edit Roadmap: ${sanitize(prep.companyName)}</h3>
+            <form onsubmit="submitEditPrep(event, '${prep._id}')">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem;">
+                    <div><label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.3rem;">Company Name</label><input type="text" id="ep_company" value="${sanitize(prep.companyName)}" required style="width:100%;padding:0.5rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);"></div>
+                    <div><label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.3rem;">Difficulty</label>
+                        <select id="ep_difficulty" style="width:100%;padding:0.5rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);">
+                            <option value="Easy" ${prep.difficulty==='Easy'?'selected':''}>Easy</option><option value="Medium" ${prep.difficulty==='Medium'?'selected':''}>Medium</option><option value="Hard" ${prep.difficulty==='Hard'?'selected':''}>Hard</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="margin-bottom:0.75rem;"><label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.3rem;">Description</label><textarea id="ep_desc" rows="2" style="width:100%;padding:0.5rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);resize:vertical;">${sanitize(prep.description||'')}</textarea></div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem;">
+                    <div><label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.3rem;">Average Salary</label><input type="text" id="ep_salary" value="${sanitize(prep.avgSalary||'')}" style="width:100%;padding:0.5rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);"></div>
+                    <div><label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.3rem;">Roles (comma separated)</label><input type="text" id="ep_roles" value="${sanitize((prep.roles||[]).join(', '))}" style="width:100%;padding:0.5rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);"></div>
+                </div>
+                <div style="margin-bottom:0.75rem;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.4rem;">
+                        <label style="font-size:0.8rem;font-weight:600;">📚 Topics & Syllabus</label>
+                        <button type="button" onclick="addPrepTopic('ep')" style="padding:0.25rem 0.6rem;font-size:0.75rem;border-radius:6px;background:var(--primary);color:#fff;border:none;cursor:pointer;">+ Add Topic</button>
+                    </div>
+                    <div id="ep_topics_container">
+                        ${(prep.topics||[]).map(t => `
+                        <div class="prep-topic-card" style="border:1px solid var(--border-color);border-radius:8px;padding:0.6rem;margin-bottom:0.5rem;background:var(--bg-muted);position:relative;">
+                            <button type="button" onclick="this.parentElement.remove()" style="position:absolute;right:0.4rem;top:0.4rem;width:20px;height:20px;border-radius:50%;border:1px solid var(--border-color);background:var(--bg-muted);cursor:pointer;font-size:0.6rem;">✕</button>
+                            <input class="topic_title" value="${sanitize(t.title||'')}" style="width:calc(100% - 30px);padding:0.35rem;border:1px solid var(--border-color);border-radius:6px;font-size:0.8rem;background:var(--input-bg);margin-bottom:0.3rem;">
+                            <input class="topic_items" value="${sanitize((t.items||[]).join(', '))}" style="width:100%;padding:0.35rem;border:1px solid var(--border-color);border-radius:6px;font-size:0.8rem;background:var(--input-bg);">
+                        </div>`).join('')}
+                    </div>
+                </div>
+                <div style="margin-bottom:1rem;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.4rem;">
+                        <label style="font-size:0.8rem;font-weight:600;">❓ Interview Questions</label>
+                        <button type="button" onclick="addPrepQuestion('ep')" style="padding:0.25rem 0.6rem;font-size:0.75rem;border-radius:6px;background:var(--primary);color:#fff;border:none;cursor:pointer;">+ Add Question</button>
+                    </div>
+                    <div id="ep_questions_container">
+                        ${(prep.questions||[]).map(q => `
+                        <div class="prep-question-card" style="border:1px solid var(--border-color);border-radius:8px;padding:0.6rem;margin-bottom:0.5rem;background:var(--bg-muted);position:relative;">
+                            <button type="button" onclick="this.parentElement.remove()" style="position:absolute;right:0.4rem;top:0.4rem;width:20px;height:20px;border-radius:50%;border:1px solid var(--border-color);background:var(--bg-muted);cursor:pointer;font-size:0.6rem;">✕</button>
+                            <input class="pq_question" value="${sanitize(q.question||'')}" style="width:calc(100% - 30px);padding:0.35rem;border:1px solid var(--border-color);border-radius:6px;font-size:0.8rem;background:var(--input-bg);margin-bottom:0.3rem;">
+                            <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:0.4rem;">
+                                <input class="pq_answer" value="${sanitize(q.answer||'')}" style="padding:0.35rem;border:1px solid var(--border-color);border-radius:6px;font-size:0.8rem;background:var(--input-bg);">
+                                <input class="pq_category" value="${sanitize(q.category||'General')}" style="padding:0.35rem;border:1px solid var(--border-color);border-radius:6px;font-size:0.8rem;background:var(--input-bg);">
+                                <select class="pq_diff" style="padding:0.35rem;border:1px solid var(--border-color);border-radius:6px;font-size:0.8rem;background:var(--input-bg);"><option value="Easy" ${q.difficulty==='Easy'?'selected':''}>Easy</option><option value="Medium" ${q.difficulty==='Medium'?'selected':''}>Medium</option><option value="Hard" ${q.difficulty==='Hard'?'selected':''}>Hard</option></select>
+                            </div>
+                        </div>`).join('')}
+                    </div>
+                </div>
+                <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
+                    <button type="button" onclick="document.getElementById('editPrepModal').style.display='none'" class="btn btn-outline">Cancel</button>
+                    <button type="submit" id="ep_submit" class="btn btn-primary">💾 Save Changes</button>
+                </div>
+            </form>
+        </div>`;
+    modal.style.display = 'flex';
+}
+window.openEditPrepModal = openEditPrepModal;
+
+async function submitEditPrep(e, prepId) {
+    e.preventDefault();
+    const btn = document.getElementById('ep_submit');
+    if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
+    const { topics, questions } = collectPrepFormData('ep');
+    const body = {
+        companyName: document.getElementById('ep_company').value.trim(),
+        difficulty: document.getElementById('ep_difficulty').value,
+        description: document.getElementById('ep_desc')?.value?.trim() || '',
+        avgSalary: document.getElementById('ep_salary')?.value?.trim() || '',
+        roles: (document.getElementById('ep_roles')?.value || '').split(',').map(s => s.trim()).filter(Boolean),
+        topics,
+        questions
+    };
+    try {
+        await API.put(`/admin/preparation/${prepId}`, body);
+        showToast('Roadmap updated!', 'success');
+        document.getElementById('editPrepModal').style.display = 'none';
+        loadSection('content');
+    } catch (err) {
+        showToast('Failed: ' + err.message, 'error');
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = '💾 Save Changes'; }
+    }
+}
+window.submitEditPrep = submitEditPrep;
 
 async function deletePrep(prepId) {
     if (!confirm('Delete this preparation path?')) return;
