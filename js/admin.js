@@ -2,71 +2,100 @@
 let state = { stats: {}, users: [], companies: [], prepCompanies: [], questions: null, analytics: {}, performers: [], notifications: [], contentTab: 'mcq', charts: {} };
 const content = () => document.getElementById('adminContent');
 
-// === UNIFIED ADMIN MODAL SYSTEM ===
+// === UNIFIED SINGLE-ROOT ADMIN MODAL SYSTEM ===
 const AdminModal = {
-    open(modalId, htmlContent) {
-        let modal = document.getElementById(modalId);
-        if (!modal) {
-            modal = document.createElement('div');
-            modal.id = modalId;
-            document.body.appendChild(modal);
+    _root: null,
+    _container: null,
+    _mouseDownOnBackdrop: false,
+
+    _ensureInit() {
+        this._root = document.getElementById('adminModalRoot');
+        if (!this._root) {
+            this._root = document.createElement('div');
+            this._root.id = 'adminModalRoot';
+            this._root.className = 'admin-modal-backdrop';
+            this._root.style.display = 'none';
+            this._root.style.pointerEvents = 'none';
+            document.body.appendChild(this._root);
         }
-        modal.className = 'modal-backdrop';
-        modal.style.position = 'fixed';
-        modal.style.inset = '0';
-        modal.style.background = 'rgba(15, 23, 42, 0.65)';
-        modal.style.backdropFilter = 'blur(4px)';
-        modal.style.display = 'flex';
-        modal.style.alignItems = 'center';
-        modal.style.justifyContent = 'center';
-        modal.style.zIndex = '99999';
-        modal.style.padding = '1rem';
-        modal.style.pointerEvents = 'auto';
-        modal.innerHTML = htmlContent;
+        let container = document.getElementById('adminModalContainer');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'adminModalContainer';
+            container.className = 'admin-modal-container';
+            this._root.appendChild(container);
+        }
+        this._container = container;
 
-        // Outside click on backdrop closes modal
-        modal.onclick = (e) => {
-            if (e.target === modal) {
-                AdminModal.close(modalId);
-            }
-        };
+        // Attach listeners once
+        if (!this._root._hasAdminModalListeners) {
+            this._root._hasAdminModalListeners = true;
 
-        // Wire close buttons inside modal
-        modal.querySelectorAll('[data-close-modal], .close-modal-btn, [data-dismiss="modal"]').forEach(btn => {
-            btn.onclick = (e) => {
-                e.preventDefault();
-                AdminModal.close(modalId);
-            };
-        });
+            // Strict backdrop drag protection: only close if mousedown AND click were directly on backdrop
+            this._root.addEventListener('mousedown', (e) => {
+                this._mouseDownOnBackdrop = (e.target === this._root);
+            });
 
+            this._root.addEventListener('click', (e) => {
+                if (e.target === this._root && this._mouseDownOnBackdrop) {
+                    AdminModal.close();
+                }
+                this._mouseDownOnBackdrop = false;
+            });
+
+            // Universal close button delegator inside modal
+            this._root.addEventListener('click', (e) => {
+                const closeBtn = e.target.closest('[data-close-modal], .close-modal-btn, [data-dismiss="modal"]');
+                if (closeBtn) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    AdminModal.close();
+                }
+            });
+        }
+    },
+
+    open(modalIdOrHtml, maybeHtml) {
+        this._ensureInit();
+        const htmlContent = typeof maybeHtml === 'string' ? maybeHtml : modalIdOrHtml;
+        const modalId = typeof maybeHtml === 'string' ? modalIdOrHtml : 'adminModal';
+
+        this._container.innerHTML = htmlContent;
+        this._root.setAttribute('data-current-modal', modalId);
+        this._root.classList.add('active');
+        this._root.style.display = 'flex';
+        this._root.style.pointerEvents = 'auto';
         document.body.style.overflow = 'hidden';
-        return modal;
+
+        return this._root;
     },
 
     close(modalId) {
-        const modal = document.getElementById(modalId);
-        if (modal) {
-            modal.style.display = 'none';
-            modal.style.pointerEvents = 'none';
+        if (!this._root) this._ensureInit();
+        if (this._root) {
+            this._root.classList.remove('active');
+            this._root.style.display = 'none';
+            this._root.style.pointerEvents = 'none';
+            this._root.removeAttribute('data-current-modal');
         }
-        const anyOpen = Array.from(document.querySelectorAll('.modal-backdrop, .modal-overlay')).some(m => m.style.display === 'flex' || m.style.display === 'block');
-        if (!anyOpen) {
-            document.body.style.overflow = '';
+        if (this._container) {
+            this._container.innerHTML = '';
         }
+        document.body.style.overflow = '';
     },
 
     closeAll() {
-        document.querySelectorAll('.modal-backdrop, .modal-overlay').forEach(m => {
-            m.style.display = 'none';
-            m.style.pointerEvents = 'none';
-        });
-        document.body.style.overflow = '';
+        this.close();
+    },
+
+    isOpen() {
+        return this._root && this._root.classList.contains('active');
     }
 };
 
 window.AdminModal = AdminModal;
 
-// Close modals on Escape key
+// Close modal on Escape key
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
         AdminModal.closeAll();
@@ -75,26 +104,12 @@ document.addEventListener('keydown', (e) => {
 
 // === GLOBAL INTERACTION & EVENT DELEGATOR ===
 document.addEventListener('click', (e) => {
-    // 1. Modal close button or backdrop click
-    const closeBtn = e.target.closest('[data-close-modal], .close-modal-btn, [data-dismiss="modal"]');
-    if (closeBtn) {
-        e.preventDefault();
-        const targetModalId = closeBtn.getAttribute('data-close-modal');
-        if (targetModalId) AdminModal.close(targetModalId);
-        else {
-            const parentModal = closeBtn.closest('.modal-backdrop, .modal-overlay');
-            if (parentModal) AdminModal.close(parentModal.id);
-            else AdminModal.closeAll();
-        }
+    // 0. If click originated inside the modal root, DO NOT let background page handlers process it!
+    if (e.target.closest('#adminModalRoot')) {
         return;
     }
 
-    if (e.target.classList.contains('modal-backdrop') || e.target.classList.contains('modal-overlay')) {
-        AdminModal.close(e.target.id);
-        return;
-    }
-
-    // 2. Navigation items
+    // 1. Navigation items
     const navItem = e.target.closest('.nav-item[data-section]');
     if (navItem) {
         e.preventDefault();
@@ -106,7 +121,7 @@ document.addEventListener('click', (e) => {
     // Check if clicked element is an interactive control (button, input, select, link)
     const isControl = e.target.closest('button, a, select, input, textarea, label');
 
-    // 3. Role filter navigation
+    // 2. Role filter navigation
     const roleTarget = e.target.closest('[data-navigate-role]');
     if (roleTarget && (!isControl || isControl === roleTarget || isControl.closest('[data-navigate-role]') === roleTarget)) {
         e.preventDefault();
@@ -115,7 +130,7 @@ document.addEventListener('click', (e) => {
         return;
     }
 
-    // 4. Section navigation
+    // 3. Section navigation
     const navSectionTarget = e.target.closest('[data-navigate-section]');
     if (navSectionTarget && (!isControl || isControl === navSectionTarget || isControl.closest('[data-navigate-section]') === navSectionTarget)) {
         e.preventDefault();
@@ -124,7 +139,7 @@ document.addEventListener('click', (e) => {
         return;
     }
 
-    // 5. Analytics granularity
+    // 4. Analytics granularity
     const granTarget = e.target.closest('[data-granularity]');
     if (granTarget) {
         e.preventDefault();
@@ -133,7 +148,7 @@ document.addEventListener('click', (e) => {
         return;
     }
 
-    // 6. User profile modal
+    // 5. User profile modal
     const viewUserTarget = e.target.closest('[data-view-user]');
     if (viewUserTarget) {
         const actionBtn = e.target.closest('button, select, a');
@@ -146,7 +161,7 @@ document.addEventListener('click', (e) => {
         return;
     }
 
-    // 7. Company details modal
+    // 6. Company details modal
     const viewCompanyTarget = e.target.closest('[data-view-company]');
     if (viewCompanyTarget) {
         const actionBtn = e.target.closest('button, a');
@@ -159,7 +174,7 @@ document.addEventListener('click', (e) => {
         return;
     }
 
-    // 8. Job details modal
+    // 7. Job details modal
     const viewJobTarget = e.target.closest('[data-view-job]');
     if (viewJobTarget) {
         const actionBtn = e.target.closest('button, a');
@@ -172,7 +187,7 @@ document.addEventListener('click', (e) => {
         return;
     }
 
-    // 9. Application details modal
+    // 8. Application details modal
     const viewAppTarget = e.target.closest('[data-view-application]');
     if (viewAppTarget) {
         const actionBtn = e.target.closest('select, button, a');
@@ -185,7 +200,7 @@ document.addEventListener('click', (e) => {
         return;
     }
 
-    // 10. Question details modal
+    // 9. Question details modal
     const viewQTarget = e.target.closest('[data-view-question]');
     if (viewQTarget) {
         const actionBtn = e.target.closest('button, a');
@@ -199,7 +214,7 @@ document.addEventListener('click', (e) => {
         return;
     }
 
-    // 11. Prep roadmap modal
+    // 10. Prep roadmap modal
     const viewPrepTarget = e.target.closest('[data-view-prep]');
     if (viewPrepTarget) {
         const actionBtn = e.target.closest('button, a');
