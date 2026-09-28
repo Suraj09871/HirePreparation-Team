@@ -225,7 +225,7 @@ window.handleLogout = function() {
                 var getStartedLink = document.createElement('a');
                 getStartedLink.href = base + 'frontend/auth.html';
                 getStartedLink.className = 'btn btn-primary';
-                getStartedLink.innerHTML = 'Get Started <span class="icon-arrow">→</span>';
+                getStartedLink.innerHTML = 'Get Started <span class="icon-arrow"></span>';
                 getStartedLink.style.textDecoration = 'none';
                 nav.appendChild(getStartedLink);
             }

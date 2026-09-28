@@ -31,7 +31,7 @@
         <div class="nav-actions">
             <span id="themeToggle" onclick="toggleTheme()" role="button" tabindex="0" aria-label="Toggle dark mode" style="font-size: 1.125rem; color: var(--text-muted); cursor: pointer; margin-right: 0.5rem;">☼</span>
             <a href="frontend/auth.html" class="btn btn-outline" id="loginBtn">Sign In</a>
-            <a href="frontend/auth.html" class="btn btn-primary" id="signupBtn">Get Started <span class="icon-arrow">→</span></a>
+            <a href="frontend/auth.html" class="btn btn-primary" id="signupBtn">Get Started <span class="icon-arrow"></span></a>
         </div>
     </nav>
 
@@ -44,8 +44,11 @@
                     <h1 class="text-white text-5xl">Prepare Smart. <span class="highlight">Get Hired.</span></h1>
                     <p class="text-white-70 max-w-xl mx-auto mt-6 text-lg">The only platform that combines company-specific interview preparation with intelligent candidate-job matching. Know your chances before you apply.</p>
                     <div class="hero-actions justify-center mt-10" id="heroCTAs">
-                        <button class="btn btn-primary btn-large px-8">Start Preparing <span class="icon-arrow"></span></button>
-                        <button class="btn btn-secondary btn-large px-8" id="heroSecondaryBtn">I'm a Recruiter</button>
+                        <a href="frontend/auth.html" class="btn btn-primary btn-large px-8" style="text-decoration: none;">Start Preparing <span class="icon-arrow"></span></a>
+                    </div>
+                    <div class="hero-recruiter-prompt mt-4">
+                        <span class="text-white-70">Looking to hire top talent?</span>
+                        <a href="frontend/auth.html?role=recruiter" class="hero-recruiter-link" id="heroSecondaryBtn">Recruiter Portal <span class="icon-arrow"></span></a>
                     </div>
                 </div>
             </div>
@@ -88,32 +91,44 @@
                 </div>
                 <div class="features-grid mt-16">
                     <div class="feature-card">
-                        <div class="feature-icon-wrapper"><span class="feature-icon icon-book"></span></div>
+                        <div class="feature-icon-wrapper">
+                            <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                        </div>
                         <h3>Company-Wise Prep</h3>
                         <p>Structured preparation paths tailored to each company's interview process and expectations.</p>
                     </div>
                     <div class="feature-card">
-                        <div class="feature-icon-wrapper"><span class="feature-icon icon-brain"></span></div>
+                        <div class="feature-icon-wrapper">
+                            <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M12 2a4.5 4.5 0 0 0-4.5 4.5c0 1.25.5 2.4 1.3 3.2L6 12l2.8 2.3A4.5 4.5 0 1 0 12 22a4.5 4.5 0 0 0 4.5-4.5c0-1.25-.5-2.4-1.3-3.2L18 12l-2.8-2.3A4.5 4.5 0 0 0 12 2z"></path></svg>
+                        </div>
                         <h3>Intelligent Matching</h3>
                         <p>Our rule-based AI calculates your skill match percentage and hiring probability before you apply.</p>
                     </div>
                     <div class="feature-card">
-                        <div class="feature-icon-wrapper"><span class="feature-icon icon-chart"></span></div>
+                        <div class="feature-icon-wrapper">
+                            <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line><line x1="2" y1="20" x2="22" y2="20"></line></svg>
+                        </div>
                         <h3>Smart Ranking</h3>
                         <p>Recruiters see candidates ranked by weighted scores across skills, experience, and resume quality.</p>
                     </div>
                     <div class="feature-card">
-                        <div class="feature-icon-wrapper"><span class="feature-icon icon-search"></span></div>
+                        <div class="feature-icon-wrapper">
+                            <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+                        </div>
                         <h3>Skill Gap Detection</h3>
                         <p>Identify missing skills and get targeted learning roadmaps to improve your match score.</p>
                     </div>
                     <div class="feature-card">
-                        <div class="feature-icon-wrapper"><span class="feature-icon icon-users"></span></div>
+                        <div class="feature-icon-wrapper">
+                            <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                        </div>
                         <h3>Recruiter Dashboard</h3>
                         <p>Post jobs, view ranked applicants, and manage hiring pipeline with intelligent insights.</p>
                     </div>
                     <div class="feature-card">
-                        <div class="feature-icon-wrapper"><span class="feature-icon icon-code"></span></div>
+                        <div class="feature-icon-wrapper">
+                            <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+                        </div>
                         <h3>Interactive Practice</h3>
                         <p>Practice 600+ coding problems, MCQ quizzes, and aptitude tests with in-browser execution and autosave.</p>
                     </div>
@@ -169,21 +184,21 @@
                             <div class="matching-item">
                                 <span class="matching-icon icon-check"></span>
                                 <div>
-                                    <div class="matching-label">Skill Match <span class="accent">(60%)</span></div>
+                                    <div class="matching-label">Skill Match <span class="matching-weight">Weight: 60%</span></div>
                                     <div class="matching-desc">How well your skills align with requirements</div>
                                 </div>
                             </div>
                             <div class="matching-item">
                                 <span class="matching-icon icon-check"></span>
                                 <div>
-                                    <div class="matching-label">Experience <span class="accent">(20%)</span></div>
+                                    <div class="matching-label">Experience <span class="matching-weight">Weight: 20%</span></div>
                                     <div class="matching-desc">Relevant work and project experience</div>
                                 </div>
                             </div>
                             <div class="matching-item">
                                 <span class="matching-icon icon-check"></span>
                                 <div>
-                                    <div class="matching-label">Resume Quality <span class="accent">(20%)</span></div>
+                                    <div class="matching-label">Resume Quality <span class="matching-weight">Weight: 20%</span></div>
                                     <div class="matching-desc">Completeness and presentation of your resume</div>
                                 </div>
                             </div>
@@ -194,36 +209,29 @@
                         <div class="visual-header text-center">
                             <div class="visual-title">Hiring Probability</div>
                             <div class="visual-score highlight">87%</div>
-                            <div class="visual-subtitle">Sample match score</div>
+                            <div class="visual-subtitle">Weighted composite score</div>
                         </div>
                         <div class="skill-bars mt-8">
                             <div class="skill-bar-container">
                                 <div class="skill-bar-header">
-                                    <span>React.js</span>
-                                    <span class="accent">95%</span>
-                                </div>
-                                <div class="skill-bar-bg"><div class="skill-bar-fill bg-gradient-accent" style="width: 95%"></div></div>
-                            </div>
-                            <div class="skill-bar-container">
-                                <div class="skill-bar-header">
-                                    <span>TypeScript</span>
+                                    <span>Skill Alignment (60% weight)</span>
                                     <span class="accent">90%</span>
                                 </div>
                                 <div class="skill-bar-bg"><div class="skill-bar-fill bg-gradient-accent" style="width: 90%"></div></div>
                             </div>
                             <div class="skill-bar-container">
                                 <div class="skill-bar-header">
-                                    <span>Node.js</span>
-                                    <span class="accent">75%</span>
+                                    <span>Experience Match (20% weight)</span>
+                                    <span class="accent">85%</span>
                                 </div>
-                                <div class="skill-bar-bg"><div class="skill-bar-fill bg-gradient-accent" style="width: 75%"></div></div>
+                                <div class="skill-bar-bg"><div class="skill-bar-fill bg-gradient-accent" style="width: 85%"></div></div>
                             </div>
                             <div class="skill-bar-container">
                                 <div class="skill-bar-header">
-                                    <span>System Design</span>
-                                    <span class="accent">60%</span>
+                                    <span>Resume Completeness (20% weight)</span>
+                                    <span class="accent">80%</span>
                                 </div>
-                                <div class="skill-bar-bg"><div class="skill-bar-fill bg-gradient-accent" style="width: 60%"></div></div>
+                                <div class="skill-bar-bg"><div class="skill-bar-fill bg-gradient-accent" style="width: 80%"></div></div>
                             </div>
                         </div>
                     </div>

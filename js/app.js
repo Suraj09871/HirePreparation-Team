@@ -99,7 +99,7 @@ async function loadJobPreview() {
                     ${(job.requiredSkills || []).map(s => `<span class="preview-skill-tag">${sanitize(s)}</span>`).join('')}
                 </div>
                 <div class="preview-job-footer">
-                    <span class="preview-job-btn">View Details & Apply <span class="icon-arrow">→</span></span>
+                    <span class="preview-job-btn">View Details & Apply <span class="icon-arrow"></span></span>
                 </div>
             </div>
         `).join('');
@@ -152,6 +152,9 @@ async function loadQuestionPreview() {
                     ${q.company ? `<span class="preview-tag preview-tag-company">${sanitize(q.company)}</span>` : ''}
                     ${showTopic ? `<span class="preview-tag preview-tag-topic">${sanitize(topic)}</span>` : ''}
                     ${q.difficulty ? `<span class="preview-tag preview-tag-difficulty-${(q.difficulty || '').toLowerCase()}">${sanitize(q.difficulty)}</span>` : ''}
+                </div>
+                <div class="preview-question-footer">
+                    <span class="preview-question-btn">Practice Question <span class="icon-arrow"></span></span>
                 </div>
             </div>
             `;
