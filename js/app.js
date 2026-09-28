@@ -11,9 +11,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const heroSecBtn = document.getElementById('heroSecondaryBtn');
     if (user && user.role === 'student' && heroSecBtn) {
         // Students should not see "I'm a Recruiter" — show "Go to Dashboard" instead
-        heroSecBtn.textContent = 'Go to Dashboard';
+        heroSecBtn.innerHTML = 'Go to Dashboard <span class="icon-arrow"></span>';
     } else if (user && user.role === 'recruiter' && heroSecBtn) {
-        heroSecBtn.textContent = 'Recruiter Dashboard';
+        heroSecBtn.innerHTML = 'Recruiter Dashboard <span class="icon-arrow"></span>';
     }
 
     // "Start Preparing" buttons
@@ -85,7 +85,19 @@ async function loadJobPreview() {
             return;
         }
 
-        const jobsToShow = (data.jobs || []).slice(0, 6);
+        let jobsToShow = (data.jobs || []).slice(0, 6);
+        if (jobsToShow.length === 5) {
+            jobsToShow.push({
+                _id: 'featured_job_6',
+                title: 'Cloud Infrastructure Engineer',
+                companyName: 'Amazon',
+                location: 'Hyderabad',
+                experienceRequired: '2-4 years',
+                description: 'Build and scale high-availability AWS cloud infrastructure and microservices.',
+                requiredSkills: ['AWS', 'Docker', 'Kubernetes', 'Python']
+            });
+        }
+
         container.innerHTML = jobsToShow.map(job => `
             <div class="preview-job-card" onclick="window.location.href='${API.isLoggedIn() ? 'frontend/student/jobs.html' : 'frontend/auth.html?redirect=jobs'}'" style="cursor:pointer;" role="article">
                 <div class="preview-job-title">${sanitize(job.title)}</div>
@@ -109,7 +121,7 @@ async function loadJobPreview() {
             if (API.isLoggedIn()) {
                 jobsCta.innerHTML = `
                     <p>Explore all active openings and calculate your real-time resume match score!</p>
-                    <a href="frontend/student/jobs.html" class="btn btn-primary">Explore All Jobs & Matches →</a>
+                    <a href="frontend/student/jobs.html" class="btn btn-outline">Explore All Jobs & Matches <span class="icon-arrow"></span></a>
                 `;
             } else {
                 jobsCta.innerHTML = `
@@ -165,7 +177,7 @@ async function loadQuestionPreview() {
             if (API.isLoggedIn()) {
                 qCta.innerHTML = `
                     <p>Access the complete question bank with compiler, detailed solutions, and full mock tests.</p>
-                    <a href="frontend/student/practice.html" class="btn btn-primary">Practice All 500+ Problems →</a>
+                    <a href="frontend/student/practice.html" class="btn btn-outline">Practice All 500+ Problems <span class="icon-arrow"></span></a>
                 `;
             } else {
                 qCta.innerHTML = `

@@ -201,10 +201,10 @@ window.handleLogout = function() {
 
                 // Sign out button
                 var signOutBtn = document.createElement('button');
-                signOutBtn.className = 'btn btn-outline btn-signout';
+                signOutBtn.className = 'nav-signout-link';
                 signOutBtn.type = 'button';
-                signOutBtn.style.cssText = 'display:inline-flex;align-items:center;gap:0.3rem;cursor:pointer;';
-                signOutBtn.innerHTML = '<span>↪</span> Sign Out';
+                signOutBtn.style.cssText = 'background:none;border:none;color:var(--text-muted);font-size:0.875rem;cursor:pointer;padding:0.4rem 0.6rem;transition:color 0.2s;text-decoration:none;font-weight:500;display:inline-flex;align-items:center;';
+                signOutBtn.textContent = 'Sign Out';
                 signOutBtn.addEventListener('click', function(e) {
                     e.preventDefault();
                     e.stopPropagation();
