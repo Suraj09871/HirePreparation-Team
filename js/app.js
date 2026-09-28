@@ -85,17 +85,21 @@ async function loadJobPreview() {
             return;
         }
 
-        container.innerHTML = data.jobs.map(job => `
-            <div class="preview-job-card" onclick="window.location.href='${API.isLoggedIn() ? 'frontend/student/jobs.html' : 'frontend/auth.html?redirect=jobs'}'" style="cursor:pointer;">
+        const jobsToShow = (data.jobs || []).slice(0, 6);
+        container.innerHTML = jobsToShow.map(job => `
+            <div class="preview-job-card" onclick="window.location.href='${API.isLoggedIn() ? 'frontend/student/jobs.html' : 'frontend/auth.html?redirect=jobs'}'" style="cursor:pointer;" role="article">
                 <div class="preview-job-title">${sanitize(job.title)}</div>
                 <div class="preview-job-company">${sanitize(job.companyName)}</div>
                 <div class="preview-job-meta">
                     <span>📍 ${sanitize(job.location || 'Remote')}</span>
                     <span>💼 ${sanitize(job.experienceRequired || 'Not specified')}</span>
                 </div>
-                ${job.description ? `<p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:0.75rem;line-height:1.5;">${sanitize(job.description)}</p>` : ''}
+                <p class="preview-job-desc">${sanitize(job.description || 'Full-time opening with career growth and competitive compensation.')}</p>
                 <div class="preview-job-skills">
                     ${(job.requiredSkills || []).map(s => `<span class="preview-skill-tag">${sanitize(s)}</span>`).join('')}
+                </div>
+                <div class="preview-job-footer">
+                    <span class="preview-job-btn">View Details & Apply <span class="icon-arrow">→</span></span>
                 </div>
             </div>
         `).join('');
@@ -110,7 +114,7 @@ async function loadJobPreview() {
             } else {
                 jobsCta.innerHTML = `
                     <p>Want to see all jobs and apply with match scoring?</p>
-                    <a href="frontend/auth.html?redirect=jobs" class="btn btn-primary">Sign In to View All Jobs</a>
+                    <a href="frontend/auth.html?redirect=jobs" class="btn btn-outline">Sign In to View All Jobs</a>
                 `;
             }
         }
@@ -137,16 +141,21 @@ async function loadQuestionPreview() {
             return;
         }
 
-        container.innerHTML = data.questions.map(q => `
-            <div class="preview-question-card" onclick="window.location.href='${API.isLoggedIn() ? 'frontend/student/practice.html' : 'frontend/auth.html?redirect=practice'}'" style="cursor:pointer;">
+        const questionsToShow = (data.questions || []).slice(0, 6);
+        container.innerHTML = questionsToShow.map(q => {
+            const topic = (q.topic || '').trim();
+            const showTopic = topic && topic.toLowerCase() !== 'coding';
+            return `
+            <div class="preview-question-card" onclick="window.location.href='${API.isLoggedIn() ? 'frontend/student/practice.html' : 'frontend/auth.html?redirect=practice'}'" style="cursor:pointer;" role="article">
                 <div class="preview-question-text">${sanitize(q.question)}</div>
                 <div class="preview-question-meta">
                     ${q.company ? `<span class="preview-tag preview-tag-company">${sanitize(q.company)}</span>` : ''}
-                    ${q.topic ? `<span class="preview-tag preview-tag-topic">${sanitize(q.topic)}</span>` : ''}
+                    ${showTopic ? `<span class="preview-tag preview-tag-topic">${sanitize(topic)}</span>` : ''}
                     ${q.difficulty ? `<span class="preview-tag preview-tag-difficulty-${(q.difficulty || '').toLowerCase()}">${sanitize(q.difficulty)}</span>` : ''}
                 </div>
             </div>
-        `).join('');
+            `;
+        }).join('');
 
         const qCta = section.querySelector('.preview-cta');
         if (qCta) {
@@ -158,7 +167,7 @@ async function loadQuestionPreview() {
             } else {
                 qCta.innerHTML = `
                     <p>Sign in to access the complete question bank with detailed explanations and mock tests.</p>
-                    <a href="frontend/auth.html?redirect=practice" class="btn btn-primary">Sign In to Unlock All Questions</a>
+                    <a href="frontend/auth.html?redirect=practice" class="btn btn-outline">Sign In to Unlock All Questions</a>
                 `;
             }
         }

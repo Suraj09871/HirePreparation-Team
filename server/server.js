@@ -231,7 +231,8 @@ async function runSeed() {
         { recruiterId: recruiter._id, companyName: 'Acme Corp', title: 'Backend Developer (Node.js)', description: 'Build scalable APIs.', requiredSkills: ['Node.js', 'Express', 'MongoDB', 'Docker'], experienceRequired: '1-3 years (Junior)', location: 'Bangalore', salary: '₹12L - ₹18L', status: 'active', applicantCount: 86 },
         { recruiterId: recruiter._id, companyName: 'TechNova', title: 'Full Stack Developer', description: 'End to end features.', requiredSkills: ['React', 'Node.js', 'MongoDB', 'AWS'], experienceRequired: '1-3 years (Junior)', location: 'Remote', salary: '₹10L - ₹15L', status: 'active', applicantCount: 42 },
         { recruiterId: recruiter2._id, companyName: 'Razorpay', title: 'DevOps Engineer', description: 'CI/CD and cloud.', requiredSkills: ['AWS', 'Docker', 'Kubernetes'], experienceRequired: '3-5 years (Mid-level)', location: 'Bangalore', salary: '₹18L - ₹28L', status: 'active', applicantCount: 34 },
-        { recruiterId: recruiter2._id, companyName: 'Swiggy', title: 'Data Analyst', description: 'Business data insights.', requiredSkills: ['Python', 'SQL', 'Tableau'], experienceRequired: '0-1 years (Fresher)', location: 'Bangalore', salary: '₹8L - ₹12L', status: 'active', applicantCount: 112 }
+        { recruiterId: recruiter2._id, companyName: 'Swiggy', title: 'Data Analyst', description: 'Business data insights.', requiredSkills: ['Python', 'SQL', 'Tableau'], experienceRequired: '0-1 years (Fresher)', location: 'Bangalore', salary: '₹8L - ₹12L', status: 'active', applicantCount: 112 },
+        { recruiterId: recruiter._id, companyName: 'Amazon', title: 'Cloud Infrastructure Engineer', description: 'High-scale AWS cloud systems.', requiredSkills: ['AWS', 'Docker', 'Kubernetes', 'Python'], experienceRequired: '2-4 years (Mid-level)', location: 'Hyderabad', salary: '₹18L - ₹26L', status: 'active', applicantCount: 64 }
     ]);
 
     // Preparation paths with real questions

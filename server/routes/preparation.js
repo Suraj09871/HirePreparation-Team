@@ -11,7 +11,7 @@ router.get('/sample-questions', async (req, res) => {
     try {
         const questions = await PreparationPath.aggregate([
             { $unwind: "$questions" },
-            { $sample: { size: 8 } },
+            { $sample: { size: 6 } },
             { $project: { 
                 question: "$questions.question", 
                 company: "$companyName", 

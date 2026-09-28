@@ -140,8 +140,8 @@ window.handleLogout = function() {
             themeBtn.type = 'button';
             themeBtn.className = 'btn-theme-toggle';
             themeBtn.setAttribute('aria-label', 'Toggle dark mode');
-            themeBtn.style.cssText = 'background:none;border:none;font-size:1.3rem;cursor:pointer;padding:0.4rem 0.5rem;border-radius:8px;color:var(--text-muted);transition:all 0.2s;display:inline-flex;align-items:center;justify-content:center;margin-right:0.3rem;';
-            themeBtn.textContent = isDark ? '🌙' : '☀️';
+            themeBtn.style.cssText = 'background:none;border:none;font-size:1.125rem;cursor:pointer;padding:0.4rem 0.5rem;border-radius:8px;color:var(--text-muted);transition:all 0.2s;display:inline-flex;align-items:center;justify-content:center;margin-right:0.3rem;';
+            themeBtn.textContent = isDark ? '🌙' : '☼';
 
             themeBtn.addEventListener('click', function(e) {
                 e.preventDefault();
@@ -150,7 +150,7 @@ window.handleLogout = function() {
                     toggleTheme();
                 }
                 var nowDark = document.documentElement.getAttribute('data-theme') === 'dark';
-                themeBtn.textContent = nowDark ? '🌙' : '☀️';
+                themeBtn.textContent = nowDark ? '🌙' : '☼';
             });
             nav.appendChild(themeBtn);
 
@@ -161,7 +161,7 @@ window.handleLogout = function() {
                 notifBtn.type = 'button';
                 notifBtn.setAttribute('aria-label', 'Open Notifications');
                 notifBtn.style.cssText = 'position:relative;background:none;border:none;cursor:pointer;font-size:1.25rem;padding:0.35rem 0.55rem;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;margin-right:0.4rem;transition:transform 0.15s ease;';
-                notifBtn.innerHTML = '🔔<span id="universalNotifBadge" style="position:absolute;top:-2px;right:-2px;background:#ef4444;color:white;font-size:0.6rem;font-weight:700;padding:0.1rem 0.35rem;border-radius:999px;display:none;">0</span>';
+                notifBtn.innerHTML = '🔔<span id="universalNotifBadge" style="position:absolute;top:-2px;right:-2px;background:#ef4444;color:white;font-size:0.6rem;font-weight:700;padding:0.1rem 0.35rem;border-radius:9999px;display:none;">0</span>';
 
                 notifBtn.addEventListener('click', function(e) {
                     e.preventDefault();
@@ -224,8 +224,8 @@ window.handleLogout = function() {
                 // Get Started link
                 var getStartedLink = document.createElement('a');
                 getStartedLink.href = base + 'frontend/auth.html';
-                getStartedLink.className = 'btn btn-dark';
-                getStartedLink.textContent = 'Get Started';
+                getStartedLink.className = 'btn btn-primary';
+                getStartedLink.innerHTML = 'Get Started <span class="icon-arrow">→</span>';
                 getStartedLink.style.textDecoration = 'none';
                 nav.appendChild(getStartedLink);
             }

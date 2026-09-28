@@ -138,6 +138,17 @@ const MockAPI = {
         }
 
         // Preparation
+        if (endpoint.includes('/preparation/sample-questions') || endpoint.includes('/sample-questions')) {
+            const samples = [
+                { question: 'Reverse a Linked List in place', company: 'Google', difficulty: 'Medium', topic: 'Data Structures' },
+                { question: 'Design Search Autocomplete with low latency', company: 'Amazon', difficulty: 'Hard', topic: 'System Design' },
+                { question: 'Find Median from Data Stream using Heaps', company: 'Microsoft', difficulty: 'Hard', topic: 'Algorithms' },
+                { question: 'Product of Array Except Self without division', company: 'Meta', difficulty: 'Medium', topic: 'Data Structures' },
+                { question: 'Design an Idempotent Payment Processing API', company: 'Razorpay', difficulty: 'Hard', topic: 'System Design' },
+                { question: 'Spiral Matrix traversal with boundary tracking', company: 'Netflix', difficulty: 'Medium', topic: 'Algorithms' }
+            ];
+            return { success: true, questions: samples };
+        }
         if (endpoint === '/preparation' || endpoint === '/preparation/') {
             return { success: true, preparations: MockAPI._preparations() };
         }
@@ -289,12 +300,16 @@ const MockAPI = {
             {_id:'rj1',title:'Senior Frontend Engineer',companyName:'Acme Corp',location:'Remote',salary:'$120k-$150k',status:'active',applicantCount:124,requiredSkills:['React','TypeScript','CSS','GraphQL'],experienceRequired:'3-5 years',createdAt:new Date(Date.now()-7*86400000).toISOString()},
             {_id:'rj2',title:'Backend Developer (Node.js)',companyName:'Acme Corp',location:'Bangalore',salary:'₹12L-₹18L',status:'active',applicantCount:86,requiredSkills:['Node.js','Express','MongoDB','Docker'],experienceRequired:'1-3 years',createdAt:new Date(Date.now()-14*86400000).toISOString()},
             {_id:'rj3',title:'Full Stack Developer',companyName:'TechNova',location:'Remote',salary:'₹10L-₹15L',status:'active',applicantCount:42,requiredSkills:['React','Node.js','MongoDB','AWS'],experienceRequired:'1-3 years',createdAt:new Date(Date.now()-21*86400000).toISOString()},
-            {_id:'rj4',title:'DevOps Engineer',companyName:'Razorpay',location:'Bangalore',salary:'₹18L-₹28L',status:'closed',applicantCount:34,requiredSkills:['AWS','Docker','Kubernetes','Terraform'],experienceRequired:'3-5 years',createdAt:new Date(Date.now()-30*86400000).toISOString()}
+            {_id:'rj4',title:'DevOps Engineer',companyName:'Razorpay',location:'Bangalore',salary:'₹18L-₹28L',status:'active',applicantCount:34,requiredSkills:['AWS','Docker','Kubernetes','Terraform'],experienceRequired:'3-5 years',createdAt:new Date(Date.now()-30*86400000).toISOString()}
         ];
     },
 
     _allJobs() {
-        return [...MockAPI._recruiterJobs(), {_id:'aj5',title:'Data Analyst',companyName:'Swiggy',location:'Bangalore',salary:'₹8L-₹12L',status:'active',applicantCount:112,requiredSkills:['Python','SQL','Tableau'],experienceRequired:'0-1 years',createdAt:new Date(Date.now()-5*86400000).toISOString()}];
+        return [
+            ...MockAPI._recruiterJobs(),
+            {_id:'aj5',title:'Data Analyst',companyName:'Swiggy',location:'Bangalore',salary:'₹8L-₹12L',status:'active',applicantCount:112,requiredSkills:['Python','SQL','Tableau'],experienceRequired:'0-1 years',createdAt:new Date(Date.now()-5*86400000).toISOString()},
+            {_id:'aj6',title:'Cloud Infrastructure Engineer',companyName:'Amazon',location:'Hyderabad',salary:'₹18L-₹26L',status:'active',applicantCount:64,requiredSkills:['AWS','Docker','Kubernetes','Python'],experienceRequired:'2-4 years',createdAt:new Date(Date.now()-2*86400000).toISOString()}
+        ];
     },
 
     _applications() {
