@@ -104,6 +104,36 @@
         }
         [data-theme="dark"] .company-pill { background: rgba(2, 132, 199, 0.2); color: #38bdf8; }
 
+        #question-description code {
+            font-family: 'Fira Code', monospace;
+            background: var(--bg-muted, #f1f5f9);
+            color: #ea580c;
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            font-size: 0.85em;
+            border: 1px solid var(--border-color, #e2e8f0);
+        }
+        #question-description pre {
+            font-family: 'Fira Code', monospace;
+            background: var(--bg-muted, #f1f5f9);
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border-color, #e2e8f0);
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+        [data-theme="dark"] #question-description code {
+            background: rgba(249, 115, 22, 0.1);
+            color: #fb923c;
+            border-color: rgba(249, 115, 22, 0.2);
+        }
+        [data-theme="dark"] #question-description pre {
+            background: #1e293b;
+            color: #f8fafc;
+            border-color: #334155;
+        }
+
         /* Right Editor Panel */
         .right-panel {
             display: flex;
@@ -538,14 +568,12 @@
 
         const code = editor.getValue();
         const lang = document.getElementById('langSelect').value;
-        const testCases = activeQuestion?.examples || [
-            { input: 'nums = [2, 7, 11, 15], target = 9', output: '[0, 1]' },
-            { input: 'nums = [3, 2, 4], target = 6', output: '[1, 2]' },
-            { input: 'nums = [3, 3], target = 6', output: '[0, 1]' }
+        const testCases = activeQuestion?.testCases || activeQuestion?.examples || [
+            { input: 'nums = [2, 7, 11, 15], target = 9', output: '[0, 1]' }
         ];
 
         setTimeout(() => {
-            const isEmpty = code.includes('pass') || (code.includes('return []') && code.length < 90) || code.includes('return null') || (code.trim().length < 30);
+            const isEmpty = code.includes('pass\n') || (code.includes('return []') && code.length < 90) || code.includes('return null;') || (code.trim().length < 30);
             
             if (isEmpty) {
                 output.innerHTML = `⚠️ Execution Complete (0/${testCases.length} Passed)\n\nOutput: null\nHint: Implement your algorithm logic before running tests.`;
@@ -588,14 +616,12 @@
 
         const code = editor.getValue();
         const lang = document.getElementById('langSelect').value;
-        const testCases = activeQuestion?.examples || [
-            { input: 'nums = [2, 7, 11, 15], target = 9', output: '[0, 1]' },
-            { input: 'nums = [3, 2, 4], target = 6', output: '[1, 2]' },
-            { input: 'nums = [3, 3], target = 6', output: '[0, 1]' }
+        const testCases = activeQuestion?.testCases || activeQuestion?.examples || [
+            { input: 'nums = [2, 7, 11, 15], target = 9', output: '[0, 1]' }
         ];
 
         setTimeout(() => {
-            const isEmpty = code.includes('pass') || (code.includes('return []') && code.length < 90) || code.includes('return null') || (code.trim().length < 30);
+            const isEmpty = code.includes('pass\n') || (code.includes('return []') && code.length < 90) || code.includes('return null;') || (code.trim().length < 30);
             const total = testCases.length;
             const passed = isEmpty ? 0 : total;
             const status = passed === total ? 'Accepted' : 'Wrong Answer';
@@ -645,10 +671,8 @@
         const list = document.getElementById('testCasesList');
         if (!list) return;
 
-        const testCases = activeQuestion?.examples || [
-            { input: 'nums = [2, 7, 11, 15], target = 9', output: '[0, 1]', explanation: 'nums[0] + nums[1] == 9' },
-            { input: 'nums = [3, 2, 4], target = 6', output: '[1, 2]', explanation: 'nums[1] + nums[2] == 6' },
-            { input: 'nums = [3, 3], target = 6', output: '[0, 1]', explanation: 'nums[0] + nums[1] == 6' }
+        const testCases = activeQuestion?.testCases || activeQuestion?.examples || [
+            { input: 'nums = [2, 7, 11, 15], target = 9', output: '[0, 1]', explanation: 'nums[0] + nums[1] == 9' }
         ];
 
         list.innerHTML = testCases.map((tc, i) => {
@@ -750,7 +774,9 @@
         let q = null;
 
         try {
-            const res = await fetch('../../data/questions.json');
+            let res = await fetch('../../data/questions.json');
+            if (!res.ok) res = await fetch('/data/questions.json');
+            if (!res.ok) res = await fetch('/api/questions');
             if (res.ok) {
                 const data = await res.json();
                 const arrayKey = paramType.includes('mcq') ? 'coding_mcq' : paramType === 'aptitude' ? 'aptitude' : 'coding';
@@ -759,8 +785,18 @@
                 if (!q && paramTitle) {
                     q = list.find(item => item.title && (item.title.toLowerCase() === paramTitle.toLowerCase() || item.title.toLowerCase().includes(paramTitle.toLowerCase())));
                 }
+                // Global fallback search across all arrays if not found in primary
+                if (!q) {
+                    const allLists = [...(data.coding || []), ...(data.coding_mcq || []), ...(data.aptitude || [])];
+                    if (paramId) q = allLists.find(item => item.id === paramId);
+                    if (!q && paramTitle) {
+                        q = allLists.find(item => item.title && (item.title.toLowerCase() === paramTitle.toLowerCase() || item.title.toLowerCase().includes(paramTitle.toLowerCase())));
+                    }
+                }
             }
-        } catch(e) {}
+        } catch(e) {
+            console.warn('Error fetching questions.json:', e);
+        }
 
         if (!q) {
             // Generate rich tailored coding problem
@@ -812,7 +848,7 @@
         }
 
         let descHtml = '<h3 style="font-size:1rem;margin:0 0 0.65rem 0;color:var(--text-main);font-weight:700;">Problem Statement</h3>';
-        descHtml += `<p style="margin-bottom:1.25rem;line-height:1.7;">${q.description}</p>`;
+        descHtml += `<div style="margin-bottom:1.25rem;line-height:1.7;color:var(--text-main);">${q.description}</div>`;
 
         if (q.examples && q.examples.length > 0) {
             descHtml += '<h3 style="font-size:1rem;margin:1.5rem 0 0.75rem 0;color:var(--text-main);font-weight:700;">Examples</h3>';
@@ -835,16 +871,29 @@
             descHtml += '</ul>';
         }
 
+        if (q.hints && q.hints.length > 0) {
+            descHtml += '<div style="margin-top:1.5rem;">';
+            descHtml += '<details style="background:var(--bg-muted, #f8fafc);border:1px solid var(--border-color);border-radius:8px;padding:0.75rem 1rem;cursor:pointer;">';
+            descHtml += '<summary style="font-weight:700;font-size:0.9rem;color:#f97316;outline:none;user-select:none;">💡 Hints & Approach Tips</summary>';
+            descHtml += '<ul style="margin:0.75rem 0 0.25rem 0;padding-left:1.25rem;color:var(--text-muted);font-size:0.85rem;line-height:1.7;">';
+            q.hints.forEach(h => { descHtml += `<li>${sanitize(h)}</li>`; });
+            descHtml += '</ul></details></div>';
+        }
+
         document.getElementById('question-description').innerHTML = descHtml;
 
         // Language Starter Templates
-        const funcName = q.title.toLowerCase().replace(/[^a-z0-9]/g, '_') || 'solution';
-        currentProblemTemplates = {
-            python: `# ${q.title} - ${q.company || 'HirePrep'}\ndef ${funcName}(nums, target=9):\n    # Write your solution below:\n    seen = {}\n    for i, num in enumerate(nums):\n        complement = target - num\n        if complement in seen:\n            return [seen[complement], i]\n        seen[num] = i\n    return []\n\n# Example test execution\n# print(${funcName}([2, 7, 11, 15], 9))\n`,
-            javascript: `// ${q.title} - ${q.company || 'HirePrep'}\nfunction ${funcName}(nums, target = 9) {\n    // Write your solution below:\n    const map = new Map();\n    for (let i = 0; i < nums.length; i++) {\n        const diff = target - nums[i];\n        if (map.has(diff)) return [map.get(diff), i];\n        map.set(nums[i], i);\n    }\n    return [];\n}\n\n// console.log(${funcName}([2, 7, 11, 15], 9));\n`,
-            java: `// ${q.title} - ${q.company || 'HirePrep'}\nimport java.util.*;\n\nclass Solution {\n    public int[] ${funcName}(int[] nums, int target) {\n        Map<Integer, Integer> map = new HashMap<>();\n        for (int i = 0; i < nums.length; i++) {\n            int diff = target - nums[i];\n            if (map.containsKey(diff)) {\n                return new int[]{map.get(diff), i};\n            }\n            map.put(nums[i], i);\n        }\n        return new int[]{};\n    }\n}\n`,
-            c_cpp: `// ${q.title} - ${q.company || 'HirePrep'}\n#include <iostream>\n#include <vector>\n#include <unordered_map>\nusing namespace std;\n\nvector<int> ${funcName}(vector<int>& nums, int target) {\n    unordered_map<int, int> seen;\n    for (int i = 0; i < nums.size(); i++) {\n        int diff = target - nums[i];\n        if (seen.find(diff) != seen.end()) {\n            return {seen[diff], i};\n        }\n        seen[nums[i]] = i;\n    }\n    return {};\n}\n`
-        };
+        if (q.templates && typeof q.templates === 'object') {
+            currentProblemTemplates = q.templates;
+        } else {
+            const funcName = q.title.toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/^_+|_+$/g, '') || 'solution';
+            currentProblemTemplates = {
+                python: `# ${q.title} - ${q.company || 'HirePrep'}\ndef ${funcName}(*args):\n    # Write your solution below:\n    pass\n\n# Example execution:\n# print(${funcName}(...))\n`,
+                javascript: `// ${q.title} - ${q.company || 'HirePrep'}\nfunction ${funcName}(...args) {\n    // Write your solution below:\n    \n}\n\n// console.log(${funcName}(...));\n`,
+                java: `// ${q.title} - ${q.company || 'HirePrep'}\nimport java.util.*;\n\nclass Solution {\n    public void ${funcName}() {\n        // Write your solution below:\n        \n    }\n}\n`,
+                c_cpp: `// ${q.title} - ${q.company || 'HirePrep'}\n#include <iostream>\n#include <vector>\n#include <string>\nusing namespace std;\n\nclass Solution {\npublic:\n    void ${funcName}() {\n        // Write your solution below:\n        \n    }\n};\n`
+            };
+        }
 
         const initialLang = document.getElementById('langSelect').value || 'python';
         const savedDraft = localStorage.getItem(`hireprep_code_${q.id}_${initialLang}`);
@@ -853,7 +902,7 @@
             const indicator = document.getElementById('autosaveIndicator');
             if (indicator) indicator.textContent = 'Draft Restored';
         } else {
-            editor.setValue(currentProblemTemplates.python, -1);
+            editor.setValue(currentProblemTemplates[initialLang] || currentProblemTemplates.python, -1);
         }
         setTimeout(() => { isInitialLoad = false; }, 200);
 

@@ -7,7 +7,9 @@ let state = { allData: null, category: 'coding', company: null, topic: null, sea
 document.addEventListener('DOMContentLoaded', async () => {
     const loadingEl = document.getElementById('loading-indicator');
     try {
-        const response = await fetch('../../data/questions.json');
+        let response = await fetch('../../data/questions.json');
+        if (!response.ok) response = await fetch('/data/questions.json');
+        if (!response.ok) response = await fetch('/api/questions');
         if (!response.ok) throw new Error("Failed to fetch questions");
         state.allData = await response.json();
         if (loadingEl) loadingEl.style.display = 'none';
@@ -190,7 +192,7 @@ function renderQuestions() {
         card.addEventListener('click', () => {
             const qType = (q.type || state.category).toLowerCase();
             const baseUrl = (qType === 'coding mcq' || qType === 'coding_mcq' || qType === 'mcq' || qType === 'aptitude') ? 'mcq-detail.html' : 'question-detail.html';
-            const detailUrl = `${baseUrl}?id=${encodeURIComponent(q.id)}&type=${encodeURIComponent(q.type || state.category)}`;
+            const detailUrl = `${baseUrl}?id=${encodeURIComponent(q.id)}&type=${encodeURIComponent(q.type || state.category)}&title=${encodeURIComponent(q.title || '')}&company=${encodeURIComponent(q.company || '')}&difficulty=${encodeURIComponent(q.difficulty || '')}`;
             window.location.href = detailUrl;
         });
 

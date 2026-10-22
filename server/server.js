@@ -117,6 +117,27 @@ app.use('/api/admin', require('./routes/admin'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/companies', require('./routes/companies'));
 
+// Questions API endpoint (Full real database support)
+app.get('/api/questions', (req, res) => {
+    try {
+        const questionsData = require('../data/questions.json');
+        const qType = req.query.type;
+        const qId = req.query.id;
+        if (qId) {
+            const all = [...(questionsData.coding || []), ...(questionsData.coding_mcq || []), ...(questionsData.aptitude || [])];
+            const found = all.find(q => q.id === qId);
+            if (found) return res.json({ success: true, question: found });
+            return res.status(404).json({ success: false, message: 'Question not found' });
+        }
+        if (qType && questionsData[qType]) {
+            return res.json({ success: true, count: questionsData[qType].length, questions: questionsData[qType] });
+        }
+        res.json({ success: true, ...questionsData });
+    } catch (e) {
+        res.status(500).json({ success: false, message: 'Failed to load questions database.' });
+    }
+});
+
 // Resume routes (new)
 try {
     app.use('/api/resume', require('./routes/resume'));
