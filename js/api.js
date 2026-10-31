@@ -242,6 +242,17 @@ const MockAPI = {
         if (endpoint.includes('/notifications/unread-count')) return { count: 0 };
         if (endpoint.includes('/notifications')) return { notifications: [] };
 
+        // Code execution fallback
+        if (endpoint.includes('/execute')) {
+            return {
+                success: false,
+                status: 'Connection Error',
+                error: 'Execution backend is unreachable. Please verify server is running on http://localhost:5000.',
+                line: 1,
+                message: 'Judge connection error.'
+            };
+        }
+
         return { success: true, message: 'Clean response' };
     },
 

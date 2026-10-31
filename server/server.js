@@ -116,10 +116,12 @@ app.use('/api/preparation', require('./routes/preparation'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/companies', require('./routes/companies'));
+app.use('/api/execute', require('./routes/execute'));
 
 // Questions API endpoint (Full real database support)
 app.get('/api/questions', (req, res) => {
     try {
+        delete require.cache[require.resolve('../data/questions.json')];
         const questionsData = require('../data/questions.json');
         const qType = req.query.type;
         const qId = req.query.id;

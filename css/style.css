@@ -35,10 +35,10 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Inter', sans-serif;
 }
 
 body {
+    font-family: 'Inter', sans-serif;
     background-color: var(--bg-color);
     color: var(--text-main);
     min-height: 100vh;
@@ -1291,7 +1291,7 @@ a.btn {
 /* Form inputs */
 [data-theme="dark"] input,
 [data-theme="dark"] select,
-[data-theme="dark"] textarea {
+[data-theme="dark"] textarea:not(.ace_text-input) {
     background: var(--input-bg);
     color: var(--text-main);
     border-color: var(--border-color);
@@ -1299,7 +1299,7 @@ a.btn {
 
 [data-theme="dark"] input:focus,
 [data-theme="dark"] select:focus,
-[data-theme="dark"] textarea:focus {
+[data-theme="dark"] textarea:not(.ace_text-input):focus {
     border-color: var(--primary);
     box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
 }
@@ -1406,16 +1406,17 @@ a.btn {
 }
 
 /* Force dark mode input styling even when inline style is present */
+/* Exclude Ace Editor's internal textarea to prevent cursor/selection breakage */
 [data-theme="dark"] input,
 [data-theme="dark"] select,
-[data-theme="dark"] textarea {
+[data-theme="dark"] textarea:not(.ace_text-input) {
     background: #0f1a2e !important;
     color: #f8fafc !important;
     border-color: #1e3048 !important;
 }
 
 [data-theme="dark"] input::placeholder,
-[data-theme="dark"] textarea::placeholder {
+[data-theme="dark"] textarea:not(.ace_text-input)::placeholder {
     color: #64748b !important;
 }
 
@@ -1535,7 +1536,7 @@ a.btn {
         min-width: 44px;
     }
 
-    input, select, textarea {
+    input, select, textarea:not(.ace_text-input) {
         min-height: 44px;
         font-size: 1rem; /* 16px prevents iOS zoom */
     }

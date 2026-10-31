@@ -32,11 +32,11 @@ function showSetup() {
                 <h1 style="font-size:1.75rem;margin-bottom:0.5rem;">Coding MCQ Practice</h1>
                 <p style="color:var(--text-muted);">Test your knowledge across Data Structures, Algorithms, DBMS, OS, Networks, and OOPs.</p>
             </div>
-            <div style="background:white;border:1px solid var(--border-color);border-radius:12px;padding:1.5rem;margin-bottom:1.5rem;">
-                <h3 style="margin:0 0 1rem 0;font-size:1rem;">Configure Quiz</h3>
+            <div style="background:var(--card-bg, #ffffff);border:1px solid var(--border-color, #e2e8f0);border-radius:14px;padding:1.75rem;margin-bottom:1.5rem;box-shadow:0 4px 12px rgba(0,0,0,0.03);color:var(--text-main);">
+                <h3 style="margin:0 0 1.25rem 0;font-size:1.05rem;color:var(--text-main);font-weight:700;">Configure Quiz</h3>
                 <div style="margin-bottom:1rem;">
-                    <label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.4rem;">Topic Focus</label>
-                    <select id="quizTopic" style="width:100%;padding:0.6rem;border:1px solid var(--border-color);border-radius:8px;">
+                    <label style="font-size:0.82rem;font-weight:600;display:block;margin-bottom:0.45rem;color:var(--text-main);">Topic Focus</label>
+                    <select id="quizTopic" style="width:100%;padding:0.65rem 0.85rem;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-muted);color:var(--text-main);font-size:0.9rem;outline:none;">
                         <option value="Mixed">Mixed (All Topics)</option>
                         <option value="Data Structures">Data Structures</option>
                         <option value="Algorithms">Algorithms</option>
@@ -47,27 +47,27 @@ function showSetup() {
                     </select>
                 </div>
                 <div style="margin-bottom:1rem;">
-                    <label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.4rem;">Number of Questions</label>
-                    <select id="quizCount" style="width:100%;padding:0.6rem;border:1px solid var(--border-color);border-radius:8px;">
+                    <label style="font-size:0.82rem;font-weight:600;display:block;margin-bottom:0.45rem;color:var(--text-main);">Number of Questions</label>
+                    <select id="quizCount" style="width:100%;padding:0.65rem 0.85rem;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-muted);color:var(--text-main);font-size:0.9rem;outline:none;">
                         <option value="5">5 Questions (Quick)</option>
                         <option value="10" ${isLogged ? 'selected' : ''}>10 Questions (Standard)</option>
                         <option value="20">20 Questions (Extended)</option>
                     </select>
                 </div>
                 <div style="margin-bottom:1.5rem;">
-                    <label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:0.4rem;">Time per Question</label>
-                    <select id="quizTime" style="width:100%;padding:0.6rem;border:1px solid var(--border-color);border-radius:8px;">
+                    <label style="font-size:0.82rem;font-weight:600;display:block;margin-bottom:0.45rem;color:var(--text-main);">Time per Question</label>
+                    <select id="quizTime" style="width:100%;padding:0.65rem 0.85rem;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-muted);color:var(--text-main);font-size:0.9rem;outline:none;">
                         <option value="60" selected>1 minute</option>
                         <option value="120">2 minutes</option>
                     </select>
                 </div>
-                <button onclick="startQuiz()" class="btn btn-primary" style="width:100%;padding:0.85rem;font-size:1rem;">▶ Start Practice</button>
+                <button onclick="startQuiz()" class="btn btn-primary" style="width:100%;padding:0.85rem;font-size:1rem;font-weight:700;">▶ Start Practice</button>
             </div>
             ${history.length > 0 ? `
-            <div style="background:white;border:1px solid var(--border-color);border-radius:12px;padding:1.25rem;">
-                <h3 style="margin:0 0 0.75rem 0;font-size:1rem;">📋 Performance History</h3>
-                ${history.slice(-5).reverse().map(t => `<div style="display:flex;justify-content:space-between;align-items:center;padding:0.5rem 0;border-bottom:1px solid var(--border-color);">
-                    <div><span style="font-weight:600;">${t.topic}</span> <span style="font-size:0.75rem;color:var(--text-muted);">· ${t.count} Qs</span></div>
+            <div style="background:var(--card-bg, #ffffff);border:1px solid var(--border-color, #e2e8f0);border-radius:14px;padding:1.5rem;color:var(--text-main);box-shadow:0 4px 12px rgba(0,0,0,0.03);">
+                <h3 style="margin:0 0 1rem 0;font-size:1.05rem;color:var(--text-main);font-weight:700;">📋 Performance History</h3>
+                ${history.slice(-5).reverse().map(t => `<div style="display:flex;justify-content:space-between;align-items:center;padding:0.65rem 0;border-bottom:1px solid var(--border-color);">
+                    <div><span style="font-weight:600;color:var(--text-main);">${t.topic}</span> <span style="font-size:0.75rem;color:var(--text-muted);">· ${t.count} Qs</span></div>
                     <div><span style="font-weight:700;color:${t.score >= 70 ? '#10b981' : t.score >= 40 ? '#d97706' : '#ef4444'};">${t.score}%</span> <span style="font-size:0.7rem;color:var(--text-muted);margin-left:0.5rem;">${new Date(t.date).toLocaleDateString()}</span></div>
                 </div>`).join('')}
             </div>` : ''}
@@ -83,7 +83,9 @@ async function startQuiz() {
     container().innerHTML = '<div style="text-align:center;padding:4rem;"><div style="font-size:2rem;animation:pulse 2s infinite;">⏳</div>Loading Questions...</div>';
 
     try {
-        const res = await fetch('../../data/questions.json');
+        let res = await fetch('../../data/questions.json');
+        if (!res.ok) res = await fetch('/data/questions.json');
+        if (!res.ok) res = await fetch('/api/questions');
         const data = await res.json();
         let pool = data.coding_mcq || [];
         
@@ -189,14 +191,14 @@ function renderQuiz() {
             ${!isReviewMode ? `
             <div class="timer-bar">
                 <div style="display:flex;align-items:center;gap:0.75rem;">
-                    <span style="font-weight:600;font-size:0.9rem;">Question ${current + 1}/${questions.length}</span>
-                    <span style="font-size:0.75rem;padding:0.15rem 0.5rem;border-radius:999px;background:var(--bg-muted);">${q.topic}</span>
+                    <span style="font-weight:700;font-size:0.95rem;color:var(--text-main);">Question ${current + 1}/${questions.length}</span>
+                    <span style="font-size:0.75rem;font-weight:600;padding:0.2rem 0.6rem;border-radius:6px;background:var(--bg-muted);color:var(--text-muted);border:1px solid var(--border-color);">${q.topic}</span>
                 </div>
                 <div class="timer-display" id="timerDisplay">--:--</div>
             </div>` : `<div style="margin-bottom:1rem;text-align:right;"><button class="btn btn-outline" onclick="showResults()">Back to Results</button></div>`}
             
             <div class="question-card">
-                <h3>${q.title}</h3>
+                <h3>${typeof sanitize === 'function' ? sanitize(q.title) : q.title}</h3>
                 ${codeBlock}
                 <div class="option-list">
                     ${optionsHtml}
