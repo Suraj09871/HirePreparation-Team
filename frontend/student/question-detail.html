@@ -1394,37 +1394,6 @@
     }
     window.submitCode = submitCode;
 
-        const sub = {
-            id: Date.now(),
-            questionId: activeQuestion?.id || 'q_' + Date.now(),
-            questionTitle: activeQuestion?.title || 'Coding Problem',
-            lang: lang.toUpperCase(),
-            status,
-            passed,
-            total,
-            runtime: execRes.runtime || '18ms',
-            memory: execRes.memory || '14.5 MB',
-            code,
-            timestamp: new Date().toISOString()
-        };
-
-        submissions.unshift(sub);
-        try {
-            localStorage.setItem('hs_submissions', JSON.stringify(submissions.slice(0, 50)));
-        } catch(e) {}
-
-        window.lastPassedCount = passed;
-        window.lastTestResults = execRes.results;
-        updateSubBadge();
-        renderTestCasesUI(passed, execRes.results);
-        renderSubmissionsUI();
-
-        if (typeof showToast === 'function') {
-            showToast(status === 'Accepted' ? '🎉 Solution Accepted!' : `❌ Submission Failed (${status})`, status === 'Accepted' ? 'success' : 'error');
-        }
-    }
-    window.submitCode = submitCode;
-
     function renderTestCasesUI(passedCount, resultsArray = null) {
         const list = document.getElementById('testCasesList');
         if (!list) return;
