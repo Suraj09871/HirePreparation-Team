@@ -7,17 +7,52 @@ const { runJava } = require('../utils/java_runner');
 const { runCpp } = require('../utils/cpp_runner');
 const { diagnose } = require('../utils/diagnostics');
 
+let resolvedPythonCmd = null;
+function getPythonCommand() {
+    if (resolvedPythonCmd) return resolvedPythonCmd;
+    if (process.platform === 'win32') {
+        resolvedPythonCmd = 'python';
+        return 'python';
+    }
+    try {
+        const { execSync } = require('child_process');
+        execSync('python3 --version', { stdio: 'ignore' });
+        resolvedPythonCmd = 'python3';
+    } catch (e) {
+        resolvedPythonCmd = 'python';
+    }
+    return resolvedPythonCmd;
+}
+
 /**
  * Execute Python solution via isolated runner process
  */
 function runPython(code, testCases, functionName) {
     return new Promise((resolve) => {
         const runnerPath = path.join(__dirname, '../utils/python_runner.py');
-        const proc = spawn('python', [runnerPath]);
+        const pythonCmd = getPythonCommand();
+        const proc = spawn(pythonCmd, [runnerPath]);
 
         let stdout = '';
         let stderr = '';
         let isTimedOut = false;
+
+        proc.on('error', (err) => {
+            clearTimeout(timer);
+            return resolve({
+                success: false,
+                status: 'Server Environment Notice',
+                errorType: 'EnvironmentError',
+                error: `Python interpreter could not be started: ${err.message}`,
+                line: 1,
+                message: 'Hosting Server Setup Needed: Python is not available on this server.',
+                reason: 'The hosting server runtime does not have Python installed.',
+                whatToDo: [
+                    'If using Render: Switch Environment to Docker to use the repository Dockerfile.',
+                    'The repository Dockerfile automatically includes Python 3, Java, and C++.'
+                ]
+            });
+        });
 
         const timer = setTimeout(() => {
             isTimedOut = true;

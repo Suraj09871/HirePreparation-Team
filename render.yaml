@@ -6,7 +6,7 @@ services:
     plan: free
     region: oregon
     rootDir: .
-    buildCommand: npm install && npm --prefix server install
+    buildCommand: node scripts/setup-jdk.js && npm install && npm --prefix server install
     startCommand: node server/server.js
     healthCheckPath: /api/health
     envVars:

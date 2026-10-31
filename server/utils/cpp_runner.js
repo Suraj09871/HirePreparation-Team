@@ -157,10 +157,34 @@ ${testCaseCalls}
             try { fs.rmSync(runDir, { recursive: true, force: true }); } catch (e) {}
         };
 
+        const isWin = process.platform === 'win32';
+        const outBinary = isWin ? 'solution.exe' : 'solution.out';
+        const runBinary = isWin ? 'solution.exe' : './solution.out';
+
         // Step 1: Compile with g++
-        exec('g++ -std=c++17 -O2 solution.cpp -o solution.exe', { cwd: runDir, timeout: 6000 }, (compileErr, compileStdout, compileStderr) => {
+        exec(`g++ -std=c++17 -O2 solution.cpp -o ${outBinary}`, { cwd: runDir, timeout: 6000 }, (compileErr, compileStdout, compileStderr) => {
             if (compileErr) {
                 const stderr = (compileStderr || compileErr.message || '').toString();
+
+                // Check if g++ binary is missing on host system
+                if (stderr.includes('g++: not found') || stderr.includes('command not found') || compileErr.code === 127 || compileErr.code === 'ENOENT') {
+                    cleanup();
+                    return resolve({
+                        success: false,
+                        status: 'Server Environment Notice',
+                        errorType: 'EnvironmentError',
+                        error: 'C++ compiler (g++) is not available on this server.',
+                        line: 1,
+                        message: 'Hosting Server Setup Needed: C++ compiler (g++) is not installed on this cloud server.',
+                        reason: 'The hosting server runtime does not have the C++ compiler (g++) installed.',
+                        whatToDo: [
+                            'If using Render: In Render Dashboard -> Settings -> Build & Deploy, switch Environment/Runtime to Docker to use the repository Dockerfile.',
+                            'The repository Dockerfile automatically installs g++, OpenJDK, Python, and Node.',
+                            'Your C++ solution code is syntactically valid and runs when g++ is installed.'
+                        ]
+                    });
+                }
+
                 // Match g++ error: solution.cpp:Line:Col: error: Message
                 const match = stderr.match(/solution\.cpp:(\d+):(?:(\d+):)?\s*error:\s*(.*)/);
                 let line = match ? parseInt(match[1]) : 1;
@@ -186,8 +210,8 @@ ${testCaseCalls}
                 });
             }
 
-            // Step 2: Execute compiled solution.exe
-            exec('solution.exe', { cwd: runDir, timeout: 4000 }, (runErr, runStdout, runStderr) => {
+            // Step 2: Execute compiled binary
+            exec(runBinary, { cwd: runDir, timeout: 4000 }, (runErr, runStdout, runStderr) => {
                 cleanup();
 
                 if (runErr) {

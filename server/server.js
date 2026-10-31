@@ -7,6 +7,14 @@ const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
+// Configure compiler paths for live code evaluation (portable JDK support)
+const localJdkDir = path.join(__dirname, 'bin/jdk');
+const localJdkBin = path.join(localJdkDir, 'bin');
+if (require('fs').existsSync(localJdkBin)) {
+    process.env.PATH = `${localJdkBin}${path.delimiter}${process.env.PATH}`;
+    process.env.JAVA_HOME = localJdkDir;
+}
+
 const connectDB = require('./config/db');
 
 const app = express();

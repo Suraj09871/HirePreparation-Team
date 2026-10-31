@@ -27,6 +27,20 @@ function diagnose({ status, errorType = '', error = '', line = 1, lineText = '',
     let reason = '';
     let whatToDo = [];
 
+    // ── 0. SERVER ENVIRONMENT / COMPILER NOT INSTALLED ──
+    if (status === 'Server Environment Notice' || errorType === 'EnvironmentError' || errLow.includes('javac: not found') || errLow.includes('g++: not found')) {
+        const isJava = errLow.includes('javac') || lang === 'java';
+        const isCpp = errLow.includes('g++') || lang === 'cpp' || lang === 'c_cpp';
+        const missingTool = isJava ? 'Java Development Kit (javac)' : isCpp ? 'C++ Compiler (g++)' : 'Compiler';
+        reason = `The cloud hosting server does not have ${missingTool} installed in its environment.`;
+        whatToDo = [
+            `If hosted on Render: In the Render Dashboard, go to your Web Service Settings and switch the 'Environment / Runtime' from 'Node' to 'Docker' using the repository Dockerfile.`,
+            `Alternatively, trigger a rebuild on Render so the automated JDK setup script installs OpenJDK 17.`,
+            `Your solution code itself is syntactically valid and runs successfully once the compiler is present on the server.`
+        ];
+        return { reason, whatToDo, codeFrame: null };
+    }
+
     // ── 1. TIME LIMIT EXCEEDED ──
     if (status === 'Time Limit Exceeded' || errLow.includes('time limit') || errLow.includes('timed out')) {
         reason = `Your solution exceeded the execution time limit (4.0 seconds). This typically indicates an infinite loop or a non-terminating recursion.`;

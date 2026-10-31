@@ -4,6 +4,23 @@ const { exec } = require('child_process');
 
 const JAVA_RUNNER_TEMPLATE = path.join(__dirname, 'JavaRunner.java');
 
+function getJavaBinaries() {
+    if (process.env.JAVA_HOME) {
+        const javacCandidate = path.join(process.env.JAVA_HOME, 'bin', process.platform === 'win32' ? 'javac.exe' : 'javac');
+        const javaCandidate = path.join(process.env.JAVA_HOME, 'bin', process.platform === 'win32' ? 'java.exe' : 'java');
+        if (fs.existsSync(javacCandidate)) {
+            return { javac: `"${javacCandidate}"`, java: `"${javaCandidate}"` };
+        }
+    }
+    const localJdk = path.join(__dirname, '../bin/jdk');
+    const localJavac = path.join(localJdk, 'bin', process.platform === 'win32' ? 'javac.exe' : 'javac');
+    const localJava = path.join(localJdk, 'bin', process.platform === 'win32' ? 'java.exe' : 'java');
+    if (fs.existsSync(localJavac)) {
+        return { javac: `"${localJavac}"`, java: `"${localJava}"` };
+    }
+    return { javac: 'javac', java: 'java' };
+}
+
 function runJava(code, testCases, functionName) {
     return new Promise((resolve) => {
         const tmpBase = path.join(__dirname, '../tmp');
@@ -50,10 +67,32 @@ function runJava(code, testCases, functionName) {
             } catch (e) {}
         };
 
+        const { javac, java } = getJavaBinaries();
+
         // Step 1: Compile with javac
-        exec('javac -encoding UTF-8 Solution.java JavaRunner.java', { cwd: runDir, timeout: 6000 }, (compileErr, compileStdout, compileStderr) => {
+        exec(`${javac} -encoding UTF-8 Solution.java JavaRunner.java`, { cwd: runDir, timeout: 7000 }, (compileErr, compileStdout, compileStderr) => {
             if (compileErr) {
                 const stderr = (compileStderr || compileErr.message || '').toString();
+
+                // Check if javac binary is missing on host system
+                if (stderr.includes('javac: not found') || stderr.includes('command not found') || compileErr.code === 127 || compileErr.code === 'ENOENT') {
+                    cleanup();
+                    return resolve({
+                        success: false,
+                        status: 'Server Environment Notice',
+                        errorType: 'EnvironmentError',
+                        error: 'Java compiler (javac) is not available on this server.',
+                        line: 1,
+                        message: 'Hosting Server Setup Needed: Java JDK (javac) is not installed on this cloud server.',
+                        reason: 'The hosting server runtime does not have the Java Development Kit (JDK) installed.',
+                        whatToDo: [
+                            'If using Render: In Render Dashboard -> Settings -> Build & Deploy, change Environment/Runtime to Docker to use the repository Dockerfile.',
+                            'Alternatively, trigger a rebuild so the automated JDK installer script installs OpenJDK 17.',
+                            'Your Java code is completely valid and runs when JDK is installed on the host.'
+                        ]
+                    });
+                }
+
                 const match = stderr.match(/Solution\.java:(\d+):(?:\s*error:\s*(.*))?/);
                 const rawLine = match ? parseInt(match[1]) : 1;
                 const line = Math.max(1, rawLine - lineOffset);
@@ -73,7 +112,7 @@ function runJava(code, testCases, functionName) {
             }
 
             // Step 2: Execute with java
-            exec('java -Xmx256m JavaRunner', { cwd: runDir, timeout: 5000 }, (runErr, runStdout, runStderr) => {
+            exec(`${java} -Xmx256m JavaRunner`, { cwd: runDir, timeout: 5000 }, (runErr, runStdout, runStderr) => {
                 cleanup();
 
                 if (runStdout && runStdout.trim()) {

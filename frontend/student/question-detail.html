@@ -1073,6 +1073,35 @@
     function renderLeetCodeOutput(res, lang, isSubmission = false) {
         if (!res) return '';
 
+        // 0. Server Environment Notice (Missing Compiler on Host)
+        if (res.status === 'Server Environment Notice' || res.errorType === 'EnvironmentError') {
+            const reason = res.reason || res.message || 'The required compiler is not installed on this cloud server.';
+            const whatToDo = res.whatToDo || [
+                'In Render Dashboard: Go to Settings -> Environment and change to Docker (using the included Dockerfile).',
+                'Your code syntax is completely valid.'
+            ];
+            return `
+                <div class="lc-card" style="border-color: rgba(245, 158, 11, 0.4);">
+                    <div class="lc-header">
+                        <span class="lc-badge" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3);">⚙️ Server Environment Notice</span>
+                        <span class="lc-meta">${lang.toUpperCase()} Judge Engine</span>
+                    </div>
+
+                    <div class="lc-section-box" style="border-left: 3px solid #f59e0b;">
+                        <div class="lc-title" style="color: #fbbf24;">🔍 Notice:</div>
+                        <div class="lc-desc">${sanitize(reason)}</div>
+                    </div>
+
+                    <div class="lc-section-box" style="border-left: 3px solid #38bdf8;">
+                        <div class="lc-title" style="color: #38bdf8;">💡 How to enable ${lang.toUpperCase()} on your server:</div>
+                        <ul class="lc-steps">
+                            ${whatToDo.map(step => `<li>${sanitize(step)}</li>`).join('')}
+                        </ul>
+                    </div>
+                </div>
+            `;
+        }
+
         // 1. Compile Error / Runtime Error
         if (res.status === 'Compile Error' || res.status === 'Runtime Error' || res.errorType || (res.line && !res.success && (!res.results || res.results.length === 0))) {
             const errLine = res.line || 1;
@@ -1247,6 +1276,17 @@
         // Fill in diagnostics if missing
         execRes = diagnoseClientSide(execRes, code, lang);
 
+        // Server Environment Notice (e.g. missing compiler on cloud host)
+        if (execRes.status === 'Server Environment Notice' || execRes.errorType === 'EnvironmentError') {
+            clearEditorErrors();
+            output.innerHTML = renderLeetCodeOutput(execRes, lang, false);
+            output.className = 'output-panel';
+            if (typeof showToast === 'function') {
+                showToast(`⚙️ Server Notice: Compiler not installed on host`, 'warning');
+            }
+            return;
+        }
+
         // Handle error with exact line number
         if (execRes.status === 'Compile Error' || execRes.status === 'Runtime Error' || execRes.errorType || (execRes.line && !execRes.success && (!execRes.results || execRes.results.length === 0))) {
             const errLine = execRes.line || 1;
@@ -1341,6 +1381,16 @@
         if (!execRes) return;
 
         execRes = diagnoseClientSide(execRes, code, lang);
+
+        if (execRes.status === 'Server Environment Notice' || execRes.errorType === 'EnvironmentError') {
+            clearEditorErrors();
+            output.innerHTML = renderLeetCodeOutput(execRes, lang, true);
+            output.className = 'output-panel';
+            if (typeof showToast === 'function') {
+                showToast(`⚙️ Server Notice: Compiler not installed on host`, 'warning');
+            }
+            return;
+        }
 
         const total = testCases.length;
         let passed = 0;

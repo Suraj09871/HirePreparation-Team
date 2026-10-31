@@ -1,0 +1,10 @@
+node_modules
+server/node_modules
+server/tmp
+server/bin/jdk
+.git
+.github
+.env
+server/.env
+scratch
+*.log
