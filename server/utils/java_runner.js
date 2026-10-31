@@ -51,7 +51,22 @@ function runJava(code, testCases, functionName) {
         }
 
         fs.writeFileSync(path.join(runDir, 'Solution.java'), normalizedCode);
-        fs.copyFileSync(JAVA_RUNNER_TEMPLATE, path.join(runDir, 'JavaRunner.java'));
+
+        // Optimize compile time: copy precompiled JavaRunner classes if available
+        const utilsDir = path.join(__dirname);
+        const precompiledClasses = fs.existsSync(utilsDir)
+            ? fs.readdirSync(utilsDir).filter(f => f.startsWith('JavaRunner') && f.endsWith('.class'))
+            : [];
+        let compileTarget = 'Solution.java JavaRunner.java';
+
+        if (precompiledClasses.length > 0) {
+            precompiledClasses.forEach(cf => {
+                try { fs.copyFileSync(path.join(utilsDir, cf), path.join(runDir, cf)); } catch (e) {}
+            });
+            compileTarget = 'Solution.java';
+        } else {
+            fs.copyFileSync(JAVA_RUNNER_TEMPLATE, path.join(runDir, 'JavaRunner.java'));
+        }
 
         // Format test_cases.txt
         const tcLines = (testCases || []).map(tc => {
@@ -69,8 +84,8 @@ function runJava(code, testCases, functionName) {
 
         const { javac, java } = getJavaBinaries();
 
-        // Step 1: Compile with javac
-        exec(`${javac} -encoding UTF-8 Solution.java JavaRunner.java`, { cwd: runDir, timeout: 7000 }, (compileErr, compileStdout, compileStderr) => {
+        // Step 1: Compile with javac (20s timeout, lightweight memory for cloud shared CPU)
+        exec(`${javac} -J-Xmx128m -encoding UTF-8 ${compileTarget}`, { cwd: runDir, timeout: 20000 }, (compileErr, compileStdout, compileStderr) => {
             if (compileErr) {
                 const stderr = (compileStderr || compileErr.message || '').toString();
 

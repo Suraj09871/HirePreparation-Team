@@ -53,6 +53,14 @@ function main() {
             // Ensure execute permissions on bin files
             try { execSync(`chmod +x "${targetDir}/bin/"*`, { stdio: 'ignore' }); } catch (e) {}
             console.log('[JDK Setup] OpenJDK 17 installed successfully into server/bin/jdk!');
+
+            try {
+                const utilsDir = path.join(__dirname, '../server/utils');
+                execSync(`"${javacBin}" -encoding UTF-8 JavaRunner.java`, { cwd: utilsDir, stdio: 'inherit' });
+                console.log('[JDK Setup] Pre-compiled JavaRunner harness successfully.');
+            } catch (e) {
+                console.warn('[JDK Setup] Notice on harness pre-compile:', e.message);
+            }
         } else {
             console.warn('[JDK Setup] Warning: javac binary not found after extraction.');
         }

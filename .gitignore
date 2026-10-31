@@ -32,3 +32,4 @@ server/uploads/*
 # Temporary judge execution folders
 server/tmp/
 *.class
+!server/utils/JavaRunner*.class

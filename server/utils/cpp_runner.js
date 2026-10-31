@@ -161,8 +161,8 @@ ${testCaseCalls}
         const outBinary = isWin ? 'solution.exe' : 'solution.out';
         const runBinary = isWin ? 'solution.exe' : './solution.out';
 
-        // Step 1: Compile with g++
-        exec(`g++ -std=c++17 -O2 solution.cpp -o ${outBinary}`, { cwd: runDir, timeout: 6000 }, (compileErr, compileStdout, compileStderr) => {
+        // Step 1: Compile with g++ (15s timeout for cloud environments with shared CPU)
+        exec(`g++ -std=c++17 -O2 solution.cpp -o ${outBinary}`, { cwd: runDir, timeout: 15000 }, (compileErr, compileStdout, compileStderr) => {
             if (compileErr) {
                 const stderr = (compileStderr || compileErr.message || '').toString();
 

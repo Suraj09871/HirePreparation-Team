@@ -15,6 +15,15 @@ if (require('fs').existsSync(localJdkBin)) {
     process.env.JAVA_HOME = localJdkDir;
 }
 
+// Precompile JavaRunner harness if missing
+try {
+    const runnerClass = path.join(__dirname, 'utils/JavaRunner.class');
+    if (!require('fs').existsSync(runnerClass)) {
+        const { exec } = require('child_process');
+        exec('javac -encoding UTF-8 JavaRunner.java', { cwd: path.join(__dirname, 'utils'), timeout: 30000 }, () => {});
+    }
+} catch (e) {}
+
 const connectDB = require('./config/db');
 
 const app = express();
