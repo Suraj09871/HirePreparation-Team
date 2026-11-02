@@ -5,11 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Resume Builder - HirePrep</title>
     <link rel="stylesheet" href="../../css/style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;1,6..72,400&family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
     <!-- PDF.js for client-side PDF resume parsing -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <!-- Mammoth for DOCX resume parsing -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+    <!-- html2pdf.js for clean single A4 PDF download -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body style="background: var(--bg-color);">
     <nav class="navbar">
@@ -117,27 +119,102 @@
                 
                 <!-- Choose Template -->
                 <div style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem;">
-                    <h3 style="font-size: 1.125rem; margin-bottom: 1.25rem; font-weight: 600; color: var(--text-main);">Choose Template</h3>
-                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem;">
-                        <div class="template-option" data-tmpl="modern" style="border: 2px solid var(--primary); border-radius: 8px; padding: 0.75rem; position: relative; cursor: pointer; text-align: center; background: var(--bg-muted);">
-                            <div class="tmpl-check" style="position: absolute; top: -6px; right: -6px; background: var(--primary); color: white; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.7rem;">✓</div>
-                            <div style="height: 44px; background: linear-gradient(to right, #1e293b 35%, #ffffff 35%); border: 1px solid #cbd5e1; border-radius: 4px; margin-bottom: 0.4rem;"></div>
-                            <div class="tmpl-label" style="font-size: 0.75rem; font-weight: 600; color: var(--text-main);">Modern</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+                        <div>
+                            <h3 style="font-size: 1.125rem; margin: 0 0 0.25rem; font-weight: 600; color: var(--text-main);">Choose Resume Template</h3>
+                            <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted);">Includes industry-standard Overleaf LaTeX & top ATS formats.</p>
                         </div>
+                        <span style="font-size: 0.75rem; background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); padding: 0.2rem 0.5rem; border-radius: 999px; font-weight: 600;">8 Styles Available</span>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem;">
+                        <!-- 1. Jake's Overleaf (CS / Tech ATS Standard) -->
+                        <div class="template-option" data-tmpl="jakes" style="border: 2px solid var(--primary); border-radius: 8px; padding: 0.75rem; position: relative; cursor: pointer; text-align: center; background: var(--bg-muted);">
+                            <div class="tmpl-check" style="position: absolute; top: -6px; right: -6px; background: var(--primary); color: white; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.7rem;">✓</div>
+                            <div style="height: 44px; background: #ffffff; border: 1px solid #94a3b8; border-radius: 4px; margin-bottom: 0.4rem; padding: 3px 4px; display: flex; flex-direction: column; justify-content: space-between;">
+                                <div style="height: 4px; background: #0f172a; width: 60%; margin: 0 auto;"></div>
+                                <div style="height: 1px; background: #0f172a; width: 100%;"></div>
+                                <div style="height: 3px; background: #cbd5e1; width: 90%;"></div>
+                                <div style="height: 1px; background: #0f172a; width: 100%;"></div>
+                                <div style="height: 3px; background: #cbd5e1; width: 85%;"></div>
+                            </div>
+                            <div class="tmpl-label" style="font-size: 0.75rem; font-weight: 700; color: var(--text-main);">Jake's Overleaf ⭐</div>
+                            <div style="font-size: 0.65rem; color: #10b981; font-weight: 600;">CS Standard</div>
+                        </div>
+
+                        <!-- 2. Deedy CV (Two-Column LaTeX) -->
+                        <div class="template-option" data-tmpl="deedy" style="border: 1px solid var(--border-color); border-radius: 8px; padding: 0.75rem; position: relative; cursor: pointer; text-align: center; background: var(--bg-muted);">
+                            <div class="tmpl-check" style="position: absolute; top: -6px; right: -6px; background: var(--primary); color: white; width: 18px; height: 18px; border-radius: 50%; display: none; align-items: center; justify-content: center; font-size: 0.7rem;">✓</div>
+                            <div style="height: 44px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 4px; margin-bottom: 0.4rem; display: flex;">
+                                <div style="width: 35%; background: #f1f5f9; border-right: 1px solid #cbd5e1; padding: 3px;">
+                                    <div style="height: 3px; background: #64748b; width: 70%; margin-bottom: 3px;"></div>
+                                    <div style="height: 2px; background: #94a3b8; width: 90%;"></div>
+                                </div>
+                                <div style="width: 65%; padding: 3px;">
+                                    <div style="height: 4px; background: #2563eb; width: 50%; margin-bottom: 3px;"></div>
+                                    <div style="height: 2px; background: #cbd5e1; width: 95%;"></div>
+                                </div>
+                            </div>
+                            <div class="tmpl-label" style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted);">Deedy CV</div>
+                            <div style="font-size: 0.65rem; color: var(--text-muted);">2-Column Tech</div>
+                        </div>
+
+                        <!-- 3. Ivy League Academic LaTeX -->
+                        <div class="template-option" data-tmpl="ivy_league" style="border: 1px solid var(--border-color); border-radius: 8px; padding: 0.75rem; position: relative; cursor: pointer; text-align: center; background: var(--bg-muted);">
+                            <div class="tmpl-check" style="position: absolute; top: -6px; right: -6px; background: var(--primary); color: white; width: 18px; height: 18px; border-radius: 50%; display: none; align-items: center; justify-content: center; font-size: 0.7rem;">✓</div>
+                            <div style="height: 44px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 4px; margin-bottom: 0.4rem; padding: 3px 5px; display: flex; flex-direction: column; justify-content: space-around;">
+                                <div style="height: 3px; background: #0f172a; width: 50%; margin: 0 auto;"></div>
+                                <div style="height: 2px; border-top: 1px solid #0f172a; border-bottom: 1px solid #0f172a;"></div>
+                                <div style="height: 3px; background: #64748b; width: 80%;"></div>
+                                <div style="height: 2px; background: #cbd5e1; width: 95%;"></div>
+                            </div>
+                            <div class="tmpl-label" style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted);">Ivy League</div>
+                            <div style="font-size: 0.65rem; color: var(--text-muted);">Academic Classic</div>
+                        </div>
+
+                        <!-- 4. Tech Minimalist FAANG -->
+                        <div class="template-option" data-tmpl="tech_minimalist" style="border: 1px solid var(--border-color); border-radius: 8px; padding: 0.75rem; position: relative; cursor: pointer; text-align: center; background: var(--bg-muted);">
+                            <div class="tmpl-check" style="position: absolute; top: -6px; right: -6px; background: var(--primary); color: white; width: 18px; height: 18px; border-radius: 50%; display: none; align-items: center; justify-content: center; font-size: 0.7rem;">✓</div>
+                            <div style="height: 44px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 4px; margin-bottom: 0.4rem; padding: 4px;">
+                                <div style="height: 4px; background: #0f172a; width: 45%; margin-bottom: 4px;"></div>
+                                <div style="height: 2px; background: #059669; width: 100%; margin-bottom: 4px;"></div>
+                                <div style="height: 3px; background: #cbd5e1; width: 90%; margin-bottom: 2px;"></div>
+                                <div style="height: 3px; background: #e2e8f0; width: 75%;"></div>
+                            </div>
+                            <div class="tmpl-label" style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted);">Tech Minimal</div>
+                            <div style="font-size: 0.65rem; color: var(--text-muted);">FAANG Single-Col</div>
+                        </div>
+
+                        <!-- 5. Modern Split Sidebar -->
+                        <div class="template-option" data-tmpl="modern" style="border: 1px solid var(--border-color); border-radius: 8px; padding: 0.75rem; position: relative; cursor: pointer; text-align: center; background: var(--bg-muted);">
+                            <div class="tmpl-check" style="position: absolute; top: -6px; right: -6px; background: var(--primary); color: white; width: 18px; height: 18px; border-radius: 50%; display: none; align-items: center; justify-content: center; font-size: 0.7rem;">✓</div>
+                            <div style="height: 44px; background: linear-gradient(to right, #1e293b 35%, #ffffff 35%); border: 1px solid #cbd5e1; border-radius: 4px; margin-bottom: 0.4rem;"></div>
+                            <div class="tmpl-label" style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted);">Modern Split</div>
+                            <div style="font-size: 0.65rem; color: var(--text-muted);">Dark Sidebar</div>
+                        </div>
+
+                        <!-- 6. Classic Corporate -->
                         <div class="template-option" data-tmpl="classic" style="border: 1px solid var(--border-color); border-radius: 8px; padding: 0.75rem; position: relative; cursor: pointer; text-align: center; background: var(--bg-muted);">
                             <div class="tmpl-check" style="position: absolute; top: -6px; right: -6px; background: var(--primary); color: white; width: 18px; height: 18px; border-radius: 50%; display: none; align-items: center; justify-content: center; font-size: 0.7rem;">✓</div>
                             <div style="height: 44px; background: #ffffff; border-top: 4px solid #1e293b; border-bottom: 1px solid #e2e8f0; border-radius: 4px; margin-bottom: 0.4rem;"></div>
                             <div class="tmpl-label" style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted);">Classic</div>
+                            <div style="font-size: 0.65rem; color: var(--text-muted);">Corporate Standard</div>
                         </div>
+
+                        <!-- 7. Minimal Accent -->
                         <div class="template-option" data-tmpl="minimal" style="border: 1px solid var(--border-color); border-radius: 8px; padding: 0.75rem; position: relative; cursor: pointer; text-align: center; background: var(--bg-muted);">
                             <div class="tmpl-check" style="position: absolute; top: -6px; right: -6px; background: var(--primary); color: white; width: 18px; height: 18px; border-radius: 50%; display: none; align-items: center; justify-content: center; font-size: 0.7rem;">✓</div>
                             <div style="height: 44px; background: #ffffff; border-left: 4px solid #f97316; border-radius: 4px; margin-bottom: 0.4rem;"></div>
                             <div class="tmpl-label" style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted);">Minimal</div>
+                            <div style="font-size: 0.65rem; color: var(--text-muted);">Clean Accent</div>
                         </div>
+
+                        <!-- 8. Executive Banner -->
                         <div class="template-option" data-tmpl="executive" style="border: 1px solid var(--border-color); border-radius: 8px; padding: 0.75rem; position: relative; cursor: pointer; text-align: center; background: var(--bg-muted);">
                             <div class="tmpl-check" style="position: absolute; top: -6px; right: -6px; background: var(--primary); color: white; width: 18px; height: 18px; border-radius: 50%; display: none; align-items: center; justify-content: center; font-size: 0.7rem;">✓</div>
                             <div style="height: 44px; background: linear-gradient(135deg, #f97316, #ea580c); border-radius: 4px; margin-bottom: 0.4rem;"></div>
                             <div class="tmpl-label" style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted);">Executive</div>
+                            <div style="font-size: 0.65rem; color: var(--text-muted);">Gradient Banner</div>
                         </div>
                     </div>
                 </div>
@@ -169,58 +246,42 @@
                     <div style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem;">
                         <h3 style="font-size: 1.125rem; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem; font-weight: 600; color: var(--text-main);"><span style="color: var(--primary);">✉</span> Personal Information</h3>
                         
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                             <div>
-                                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-main); margin-bottom: 0.5rem;">Full Name</label>
-                                <input type="text" id="rbName" placeholder="Your full name" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.875rem; background: var(--input-bg); color: var(--text-main);">
+                                <label style="display: block; font-size: 0.85rem; font-weight: 500; color: var(--text-main); margin-bottom: 0.4rem;">Full Name</label>
+                                <input type="text" id="rbName" placeholder="Suraj Kumar" style="width: 100%; padding: 0.65rem 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.875rem; background: var(--input-bg); color: var(--text-main);">
                             </div>
                             <div>
-                                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-main); margin-bottom: 0.5rem;">Professional Title</label>
-                                <input type="text" id="rbTitle" placeholder="Full Stack Developer" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.875rem; background: var(--input-bg); color: var(--text-main);">
+                                <label style="display: block; font-size: 0.85rem; font-weight: 500; color: var(--text-main); margin-bottom: 0.4rem;">Professional Title</label>
+                                <input type="text" id="rbTitle" placeholder="Software Developer" style="width: 100%; padding: 0.65rem 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.875rem; background: var(--input-bg); color: var(--text-main);">
                             </div>
                             <div>
-                                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-main); margin-bottom: 0.5rem;">Email</label>
-                                <input type="email" id="rbEmail" placeholder="you@example.com" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.875rem; background: var(--input-bg); color: var(--text-main);">
+                                <label style="display: block; font-size: 0.85rem; font-weight: 500; color: var(--text-main); margin-bottom: 0.4rem;">Email</label>
+                                <input type="email" id="rbEmail" placeholder="surajkr09871@gmail.com" style="width: 100%; padding: 0.65rem 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.875rem; background: var(--input-bg); color: var(--text-main);">
                             </div>
                             <div>
-                                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-main); margin-bottom: 0.5rem;">Phone</label>
-                                <input type="text" id="rbPhone" placeholder="+91 98765 43210" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.875rem; background: var(--input-bg); color: var(--text-main);">
+                                <label style="display: block; font-size: 0.85rem; font-weight: 500; color: var(--text-main); margin-bottom: 0.4rem;">Phone</label>
+                                <input type="text" id="rbPhone" placeholder="+91-9871187368" style="width: 100%; padding: 0.65rem 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.875rem; background: var(--input-bg); color: var(--text-main);">
                             </div>
                             <div>
-                                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-main); margin-bottom: 0.5rem;">Location</label>
-                                <input type="text" id="rbLocation" placeholder="New Delhi, India" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.875rem; background: var(--input-bg); color: var(--text-main);">
+                                <label style="display: block; font-size: 0.85rem; font-weight: 500; color: var(--text-main); margin-bottom: 0.4rem;">LinkedIn Profile / ID</label>
+                                <input type="text" id="rbLinkedIn" placeholder="linkedin.com/in/suraj-kumar-47aa35284" style="width: 100%; padding: 0.65rem 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.875rem; background: var(--input-bg); color: var(--text-main);">
                             </div>
                             <div>
-                                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-main); margin-bottom: 0.5rem;">Portfolio / LinkedIn / GitHub</label>
-                                <input type="text" id="rbPortfolio" placeholder="linkedin.com/in/yourname" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.875rem; background: var(--input-bg); color: var(--text-main);">
+                                <label style="display: block; font-size: 0.85rem; font-weight: 500; color: var(--text-main); margin-bottom: 0.4rem;">GitHub Username / Link</label>
+                                <input type="text" id="rbGitHub" placeholder="Suraj09871" style="width: 100%; padding: 0.65rem 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.875rem; background: var(--input-bg); color: var(--text-main);">
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 0.85rem; font-weight: 500; color: var(--text-main); margin-bottom: 0.4rem;">Location</label>
+                                <input type="text" id="rbLocation" placeholder="New Delhi, India" style="width: 100%; padding: 0.65rem 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.875rem; background: var(--input-bg); color: var(--text-main);">
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 0.85rem; font-weight: 500; color: var(--text-main); margin-bottom: 0.4rem;">Portfolio Website (Optional)</label>
+                                <input type="text" id="rbPortfolio" placeholder="surajkumar.dev" style="width: 100%; padding: 0.65rem 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.875rem; background: var(--input-bg); color: var(--text-main);">
                             </div>
                             <div style="grid-column: span 2;">
-                                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-main); margin-bottom: 0.5rem;">Professional Summary</label>
-                                <textarea id="rbSummary" placeholder="Describe your experience, technical expertise, and career accomplishments..." style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.875rem; background: var(--input-bg); color: var(--text-main); min-height: 85px; font-family: 'Inter', sans-serif; resize: vertical;"></textarea>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Core Skills -->
-                    <div style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem;">
-                        <h3 style="font-size: 1.125rem; margin: 0 0 0.75rem; display: flex; align-items: center; gap: 0.5rem; font-weight: 600; color: var(--text-main);"><span style="color: var(--primary);">🛠</span> Core Skills</h3>
-                        <input type="text" id="rbSkills" placeholder="JavaScript, React, Node.js, MongoDB, Docker, Python, REST APIs (comma separated)" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.875rem; background: var(--input-bg); color: var(--text-main);">
-                        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.35rem;">Separate skills with commas. These appear in the Core Skills badge section of your resume.</div>
-                    </div>
-
-                    <!-- Work Experience -->
-                    <div style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                            <h3 style="font-size: 1.125rem; margin: 0; display: flex; align-items: center; gap: 0.5rem; font-weight: 600; color: var(--text-main);"><span style="color: var(--primary);">💼</span> Work Experience</h3>
-                            <button type="button" onclick="addExperienceEntry()" class="btn btn-outline" style="font-size: 0.75rem; padding: 0.3rem 0.7rem; border-radius: 6px;">+ Add Role</button>
-                        </div>
-                        <div id="experienceEntries">
-                            <div class="exp-entry" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
-                                <div><label style="display:block;font-size:0.8rem;font-weight:500;margin-bottom:0.3rem;color:var(--text-main);">Job Title</label><input type="text" class="rbExpTitle" placeholder="Software Developer" style="width:100%;padding:0.6rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);color:var(--text-main);"></div>
-                                <div><label style="display:block;font-size:0.8rem;font-weight:500;margin-bottom:0.3rem;color:var(--text-main);">Company</label><input type="text" class="rbExpCompany" placeholder="Google / Microsoft" style="width:100%;padding:0.6rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);color:var(--text-main);"></div>
-                                <div><label style="display:block;font-size:0.8rem;font-weight:500;margin-bottom:0.3rem;color:var(--text-main);">Duration</label><input type="text" class="rbExpDuration" placeholder="2023 - Present" style="width:100%;padding:0.6rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);color:var(--text-main);"></div>
-                                <div><label style="display:block;font-size:0.8rem;font-weight:500;margin-bottom:0.3rem;color:var(--text-main);">Location</label><input type="text" class="rbExpLocation" placeholder="Bangalore / Remote" style="width:100%;padding:0.6rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);color:var(--text-main);"></div>
-                                <div style="grid-column: span 2;"><label style="display:block;font-size:0.8rem;font-weight:500;margin-bottom:0.3rem;color:var(--text-main);">Description / Responsibilities</label><textarea class="rbExpDesc" placeholder="Built scalable APIs, reduced latency by 30%, led frontend refactoring..." style="width:100%;padding:0.6rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);color:var(--text-main);min-height:60px;font-family:inherit;resize:vertical;"></textarea></div>
+                                <label style="display: block; font-size: 0.85rem; font-weight: 500; color: var(--text-main); margin-bottom: 0.4rem;">Career Objective / Summary</label>
+                                <textarea id="rbSummary" placeholder="Motivated Software Developer with experience in building web applications using JavaScript, HTML, CSS, and Node.js..." style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.875rem; background: var(--input-bg); color: var(--text-main); min-height: 85px; font-family: inherit; resize: vertical;"></textarea>
                             </div>
                         </div>
                     </div>
@@ -232,11 +293,49 @@
                             <button type="button" onclick="addEducationEntry()" class="btn btn-outline" style="font-size: 0.75rem; padding: 0.3rem 0.7rem; border-radius: 6px;">+ Add Degree</button>
                         </div>
                         <div id="educationEntries">
-                            <div class="edu-entry" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
-                                <div><label style="display:block;font-size:0.8rem;font-weight:500;margin-bottom:0.3rem;color:var(--text-main);">Degree / Course</label><input type="text" class="rbEduDegree" placeholder="B.Tech Computer Science" style="width:100%;padding:0.6rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);color:var(--text-main);"></div>
-                                <div><label style="display:block;font-size:0.8rem;font-weight:500;margin-bottom:0.3rem;color:var(--text-main);">Institution</label><input type="text" class="rbEduInstitution" placeholder="IIT Delhi" style="width:100%;padding:0.6rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);color:var(--text-main);"></div>
-                                <div><label style="display:block;font-size:0.8rem;font-weight:500;margin-bottom:0.3rem;color:var(--text-main);">Year</label><input type="text" class="rbEduYear" placeholder="2020 - 2024" style="width:100%;padding:0.6rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);color:var(--text-main);"></div>
-                                <div><label style="display:block;font-size:0.8rem;font-weight:500;margin-bottom:0.3rem;color:var(--text-main);">Grade / CGPA</label><input type="text" class="rbEduGrade" placeholder="8.5 CGPA" style="width:100%;padding:0.6rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);color:var(--text-main);"></div>
+                            <!-- Populated dynamically by resume-builder.js -->
+                        </div>
+                    </div>
+
+                    <!-- Coursework / Subjects (Overleaf CS Style) -->
+                    <div style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem;">
+                        <h3 style="font-size: 1.125rem; margin: 0 0 0.5rem; display: flex; align-items: center; gap: 0.5rem; font-weight: 600; color: var(--text-main);"><span style="color: var(--primary);">📚</span> Coursework / Relevant Subjects</h3>
+                        <p style="margin: 0 0 0.75rem; font-size: 0.8rem; color: var(--text-muted);">Comma-separated subjects. Rendered as a multi-column LaTeX grid in Overleaf and ATS templates.</p>
+                        <input type="text" id="rbCoursework" placeholder="Data Structures & Algorithms, Object-Oriented Programming, Database Management (DBMS), Operating Systems, Computer Networks, RESTful API Design, Software Development, UI/UX Design Principles" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.875rem; background: var(--input-bg); color: var(--text-main);">
+                    </div>
+
+                    <!-- Technical Skills (Categorized Overleaf Style) -->
+                    <div style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem;">
+                        <h3 style="font-size: 1.125rem; margin: 0 0 0.5rem; display: flex; align-items: center; gap: 0.5rem; font-weight: 600; color: var(--text-main);"><span style="color: var(--primary);">🛠</span> Technical Skills (Grouped Categories)</h3>
+                        <p style="margin: 0 0 1rem; font-size: 0.8rem; color: var(--text-muted);">Matches Jake's Overleaf format with bold labels for Languages, Frontend, Backend, Tools, etc.</p>
+                        
+                        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                            <div>
+                                <label style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-main); margin-bottom: 0.25rem;">Languages</label>
+                                <input type="text" id="rbSkillsLanguages" placeholder="Java, JavaScript, Python (basic), C++" style="width: 100%; padding: 0.6rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.85rem; background: var(--input-bg); color: var(--text-main);">
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-main); margin-bottom: 0.25rem;">Frontend</label>
+                                <input type="text" id="rbSkillsFrontend" placeholder="HTML, CSS, React.js, Bootstrap, Responsive Web Design" style="width: 100%; padding: 0.6rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.85rem; background: var(--input-bg); color: var(--text-main);">
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-main); margin-bottom: 0.25rem;">Backend & APIs</label>
+                                <input type="text" id="rbSkillsBackend" placeholder="Node.js, Express.js, RESTful APIs, API Integration" style="width: 100%; padding: 0.6rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.85rem; background: var(--input-bg); color: var(--text-main);">
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-main); margin-bottom: 0.25rem;">Developer Tools</label>
+                                <input type="text" id="rbSkillsTools" placeholder="Git, GitHub, VS Code, Postman, Chrome DevTools, Netlify" style="width: 100%; padding: 0.6rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.85rem; background: var(--input-bg); color: var(--text-main);">
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-main); margin-bottom: 0.25rem;">Database</label>
+                                <input type="text" id="rbSkillsDatabase" placeholder="MongoDB (CRUD, Schema Design), PostgreSQL, MySQL" style="width: 100%; padding: 0.6rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.85rem; background: var(--input-bg); color: var(--text-main);">
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-main); margin-bottom: 0.25rem;">Soft Skills</label>
+                                <input type="text" id="rbSkillsSoft" placeholder="Quick Learner, Team Player, Time Management, Adaptability, Creative Problem Solving" style="width: 100%; padding: 0.6rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.85rem; background: var(--input-bg); color: var(--text-main);">
+                            </div>
+                            <div style="display: none;">
+                                <input type="text" id="rbSkills">
                             </div>
                         </div>
                     </div>
@@ -248,25 +347,40 @@
                             <button type="button" onclick="addProjectEntry()" class="btn btn-outline" style="font-size: 0.75rem; padding: 0.3rem 0.7rem; border-radius: 6px;">+ Add Project</button>
                         </div>
                         <div id="projectEntries">
-                            <div class="proj-entry" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
-                                <div><label style="display:block;font-size:0.8rem;font-weight:500;margin-bottom:0.3rem;color:var(--text-main);">Project Title</label><input type="text" class="rbProjTitle" placeholder="AI Job Matching Platform" style="width:100%;padding:0.6rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);color:var(--text-main);"></div>
-                                <div><label style="display:block;font-size:0.8rem;font-weight:500;margin-bottom:0.3rem;color:var(--text-main);">Tech Stack</label><input type="text" class="rbProjTech" placeholder="Node.js, React, MongoDB" style="width:100%;padding:0.6rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);color:var(--text-main);"></div>
-                                <div style="grid-column: span 2;"><label style="display:block;font-size:0.8rem;font-weight:500;margin-bottom:0.3rem;color:var(--text-main);">Description</label><textarea class="rbProjDesc" placeholder="Designed and built intelligent job matching web application..." style="width:100%;padding:0.6rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);color:var(--text-main);min-height:50px;font-family:inherit;resize:vertical;"></textarea></div>
-                            </div>
+                            <!-- Populated dynamically by resume-builder.js -->
+                        </div>
+                    </div>
+
+                    <!-- Work Experience -->
+                    <div style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <h3 style="font-size: 1.125rem; margin: 0; display: flex; align-items: center; gap: 0.5rem; font-weight: 600; color: var(--text-main);"><span style="color: var(--primary);">💼</span> Work Experience / Internships</h3>
+                            <button type="button" onclick="addExperienceEntry()" class="btn btn-outline" style="font-size: 0.75rem; padding: 0.3rem 0.7rem; border-radius: 6px;">+ Add Role</button>
+                        </div>
+                        <div id="experienceEntries">
+                            <!-- Populated dynamically by resume-builder.js -->
+                        </div>
+                    </div>
+
+                    <!-- Achievements -->
+                    <div style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <h3 style="font-size: 1.125rem; margin: 0; display: flex; align-items: center; gap: 0.5rem; font-weight: 600; color: var(--text-main);"><span style="color: var(--primary);">🏆</span> Achievements & Honors</h3>
+                            <button type="button" onclick="addAchievementEntry()" class="btn btn-outline" style="font-size: 0.75rem; padding: 0.3rem 0.7rem; border-radius: 6px;">+ Add</button>
+                        </div>
+                        <div id="achievementEntries">
+                            <!-- Populated dynamically by resume-builder.js -->
                         </div>
                     </div>
 
                     <!-- Certifications -->
                     <div style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                            <h3 style="font-size: 1.125rem; margin: 0; display: flex; align-items: center; gap: 0.5rem; font-weight: 600; color: var(--text-main);"><span style="color: var(--primary);">📜</span> Certifications & Awards</h3>
+                            <h3 style="font-size: 1.125rem; margin: 0; display: flex; align-items: center; gap: 0.5rem; font-weight: 600; color: var(--text-main);"><span style="color: var(--primary);">📜</span> Certifications</h3>
                             <button type="button" onclick="addCertEntry()" class="btn btn-outline" style="font-size: 0.75rem; padding: 0.3rem 0.7rem; border-radius: 6px;">+ Add</button>
                         </div>
                         <div id="certEntries">
-                            <div class="cert-entry" style="display: grid; grid-template-columns: 2fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem;">
-                                <div><input type="text" class="rbCertName" placeholder="AWS Certified Solutions Architect" style="width:100%;padding:0.6rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);color:var(--text-main);"></div>
-                                <div><input type="text" class="rbCertYear" placeholder="2024" style="width:100%;padding:0.6rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;background:var(--input-bg);color:var(--text-main);"></div>
-                            </div>
+                            <!-- Populated dynamically by resume-builder.js -->
                         </div>
                     </div>
                 </div>
@@ -275,25 +389,61 @@
             <!-- Left Column: Overleaf / Code Mode (Hidden by default) -->
             <div id="codeModeContainer" style="display: none; flex-direction: column; gap: 1rem;">
                 <div class="code-editor-container">
+                    <!-- Overleaf Studio Header -->
                     <div class="code-editor-toolbar">
-                        <div style="display: flex; align-items: center; gap: 0.75rem;">
-                            <span style="font-size: 0.8rem; font-weight: 600; color: #38bdf8;">⚡ Overleaf / LaTeX & Markdown Editor</span>
-                            <select id="codeTemplateSelect" onchange="loadCodeTemplate(this.value)" style="padding: 0.25rem 0.5rem; border-radius: 6px; border: 1px solid #1e3048; font-size: 0.75rem; background: #0b1120; color: #e2e8f0;">
-                                <option value="latex-modern">LaTeX: Modern Resume</option>
-                                <option value="latex-classic">LaTeX: Classic Academic</option>
+                        <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
+                            <span style="font-size: 0.85rem; font-weight: 700; color: #4ade80; display: flex; align-items: center; gap: 0.35rem;">
+                                <span>🍀</span> Overleaf LaTeX Studio
+                            </span>
+                            <select id="codeTemplateSelect" onchange="loadCodeTemplate(this.value)" style="padding: 0.3rem 0.6rem; border-radius: 6px; border: 1px solid #334155; font-size: 0.78rem; background: #0f172a; color: #f8fafc; font-weight: 500;">
+                                <option value="latex-jakes" selected>LaTeX: Jake's Resume (Overleaf CS Standard)</option>
+                                <option value="latex-deedy">LaTeX: Deedy CV (Two-Column LaTeX)</option>
+                                <option value="latex-ivy">LaTeX: Harvard / Academic LaTeX</option>
+                                <option value="latex-modern">LaTeX: Modern Tech LaTeX</option>
                                 <option value="markdown">Markdown Resume</option>
                                 <option value="json">JSON Resume Data</option>
                             </select>
                         </div>
-                        <div style="display: flex; gap: 0.4rem;">
-                            <button type="button" onclick="syncFromVisualForm()" style="padding: 0.25rem 0.6rem; font-size: 0.75rem; background: #1e293b; color: #e2e8f0; border: 1px solid #334155; border-radius: 6px; cursor: pointer;" title="Convert Visual Form data to Code">🔄 Sync Form to Code</button>
-                            <button type="button" onclick="compileCodeToResume()" style="padding: 0.25rem 0.6rem; font-size: 0.75rem; background: var(--primary); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">▶ Compile</button>
+                        <div style="display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap;">
+                            <button type="button" onclick="syncFromVisualForm()" style="padding: 0.3rem 0.65rem; font-size: 0.75rem; background: #1e293b; color: #e2e8f0; border: 1px solid #334155; border-radius: 6px; cursor: pointer;" title="Convert Visual Form data to LaTeX Code">🔄 Sync Form</button>
+                            <button type="button" onclick="compileCodeToResume()" style="padding: 0.3rem 0.75rem; font-size: 0.75rem; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 700; box-shadow: 0 2px 8px rgba(16,185,129,0.3);" title="Compile LaTeX live into resume preview">▶ Compile</button>
+                            <button type="button" onclick="copyLatexCode()" style="padding: 0.3rem 0.65rem; font-size: 0.75rem; background: #1e293b; color: #38bdf8; border: 1px solid #334155; border-radius: 6px; cursor: pointer;" title="Copy entire LaTeX source code">📋 Copy</button>
+                            <button type="button" onclick="exportTexFile()" style="padding: 0.3rem 0.65rem; font-size: 0.75rem; background: #1e293b; color: #f59e0b; border: 1px solid #334155; border-radius: 6px; cursor: pointer;" title="Download .tex file to upload to Overleaf.com">💾 .tex</button>
+                            <button type="button" onclick="beautifyLatexCode()" style="padding: 0.3rem 0.65rem; font-size: 0.75rem; background: #1e293b; color: #a78bfa; border: 1px solid #334155; border-radius: 6px; cursor: pointer;" title="Clean indentation and format LaTeX">✨ Format</button>
                         </div>
                     </div>
-                    <textarea id="resumeCodeEditor" class="code-editor-textarea" spellcheck="false" placeholder="Type LaTeX / Markdown code here to live-render resume..."></textarea>
-                    <div style="background: #131f37; padding: 0.4rem 1rem; border-top: 1px solid #1e3048; font-size: 0.72rem; color: #94a3b8; display: flex; justify-content: space-between;">
-                        <span>Auto-compiles as you type • Real-time PDF preview</span>
-                        <span id="codeLineCount">Lines: 0</span>
+
+                    <!-- LaTeX Quick Snippet Insert Bar -->
+                    <div class="code-snippet-bar">
+                        <span style="font-size: 0.68rem; color: #64748b; font-weight: 600; text-transform: uppercase;">Insert:</span>
+                        <button type="button" class="code-snippet-btn" onclick="insertLatexSnippet('\\section{SECTION NAME}\n')">+ \section</button>
+                        <button type="button" class="code-snippet-btn" onclick="insertLatexSnippet('\\resumeSubheading\n  {Role Title}{Dates}\n  {Company / Institution}{Location}\n')">+ \subheading</button>
+                        <button type="button" class="code-snippet-btn" onclick="insertLatexSnippet('\\resumeProjectHeading\n  {\\textbf{Project Name} $|$ \\emph{Tech Stack}}{Date}\n')">+ \project</button>
+                        <button type="button" class="code-snippet-btn" onclick="insertLatexSnippet('\\resumeItem{Key accomplishment with metrics...}\n')">+ \item</button>
+                        <button type="button" class="code-snippet-btn" onclick="insertLatexSnippet('\\textbf{Bold Text}')">+ \textbf</button>
+                        <button type="button" class="code-snippet-btn" onclick="insertLatexSnippet('\\textit{Italic Text}')">+ \textit</button>
+                        <button type="button" class="code-snippet-btn" onclick="insertLatexSnippet('\\href{https://url}{Link Text}')">+ \href</button>
+                    </div>
+
+                    <!-- Overleaf Code Editor with Line Gutter -->
+                    <div class="code-editor-wrapper">
+                        <div id="codeLineGutter" class="code-line-gutter">1</div>
+                        <textarea id="resumeCodeEditor" class="code-editor-textarea" spellcheck="false" placeholder="% Type LaTeX / Markdown code here to live-render resume..."></textarea>
+                    </div>
+
+                    <!-- Editor Footer Status Bar -->
+                    <div style="background: #0f172a; padding: 0.45rem 1rem; border-top: 1px solid #1e293b; font-size: 0.72rem; color: #94a3b8; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <label style="display: flex; align-items: center; gap: 0.35rem; cursor: pointer; color: #cbd5e1; user-select: none;">
+                                <input type="checkbox" id="chkAutoCompile" checked style="accent-color: #10b981; cursor: pointer;">
+                                <span>Live Auto-Compile</span>
+                            </label>
+                            <span id="codeStatusMsg" style="color: #4ade80;">✓ Ready (Real-time)</span>
+                        </div>
+                        <div style="display: flex; gap: 1rem; font-family: 'Fira Code', monospace;">
+                            <span id="codeLineCount">Lines: 1</span>
+                            <span id="codeCharCount">Chars: 0</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -306,8 +456,8 @@
                             <span>👁</span> Live Document Preview
                         </h3>
                         <div style="display: flex; align-items: center; gap: 0.5rem;">
-                            <span id="previewTemplateName" style="font-size: 0.75rem; background: var(--bg-muted); border: 1px solid var(--border-color); padding: 0.2rem 0.6rem; border-radius: 999px; color: var(--text-main); font-weight: 600;">Modern</span>
-                            <button type="button" onclick="window.print()" class="btn btn-outline" style="font-size: 0.75rem; padding: 0.2rem 0.6rem; border-radius: 6px;">Print</button>
+                            <span id="previewTemplateName" style="font-size: 0.75rem; background: var(--bg-muted); border: 1px solid var(--border-color); padding: 0.2rem 0.6rem; border-radius: 999px; color: var(--text-main); font-weight: 600;">Jake's Overleaf</span>
+                            <button type="button" onclick="printResumeOnly()" class="btn btn-outline" style="font-size: 0.75rem; padding: 0.2rem 0.6rem; border-radius: 6px;">Print</button>
                         </div>
                     </div>
 

@@ -1476,36 +1476,99 @@ a.btn {
 }
 
 .code-editor-container {
-    background: #0d1526;
-    border: 1px solid #1e3048;
+    background: #0b1120;
+    border: 1px solid #1e293b;
     border-radius: 12px;
     font-family: 'Fira Code', 'Consolas', monospace;
     overflow: hidden;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
 }
 
 .code-editor-toolbar {
-    background: #131f37;
-    padding: 0.6rem 1rem;
-    border-bottom: 1px solid #1e3048;
+    background: #111c33;
+    padding: 0.65rem 1rem;
+    border-bottom: 1px solid #1e293b;
     display: flex;
     justify-content: space-between;
     align-items: center;
     gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.code-snippet-bar {
+    background: #0f172a;
+    padding: 0.35rem 0.75rem;
+    border-bottom: 1px solid #1e293b;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+}
+
+.code-snippet-btn {
+    background: #1e293b;
+    color: #94a3b8;
+    border: 1px solid #334155;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    cursor: pointer;
+    font-family: 'Fira Code', monospace;
+    transition: all 0.15s ease;
+}
+
+.code-snippet-btn:hover {
+    background: #334155;
+    color: #38bdf8;
+    border-color: #38bdf8;
+}
+
+.code-editor-wrapper {
+    display: flex;
+    position: relative;
+    height: 580px;
+    background: #0b1120;
+}
+
+.code-line-gutter {
+    width: 48px;
+    background: #070d18;
+    color: #475569;
+    font-family: 'Fira Code', 'Consolas', monospace;
+    font-size: 0.82rem;
+    padding: 1rem 0.5rem 1rem 0.25rem;
+    text-align: right;
+    user-select: none;
+    border-right: 1px solid #1e293b;
+    line-height: 1.6;
+    overflow: hidden;
+    white-space: pre;
+    box-sizing: border-box;
 }
 
 .code-editor-textarea {
-    width: 100%;
-    min-height: 520px;
-    background: #0d1526;
-    color: #38bdf8;
+    flex: 1;
+    height: 100%;
+    min-height: 580px;
+    background: #0b1120;
+    color: #e2e8f0;
     font-family: 'Fira Code', 'Consolas', monospace;
-    font-size: 0.875rem;
+    font-size: 0.84rem;
     line-height: 1.6;
     padding: 1rem;
     border: none;
-    resize: vertical;
+    resize: none;
     outline: none;
     box-sizing: border-box;
+    tab-size: 2;
+    white-space: pre;
+    overflow-x: auto;
+    overflow-y: scroll;
+}
+
+.code-editor-textarea::selection {
+    background: #1e3a8a;
+    color: #ffffff;
 }
 
 .mode-pill {
@@ -1527,6 +1590,87 @@ a.btn {
     background: var(--bg-muted);
     color: var(--text-muted);
     border-color: var(--border-color);
+}
+
+/* Template option card styles */
+.template-option {
+    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.template-option:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* Dedicated Print / PDF export styles — Isolates ONLY the Resume in pure A4 */
+@media print {
+    html, body {
+        background: #ffffff !important;
+        color: #000000 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        overflow: visible !important;
+    }
+
+    /* Hide EVERYTHING on the page by default */
+    body * {
+        visibility: hidden !important;
+    }
+
+    /* Specifically disable all UI widgets */
+    .navbar,
+    .hamburger,
+    #themeToggle,
+    .nav-actions,
+    .nav-links,
+    .mode-pill,
+    .btn,
+    button,
+    #visualModeContainer,
+    #codeModeContainer,
+    .code-editor-container,
+    main > div:first-child,
+    main > div:nth-child(2),
+    main > div:nth-child(3),
+    #resumePreviewContainer > div:first-child,
+    #resumePreviewContainer {
+        display: none !important;
+        visibility: hidden !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    /* Make ONLY resumePreviewContent and its children visible and fixed to top-left of page */
+    #resumePreviewContent,
+    #resumePreviewContent * {
+        visibility: visible !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    #resumePreviewContent {
+        display: block !important;
+        position: fixed !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        max-width: 210mm !important;
+        margin: 0 auto !important;
+        padding: 8mm 10mm !important;
+        border: none !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        background: #ffffff !important;
+        box-sizing: border-box !important;
+    }
+
+    @page {
+        size: A4 portrait;
+        margin: 0;
+    }
 }
 
 /* ===== Accessibility & Touch Targets ===== */
