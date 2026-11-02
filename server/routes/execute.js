@@ -31,7 +31,7 @@ function runPython(code, testCases, functionName) {
     return new Promise((resolve) => {
         const runnerPath = path.join(__dirname, '../utils/python_runner.py');
         const pythonCmd = getPythonCommand();
-        const proc = spawn(pythonCmd, [runnerPath]);
+        const proc = spawn(pythonCmd, ['-u', '-B', runnerPath]);
 
         let stdout = '';
         let stderr = '';

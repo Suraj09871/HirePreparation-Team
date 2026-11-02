@@ -84,8 +84,8 @@ function runJava(code, testCases, functionName) {
 
         const { javac, java } = getJavaBinaries();
 
-        // Step 1: Compile with javac (20s timeout, lightweight memory for cloud shared CPU)
-        exec(`${javac} -J-Xmx128m -encoding UTF-8 ${compileTarget}`, { cwd: runDir, timeout: 20000 }, (compileErr, compileStdout, compileStderr) => {
+        // Step 1: Compile with javac (Fast Tier-1 compilation for cloud shared CPU)
+        exec(`${javac} -J-XX:TieredStopAtLevel=1 -J-Xms32m -J-Xmx128m -encoding UTF-8 ${compileTarget}`, { cwd: runDir, timeout: 20000 }, (compileErr, compileStdout, compileStderr) => {
             if (compileErr) {
                 const stderr = (compileStderr || compileErr.message || '').toString();
 
@@ -126,8 +126,8 @@ function runJava(code, testCases, functionName) {
                 });
             }
 
-            // Step 2: Execute with java
-            exec(`${java} -Xmx256m JavaRunner`, { cwd: runDir, timeout: 5000 }, (runErr, runStdout, runStderr) => {
+            // Step 2: Execute with java (Fast Tier-1 compilation)
+            exec(`${java} -XX:TieredStopAtLevel=1 -Xms32m -Xmx128m JavaRunner`, { cwd: runDir, timeout: 8000 }, (runErr, runStdout, runStderr) => {
                 cleanup();
 
                 if (runStdout && runStdout.trim()) {

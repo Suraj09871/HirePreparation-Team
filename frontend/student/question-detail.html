@@ -1245,22 +1245,23 @@
         const fnName = getFunctionName(code, lang);
 
         let execRes = null;
-        try {
-            execRes = await API.post('/execute', {
-                code,
-                language: lang,
-                questionId: activeQuestion?.id,
-                testCases: targetTestCases,
-                functionName: fnName
-            });
-        } catch (err) {
-            if (lang === 'javascript') {
-                execRes = executeClientSideJS(code, targetTestCases, fnName);
-            } else {
+        if (lang === 'javascript') {
+            // Instant 5ms client-side execution for JavaScript
+            execRes = executeClientSideJS(code, targetTestCases, fnName);
+        } else {
+            try {
+                execRes = await API.post('/execute', {
+                    code,
+                    language: lang,
+                    questionId: activeQuestion?.id,
+                    testCases: targetTestCases,
+                    functionName: fnName
+                });
+            } catch (err) {
                 execRes = {
                     success: false,
                     status: 'Connection Error',
-                    error: 'Could not connect to execution backend. Please ensure local server is running on http://localhost:5000.',
+                    error: 'Could not connect to execution backend. If on free cloud tier, server may be waking up (takes ~15s). Please try again.',
                     line: 1,
                     message: 'Judge connection error.'
                 };
@@ -1356,22 +1357,22 @@
         const fnName = getFunctionName(code, lang);
 
         let execRes = null;
-        try {
-            execRes = await API.post('/execute', {
-                code,
-                language: lang,
-                questionId: activeQuestion?.id,
-                testCases,
-                functionName: fnName
-            });
-        } catch (err) {
-            if (lang === 'javascript') {
-                execRes = executeClientSideJS(code, testCases, fnName);
-            } else {
+        if (lang === 'javascript') {
+            execRes = executeClientSideJS(code, testCases, fnName);
+        } else {
+            try {
+                execRes = await API.post('/execute', {
+                    code,
+                    language: lang,
+                    questionId: activeQuestion?.id,
+                    testCases,
+                    functionName: fnName
+                });
+            } catch (err) {
                 execRes = {
                     success: false,
                     status: 'Connection Error',
-                    error: 'Could not connect to execution backend.',
+                    error: 'Could not connect to execution backend. If on free cloud tier, server may be waking up (takes ~15s). Please try again.',
                     line: 1,
                     message: 'Judge connection error.'
                 };
@@ -1563,69 +1564,27 @@
         modal.style.display = 'flex';
     }
 
-    // ── Load Problem Details on Start ──
-    (async () => {
-        const params = new URLSearchParams(window.location.search);
-        const paramId = params.get('id');
-        const paramTitle = params.get('title') || 'Two Sum';
-        const paramCompany = params.get('company') || 'TCS';
-        const paramDiff = params.get('difficulty') || 'Easy';
-        const paramType = params.get('type') || 'coding';
+    // ── Pre-warm Backend Judge Immediately ──
+    try {
+        const pingUrl = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+            ? (window.location.port === '5000' ? '/api/health' : 'http://localhost:5000/api/health')
+            : 'https://hirepreparation-backend.onrender.com/api/health';
+        fetch(pingUrl, { keepalive: true, mode: 'cors' }).catch(() => {});
+    } catch(e) {}
 
-        let q = null;
-
-        try {
-            let res = await fetch('../../data/questions.json');
-            if (!res.ok) res = await fetch('/data/questions.json');
-            if (!res.ok) res = await fetch('/api/questions');
-            if (res.ok) {
-                const data = await res.json();
-                const arrayKey = paramType.includes('mcq') ? 'coding_mcq' : paramType === 'aptitude' ? 'aptitude' : 'coding';
-                const list = data[arrayKey] || [];
-                if (paramId) q = list.find(item => item.id === paramId);
-                if (!q && paramTitle) {
-                    q = list.find(item => item.title && (item.title.toLowerCase() === paramTitle.toLowerCase() || item.title.toLowerCase().includes(paramTitle.toLowerCase())));
-                }
-                // Global fallback search across all arrays if not found in primary
-                if (!q) {
-                    const allLists = [...(data.coding || []), ...(data.coding_mcq || []), ...(data.aptitude || [])];
-                    if (paramId) q = allLists.find(item => item.id === paramId);
-                    if (!q && paramTitle) {
-                        q = allLists.find(item => item.title && (item.title.toLowerCase() === paramTitle.toLowerCase() || item.title.toLowerCase().includes(paramTitle.toLowerCase())));
-                    }
-                }
-            }
-        } catch(e) {
-            console.warn('Error fetching questions.json:', e);
-        }
-
-        if (!q) {
-            // Generate rich tailored coding problem
-            q = {
-                id: paramId || 'q_' + paramTitle.toLowerCase().replace(/[^a-z0-9]/g, '_'),
-                title: paramTitle,
-                difficulty: paramDiff,
-                company: paramCompany,
-                tags: ['Algorithms', 'Data Structures', 'Interview Prep'],
-                acceptance: '38.5%',
-                description: `Given the input parameters for <strong>${sanitize(paramTitle)}</strong>, design an optimal solution satisfying all edge cases commonly asked in <strong>${sanitize(paramCompany)}</strong> technical rounds.`,
-                examples: [
-                    { input: 'nums = [2, 7, 11, 15], target = 9', output: '[0, 1]', explanation: 'Because nums[0] + nums[1] == 9, return [0, 1].' },
-                    { input: 'nums = [3, 2, 4], target = 6', output: '[1, 2]', explanation: 'Because nums[1] + nums[2] == 6, return [1, 2].' },
-                    { input: 'nums = [3, 3], target = 6', output: '[0, 1]', explanation: 'Target sum matches indices 0 and 1.' }
-                ],
-                constraints: [
-                    '1 <= input.length <= 10^5',
-                    'Time Complexity: O(n) or O(n log n)',
-                    'Space Complexity: O(1) auxiliary space'
-                ]
-            };
-        }
-
+    // ── Reusable Instant Problem Renderer (0ms) ──
+    function renderActiveQuestion(q) {
+        if (!q) return;
         activeQuestion = q;
 
+        try {
+            sessionStorage.setItem('hp_active_question', JSON.stringify(q));
+            if (q.id) localStorage.setItem(`hp_q_${q.id}`, JSON.stringify(q));
+        } catch(e) {}
+
         // Populate Left Panel
-        document.getElementById('question-title').textContent = q.title;
+        const titleEl = document.getElementById('question-title');
+        if (titleEl) titleEl.textContent = q.title;
         document.title = q.title + ' - HirePrep Practice';
 
         const diffEl = document.getElementById('question-difficulty');
@@ -1638,7 +1597,7 @@
 
         const compEl = document.getElementById('question-companies');
         if (compEl) {
-            compEl.innerHTML = `<span class="company-pill">${sanitize(q.company || paramCompany)}</span>`;
+            compEl.innerHTML = `<span class="company-pill">${sanitize(q.company || 'Top Tech Co')}</span>`;
         }
 
         const tagsEl = document.getElementById('question-tags');
@@ -1681,7 +1640,8 @@
             descHtml += '</ul></details></div>';
         }
 
-        document.getElementById('question-description').innerHTML = descHtml;
+        const descEl = document.getElementById('question-description');
+        if (descEl) descEl.innerHTML = descHtml;
 
         // Language Starter Templates
         if (q.templates && typeof q.templates === 'object') {
@@ -1702,12 +1662,11 @@
             editor.setValue(savedDraft, -1);
             const indicator = document.getElementById('autosaveIndicator');
             if (indicator) indicator.textContent = 'Draft Restored';
-        } else {
+        } else if (isInitialLoad) {
             editor.setValue(currentProblemTemplates[initialLang] || currentProblemTemplates.python, -1);
         }
         setTimeout(() => { isInitialLoad = false; }, 200);
 
-        // Ensure editor is properly sized and focused after load
         editor.resize();
         editor.renderer.updateFull(true);
         editor.focus();
@@ -1717,6 +1676,92 @@
         renderTestCasesUI(0);
         renderSubmissionsUI();
         updateSubBadge();
+    }
+
+    // ── Instant Problem Loader (0ms) on Page Refresh ──
+    const params = new URLSearchParams(window.location.search);
+    const paramId = params.get('id');
+    const paramTitle = params.get('title') || 'Two Sum';
+    const paramCompany = params.get('company') || 'TCS';
+    const paramDiff = params.get('difficulty') || 'Easy';
+    const paramType = params.get('type') || 'coding';
+
+    let initialQ = null;
+
+    // 1. Instant cache retrieval (0ms synchronous)
+    try {
+        const sessionActive = JSON.parse(sessionStorage.getItem('hp_active_question') || 'null');
+        if (sessionActive && (sessionActive.id === paramId || (sessionActive.title && sessionActive.title.toLowerCase() === paramTitle.toLowerCase()))) {
+            initialQ = sessionActive;
+        }
+        if (!initialQ && paramId) {
+            const cachedSingle = JSON.parse(localStorage.getItem(`hp_q_${paramId}`) || 'null');
+            if (cachedSingle) initialQ = cachedSingle;
+        }
+        if (!initialQ) {
+            const allCached = JSON.parse(localStorage.getItem('hireprep_questions_cache') || 'null');
+            if (allCached) {
+                const list = [...(allCached.coding || []), ...(allCached.coding_mcq || []), ...(allCached.aptitude || [])];
+                if (paramId) initialQ = list.find(item => item.id === paramId);
+                if (!initialQ && paramTitle) {
+                    initialQ = list.find(item => item.title && (item.title.toLowerCase() === paramTitle.toLowerCase() || item.title.toLowerCase().includes(paramTitle.toLowerCase())));
+                }
+            }
+        }
+    } catch(e) {}
+
+    // 2. Render instantly so user NEVER sees "Loading Problem..."
+    if (initialQ) {
+        renderActiveQuestion(initialQ);
+    } else {
+        renderActiveQuestion({
+            id: paramId || 'q_' + paramTitle.toLowerCase().replace(/[^a-z0-9]/g, '_'),
+            title: paramTitle,
+            difficulty: paramDiff,
+            company: paramCompany,
+            tags: ['Algorithms', 'Data Structures', 'Interview Prep'],
+            acceptance: '38.5%',
+            description: `Given the input parameters for <strong>${sanitize(paramTitle)}</strong>, design an optimal solution satisfying all edge cases commonly asked in <strong>${sanitize(paramCompany)}</strong> technical rounds.`,
+            examples: [
+                { input: 'nums = [2, 7, 11, 15], target = 9', output: '[0, 1]', explanation: 'Because nums[0] + nums[1] == 9, return [0, 1].' },
+                { input: 'nums = [3, 2, 4], target = 6', output: '[1, 2]', explanation: 'Because nums[1] + nums[2] == 6, return [1, 2].' },
+                { input: 'nums = [3, 3], target = 6', output: '[0, 1]', explanation: 'Target sum matches indices 0 and 1.' }
+            ],
+            constraints: [
+                '1 <= input.length <= 10^5',
+                'Time Complexity: O(n) or O(n log n)',
+                'Space Complexity: O(1) auxiliary space'
+            ]
+        });
+    }
+
+    // 3. Background fetch to keep question data and test cases updated
+    (async () => {
+        try {
+            let res = await fetch('../../data/questions.json');
+            if (!res.ok) res = await fetch('/data/questions.json');
+            if (!res.ok) res = await fetch('/api/questions');
+            if (res.ok) {
+                const data = await res.json();
+                try { localStorage.setItem('hireprep_questions_cache', JSON.stringify(data)); } catch(e) {}
+                const arrayKey = paramType.includes('mcq') ? 'coding_mcq' : paramType === 'aptitude' ? 'aptitude' : 'coding';
+                const list = data[arrayKey] || [];
+                let freshQ = paramId ? list.find(item => item.id === paramId) : null;
+                if (!freshQ && paramTitle) {
+                    freshQ = list.find(item => item.title && (item.title.toLowerCase() === paramTitle.toLowerCase() || item.title.toLowerCase().includes(paramTitle.toLowerCase())));
+                }
+                if (!freshQ) {
+                    const allLists = [...(data.coding || []), ...(data.coding_mcq || []), ...(data.aptitude || [])];
+                    if (paramId) freshQ = allLists.find(item => item.id === paramId);
+                    if (!freshQ && paramTitle) {
+                        freshQ = allLists.find(item => item.title && (item.title.toLowerCase() === paramTitle.toLowerCase() || item.title.toLowerCase().includes(paramTitle.toLowerCase())));
+                    }
+                }
+                if (freshQ) {
+                    renderActiveQuestion(freshQ);
+                }
+            }
+        } catch(e) {}
     })();
     </script>
 </body>

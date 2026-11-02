@@ -20,8 +20,24 @@ function getApiBaseUrl() {
     if (host === 'localhost' || host === '127.0.0.1') {
         return window.location.port === '5000' ? '/api' : 'http://localhost:5000/api';
     }
-    // 4. Production hosting (Netlify proxy or relative path)
-    return '/api';
+    // 4. Production hosting (Direct connection to Render to eliminate Netlify proxy delays)
+    return DEFAULT_RENDER_BACKEND + '/api';
+}
+
+// Background pre-warming of Render instance so it is awake when user runs code
+function warmBackend() {
+    try {
+        if (typeof window !== 'undefined') {
+            const host = window.location.hostname;
+            const url = (host === 'localhost' || host === '127.0.0.1')
+                ? (window.location.port === '5000' ? '/api/health' : 'http://localhost:5000/api/health')
+                : DEFAULT_RENDER_BACKEND + '/api/health';
+            fetch(url, { keepalive: true, mode: 'cors' }).catch(() => {});
+        }
+    } catch (e) {}
+}
+if (typeof window !== 'undefined') {
+    warmBackend();
 }
 
 const API = {

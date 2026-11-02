@@ -5,33 +5,69 @@
 let state = { allData: null, category: 'coding', company: null, topic: null, search: '', difficulty: '', currentPage: 1, itemsPerPage: 15 };
 
 document.addEventListener('DOMContentLoaded', async () => {
+    // Pre-warm backend judge in background so it is awake when user opens a question
+    try {
+        fetch('https://hirepreparation-backend.onrender.com/api/health', { keepalive: true }).catch(() => {});
+    } catch(e) {}
+
     const loadingEl = document.getElementById('loading-indicator');
+
+    // 1. Check local / session cache for instant 0ms load
+    try {
+        const cached = localStorage.getItem('hireprep_questions_cache');
+        if (cached) {
+            state.allData = JSON.parse(cached);
+            if (loadingEl) loadingEl.style.display = 'none';
+            checkResumeBanner();
+            updateCountsAndRender();
+        }
+    } catch(e) {}
+
     try {
         let response = await fetch('../../data/questions.json');
         if (!response.ok) response = await fetch('/data/questions.json');
         if (!response.ok) response = await fetch('/api/questions');
-        if (!response.ok) throw new Error("Failed to fetch questions");
-        state.allData = await response.json();
-        if (loadingEl) loadingEl.style.display = 'none';
-        checkResumeBanner();
+        if (response.ok) {
+            const data = await response.json();
+            state.allData = data;
+            try { localStorage.setItem('hireprep_questions_cache', JSON.stringify(data)); } catch(e) {}
+            if (loadingEl) loadingEl.style.display = 'none';
+            checkResumeBanner();
+            updateCountsAndRender();
+        } else if (!state.allData) {
+            throw new Error("Failed to fetch questions");
+        }
+    } catch (e) {
+        if (!state.allData) {
+            console.error("Could not load questions data:", e);
+            if (loadingEl) loadingEl.innerHTML = '<div style="color:var(--text-muted);padding:2rem;">Could not load practice questions. Please refresh.</div>';
+        }
+    }
+});
 
-        // Update counts in stats and tabs
-        const codingLen = (state.allData.coding || []).length;
-        const mcqLen = (state.allData.coding_mcq || []).length;
-        const aptLen = (state.allData.aptitude || []).length;
-        
-        ['codingCount', 'codingTabCount'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.textContent = codingLen;
-        });
-        ['mcqCount', 'mcqTabCount'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.textContent = mcqLen;
-        });
-        ['aptitudeCount', 'aptitudeTabCount'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.textContent = aptLen;
-        });
+function updateCountsAndRender() {
+    if (!state.allData) return;
+    const codingLen = (state.allData.coding || []).length;
+    const mcqLen = (state.allData.coding_mcq || []).length;
+    const aptLen = (state.allData.aptitude || []).length;
+    
+    ['codingCount', 'codingTabCount'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = codingLen;
+    });
+    ['mcqCount', 'mcqTabCount'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = mcqLen;
+    });
+    ['aptitudeCount', 'aptitudeTabCount'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = aptLen;
+    });
+
+    renderQuestions();
+}
+
+function initCompanyFilterButtons() {
 
         // Company filter buttons
         document.querySelectorAll('.company-btn, .company-pill').forEach(btn => {
@@ -190,6 +226,7 @@ function renderQuestions() {
         const card = document.createElement('div');
         card.className = 'question-card';
         card.addEventListener('click', () => {
+            try { sessionStorage.setItem('hp_active_question', JSON.stringify(q)); } catch (e) {}
             const qType = (q.type || state.category).toLowerCase();
             const baseUrl = (qType === 'coding mcq' || qType === 'coding_mcq' || qType === 'mcq' || qType === 'aptitude') ? 'mcq-detail.html' : 'question-detail.html';
             const detailUrl = `${baseUrl}?id=${encodeURIComponent(q.id)}&type=${encodeURIComponent(q.type || state.category)}&title=${encodeURIComponent(q.title || '')}&company=${encodeURIComponent(q.company || '')}&difficulty=${encodeURIComponent(q.difficulty || '')}`;
