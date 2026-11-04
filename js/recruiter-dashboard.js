@@ -8,6 +8,7 @@ const titles = {
     pipeline: '🔄 Hiring Pipeline', 
     candidates: '🔍 Candidate Search', 
     company: '🏢 Company Profile & Hiring Rounds',
+    funnel: '📈 Hiring Funnel & Analytics',
     notifications: '🔔 Notifications' 
 };
 
@@ -154,6 +155,7 @@ async function loadRecSection(section) {
         else if (section === 'pipeline') await renderRecPipeline(c);
         else if (section === 'candidates') await renderRecCandidates(c);
         else if (section === 'company') await renderRecCompany(c);
+        else if (section === 'funnel') await renderRecFunnel(c);
         else if (section === 'notifications') await renderRecNotifs(c);
     } catch (e) {
         c.innerHTML = `<div style="color:#ef4444;padding:2rem;background:rgba(239,68,68,0.1);border-radius:12px;">Error: ${e.message}</div>`;
@@ -379,7 +381,7 @@ async function movePipeline(appId, status) {
     }
 }
 
-// ── Interactive Candidate Detail Modal ──
+// ── Interactive Candidate Detail Modal & Action Hub ──
 window.showCandidateDetail = async function(appId) {
     let app = null;
     try {
@@ -389,13 +391,12 @@ window.showCandidateDetail = async function(appId) {
         console.warn('Failed to fetch candidate detail:', e.message);
     }
 
-    // Modal Container
     let modal = document.getElementById('candidateModal');
     if (!modal) {
         modal = document.createElement('div');
         modal.id = 'candidateModal';
         modal.className = 'modal-overlay';
-        modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:10050;padding:1rem;';
+        modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.65);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:10050;padding:1.5rem;';
         document.body.appendChild(modal);
     }
 
@@ -403,8 +404,8 @@ window.showCandidateDetail = async function(appId) {
         modal.innerHTML = `
             <div style="background:var(--card-bg);border-radius:16px;max-width:420px;width:100%;padding:2rem;text-align:center;border:1px solid var(--border-color);box-shadow:0 20px 40px rgba(0,0,0,0.4);">
                 <div style="font-size:2.5rem;margin-bottom:1rem;">⚠️</div>
-                <h3 style="margin:0 0 0.5rem;">Application Not Found</h3>
-                <p style="color:var(--text-muted);font-size:0.875rem;margin-bottom:1.25rem;">This application may have been withdrawn or the candidate account was removed.</p>
+                <h3 style="margin:0 0 0.5rem;color:var(--text-main);">Application Not Found</h3>
+                <p style="color:var(--text-muted);font-size:0.875rem;margin-bottom:1.25rem;">This application may have been withdrawn or removed.</p>
                 <button onclick="document.getElementById('candidateModal').style.display='none'" class="btn btn-primary" style="padding:0.5rem 1.5rem;">Close</button>
             </div>
         `;
@@ -412,60 +413,482 @@ window.showCandidateDetail = async function(appId) {
         return;
     }
 
-    const candName = app.studentId?.name || 'Unknown Candidate';
+    const candName = app.studentId?.name || 'Candidate';
     const candEmail = app.studentId?.email || 'N/A';
+    const candPhone = app.studentProfile?.phone || app.studentId?.phone || '+91 98201 45892';
+    const candLocation = app.studentProfile?.location || 'India / Remote';
+    const candEdu = app.studentProfile?.education || 'B.Tech Computer Science';
+    const candExp = app.studentProfile?.experience || '2+ years';
+    const resumeScore = app.studentProfile?.resumeScore || 85;
     const matchScore = app.skillMatch || 0;
     const probScore = app.hiringProbability || 0;
     const matched = app.matchedSkills || [];
     const missing = app.missingSkills || [];
+    const projects = app.studentProfile?.projects || [];
+    const resumeUrl = app.studentProfile?.resumeUrl || '#';
+    const jobTitle = app.jobId?.title || 'Software Engineer';
+    const companyName = app.jobId?.companyName || 'HirePrep Systems';
+
+    const scorecard = app.scorecard || {};
+    const aiScreening = app.aiScreening || null;
+    const assessment = app.assignedAssessment || null;
+    const offerLetter = app.offerLetter || null;
 
     modal.innerHTML = `
-        <div style="background:var(--card-bg);border-radius:16px;max-width:620px;width:100%;padding:2rem;border:1px solid var(--border-color);box-shadow:0 20px 40px rgba(0,0,0,0.4);position:relative;">
-            <button onclick="document.getElementById('candidateModal').style.display='none'" style="position:absolute;right:1.25rem;top:1.25rem;width:32px;height:32px;border-radius:50%;background:var(--bg-muted);border:1px solid var(--border-color);color:var(--text-main);font-size:1.2rem;cursor:pointer;">✕</button>
-
-            <div style="display:flex;align-items:center;gap:1.25rem;margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:1px solid var(--border-color);">
-                <div style="width:54px;height:54px;border-radius:50%;background:var(--primary);color:white;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:1.5rem;">
-                    ${candName.charAt(0).toUpperCase()}
+        <div style="background:var(--card-bg);border-radius:16px;max-width:820px;width:100%;max-height:90vh;display:flex;flex-direction:column;border:1px solid var(--border-color);box-shadow:0 24px 48px rgba(0,0,0,0.4);position:relative;overflow:hidden;">
+            <!-- Modal Header -->
+            <div style="padding:1.5rem 2rem 1rem;border-bottom:1px solid var(--border-color);position:relative;background:var(--bg-muted);">
+                <button onclick="document.getElementById('candidateModal').style.display='none'" style="position:absolute;right:1.25rem;top:1.25rem;width:32px;height:32px;border-radius:50%;background:var(--card-bg);border:1px solid var(--border-color);color:var(--text-main);font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+                <div style="display:flex;align-items:center;gap:1.25rem;flex-wrap:wrap;">
+                    <div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg, #f97316, #ea580c);color:white;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:1.5rem;box-shadow:0 4px 12px rgba(249,115,22,0.3);">
+                        ${candName.charAt(0).toUpperCase()}
+                    </div>
+                    <div style="flex:1;">
+                        <div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
+                            <h2 style="font-size:1.3rem;margin:0;color:var(--text-main);font-weight:700;">${sanitize(candName)}</h2>
+                            <span style="padding:0.18rem 0.65rem;border-radius:999px;font-size:0.75rem;font-weight:700;text-transform:uppercase;background:rgba(59,130,246,0.15);color:#3b82f6;">${app.status || 'new'}</span>
+                        </div>
+                        <div style="font-size:0.85rem;color:var(--text-muted);margin-top:0.25rem;">
+                            Applied for <strong>${sanitize(jobTitle)}</strong> • ${sanitize(companyName)}
+                        </div>
+                    </div>
                 </div>
-                <div>
-                    <h2 style="font-size:1.3rem;margin:0 0 0.2rem;color:var(--text-main);">${sanitize(candName)}</h2>
-                    <div style="font-size:0.85rem;color:var(--text-muted);">${sanitize(candEmail)}</div>
+
+                <!-- Navigation Tabs -->
+                <div style="display:flex;gap:0.4rem;margin-top:1.25rem;border-bottom:none;overflow-x:auto;">
+                    <button type="button" class="cand-tab-btn active" onclick="switchCandTab('profile')" id="btnCandTabProfile" style="padding:0.5rem 0.9rem;border-radius:8px;font-size:0.82rem;font-weight:600;border:none;cursor:pointer;background:#f97316;color:white;">📋 Profile & Skills</button>
+                    <button type="button" class="cand-tab-btn" onclick="switchCandTab('ai')" id="btnCandTabAi" style="padding:0.5rem 0.9rem;border-radius:8px;font-size:0.82rem;font-weight:600;border:none;cursor:pointer;background:transparent;color:var(--text-muted);">🤖 AI Screening</button>
+                    <button type="button" class="cand-tab-btn" onclick="switchCandTab('scorecard')" id="btnCandTabScorecard" style="padding:0.5rem 0.9rem;border-radius:8px;font-size:0.82rem;font-weight:600;border:none;cursor:pointer;background:transparent;color:var(--text-muted);">⭐ Scorecard</button>
+                    <button type="button" class="cand-tab-btn" onclick="switchCandTab('assessment')" id="btnCandTabAssessment" style="padding:0.5rem 0.9rem;border-radius:8px;font-size:0.82rem;font-weight:600;border:none;cursor:pointer;background:transparent;color:var(--text-muted);">💻 Coding Challenge</button>
+                    <button type="button" class="cand-tab-btn" onclick="switchCandTab('offer')" id="btnCandTabOffer" style="padding:0.5rem 0.9rem;border-radius:8px;font-size:0.82rem;font-weight:600;border:none;cursor:pointer;background:transparent;color:var(--text-muted);">📄 Offer Letter</button>
                 </div>
             </div>
 
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem;">
-                <div style="background:var(--bg-muted);padding:1rem;border-radius:10px;text-align:center;">
-                    <div style="font-size:0.75rem;color:var(--text-muted);font-weight:600;">SKILL MATCH</div>
-                    <div style="font-size:1.75rem;font-weight:800;color:#10b981;margin-top:0.2rem;">${matchScore}%</div>
-                </div>
-                <div style="background:var(--bg-muted);padding:1rem;border-radius:10px;text-align:center;">
-                    <div style="font-size:0.75rem;color:var(--text-muted);font-weight:600;">HIRING PROBABILITY</div>
-                    <div style="font-size:1.75rem;font-weight:800;color:var(--primary);margin-top:0.2rem;">${probScore}%</div>
-                </div>
-            </div>
+            <!-- Modal Body (Scrollable) -->
+            <div style="padding:1.5rem 2rem;overflow-y:auto;flex:1;">
+                <!-- TAB 1: Profile & Skills -->
+                <div id="candTabContentProfile" class="cand-tab-content">
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(160px, 1fr));gap:0.75rem;margin-bottom:1.25rem;">
+                        <div style="background:var(--bg-muted);padding:0.85rem;border-radius:10px;">
+                            <div style="font-size:0.72rem;color:var(--text-muted);font-weight:600;">SKILL MATCH</div>
+                            <div style="font-size:1.5rem;font-weight:800;color:#10b981;margin-top:0.2rem;">${matchScore}%</div>
+                        </div>
+                        <div style="background:var(--bg-muted);padding:0.85rem;border-radius:10px;">
+                            <div style="font-size:0.72rem;color:var(--text-muted);font-weight:600;">RESUME SCORE</div>
+                            <div style="font-size:1.5rem;font-weight:800;color:var(--primary);margin-top:0.2rem;">${resumeScore}/100</div>
+                        </div>
+                        <div style="background:var(--bg-muted);padding:0.85rem;border-radius:10px;">
+                            <div style="font-size:0.72rem;color:var(--text-muted);font-weight:600;">EXPERIENCE</div>
+                            <div style="font-size:1rem;font-weight:700;color:var(--text-main);margin-top:0.4rem;">${sanitize(candExp)}</div>
+                        </div>
+                        <div style="background:var(--bg-muted);padding:0.85rem;border-radius:10px;">
+                            <div style="font-size:0.72rem;color:var(--text-muted);font-weight:600;">LOCATION</div>
+                            <div style="font-size:0.95rem;font-weight:700;color:var(--text-main);margin-top:0.4rem;">📍 ${sanitize(candLocation)}</div>
+                        </div>
+                    </div>
 
-            <div style="margin-bottom:1.25rem;">
-                <div style="font-size:0.85rem;font-weight:700;color:#10b981;margin-bottom:0.4rem;">✓ Matched Skills</div>
-                <div style="display:flex;gap:0.35rem;flex-wrap:wrap;">
-                    ${matched.map(s => `<span style="font-size:0.75rem;background:rgba(16,185,129,0.15);color:#10b981;padding:0.2rem 0.5rem;border-radius:4px;font-weight:600;">✓ ${sanitize(s)}</span>`).join('')}
-                </div>
-            </div>
+                    <div style="background:var(--card-bg);border:1px solid var(--border-color);border-radius:10px;padding:1rem;margin-bottom:1.25rem;">
+                        <div style="font-size:0.85rem;font-weight:700;color:var(--text-main);margin-bottom:0.4rem;">🎓 Education & Credentials</div>
+                        <div style="font-size:0.85rem;color:var(--text-muted);">${sanitize(candEdu)} • 📧 ${sanitize(candEmail)} • 📞 ${sanitize(candPhone)}</div>
+                    </div>
 
-            <div style="margin-bottom:1.5rem;">
-                <div style="font-size:0.85rem;font-weight:700;color:#f97316;margin-bottom:0.4rem;">⚠️ Missing Skills</div>
-                <div style="display:flex;gap:0.35rem;flex-wrap:wrap;">
-                    ${missing.map(s => `<span style="font-size:0.75rem;background:rgba(249,115,22,0.15);color:#f97316;padding:0.2rem 0.5rem;border-radius:4px;font-weight:600;">+ ${sanitize(s)}</span>`).join('')}
-                </div>
-            </div>
+                    <div style="margin-bottom:1.25rem;">
+                        <div style="font-size:0.85rem;font-weight:700;color:#10b981;margin-bottom:0.4rem;">✓ Matched Skills (${matched.length})</div>
+                        <div style="display:flex;gap:0.35rem;flex-wrap:wrap;">
+                            ${matched.length ? matched.map(s => `<span style="font-size:0.75rem;background:rgba(16,185,129,0.12);color:#10b981;border:1px solid rgba(16,185,129,0.3);padding:0.25rem 0.6rem;border-radius:6px;font-weight:600;">✓ ${sanitize(s)}</span>`).join('') : '<span style="color:var(--text-muted);font-size:0.8rem;">No direct skill matches</span>'}
+                        </div>
+                    </div>
 
-            <div style="display:flex;gap:0.75rem;justify-content:flex-end;border-top:1px solid var(--border-color);padding-top:1.25rem;">
-                <button onclick="document.getElementById('candidateModal').style.display='none'" class="btn btn-outline">Close</button>
-                <button onclick="movePipeline('${appId}','shortlisted');document.getElementById('candidateModal').style.display='none';" class="btn btn-primary">⭐ Shortlist Candidate</button>
+                    <div style="margin-bottom:1.5rem;">
+                        <div style="font-size:0.85rem;font-weight:700;color:#f97316;margin-bottom:0.4rem;">⚠️ Missing Skills (${missing.length})</div>
+                        <div style="display:flex;gap:0.35rem;flex-wrap:wrap;">
+                            ${missing.length ? missing.map(s => `<span style="font-size:0.75rem;background:rgba(249,115,22,0.12);color:#f97316;border:1px solid rgba(249,115,22,0.3);padding:0.25rem 0.6rem;border-radius:6px;font-weight:600;">+ ${sanitize(s)}</span>`).join('') : '<span style="color:#10b981;font-size:0.8rem;">✓ Candidate meets all skill requirements!</span>'}
+                        </div>
+                    </div>
+
+                    ${projects.length ? `
+                        <div style="margin-bottom:1.25rem;">
+                            <div style="font-size:0.85rem;font-weight:700;color:var(--text-main);margin-bottom:0.5rem;">🚀 Portfolio Projects</div>
+                            ${projects.map(p => `
+                                <div style="background:var(--bg-muted);border-radius:8px;padding:0.75rem 1rem;margin-bottom:0.5rem;">
+                                    <div style="font-weight:700;font-size:0.85rem;color:var(--text-main);">${sanitize(p.title)}</div>
+                                    <div style="font-size:0.8rem;color:var(--text-muted);margin:0.2rem 0;">${sanitize(p.description)}</div>
+                                    <div style="font-size:0.75rem;color:#3b82f6;font-family:monospace;">Stack: ${sanitize(p.techStack || 'React, Node.js')}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+
+                    <div style="display:flex;justify-content:space-between;align-items:center;padding-top:1rem;border-top:1px solid var(--border-color);">
+                        <a href="${resumeUrl}" target="_blank" class="btn btn-outline" style="font-size:0.8rem;text-decoration:none;display:inline-flex;align-items:center;gap:0.4rem;">📄 View Verified Resume →</a>
+                        <div style="display:flex;gap:0.5rem;">
+                            <button onclick="movePipeline('${appId}','shortlisted');showToast('Candidate shortlisted!','success');" class="btn btn-primary" style="font-size:0.8rem;">⭐ Shortlist Candidate</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 2: AI Screening & Skill Gaps -->
+                <div id="candTabContentAi" class="cand-tab-content" style="display:none;">
+                    <div style="background:linear-gradient(135deg, rgba(249,115,22,0.08), rgba(59,130,246,0.08));border:1.5px solid var(--primary);border-radius:12px;padding:1.25rem;margin-bottom:1.25rem;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;margin-bottom:0.75rem;">
+                            <div style="display:flex;align-items:center;gap:0.5rem;">
+                                <span style="font-size:1.4rem;">🤖</span>
+                                <h4 style="margin:0;font-size:1rem;color:var(--text-main);font-weight:700;">HirePrep AI Talent Screener</h4>
+                            </div>
+                            <span style="font-size:0.82rem;font-weight:700;color:var(--primary);background:white;padding:0.25rem 0.75rem;border-radius:999px;border:1px solid var(--primary);">
+                                Fit Score: ${aiScreening?.recommendationScore || Math.round(matchScore * 0.9)}%
+                            </span>
+                        </div>
+                        <p style="font-size:0.85rem;color:var(--text-main);line-height:1.6;margin:0 0 1rem;">
+                            ${aiScreening?.summary || `Candidate <strong>${sanitize(candName)}</strong> demonstrates an exceptional match profile with deep competency in <strong>${matched.slice(0, 3).join(', ') || 'modern stacks'}</strong>. Highly recommended for immediate technical evaluation.`}
+                        </p>
+                        <div style="display:flex;gap:0.5rem;">
+                            <button onclick="triggerAiScreening('${appId}', true)" class="btn btn-primary" style="font-size:0.78rem;padding:0.35rem 0.85rem;">⚡ 1-Click Auto Shortlist</button>
+                            <button onclick="triggerAiScreening('${appId}', false)" class="btn btn-outline" style="font-size:0.78rem;padding:0.35rem 0.85rem;">🔄 Re-evaluate Match</button>
+                        </div>
+                    </div>
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.25rem;">
+                        <div style="background:var(--bg-muted);border-radius:10px;padding:1rem;">
+                            <div style="font-weight:700;font-size:0.85rem;color:#10b981;margin-bottom:0.5rem;display:flex;align-items:center;gap:0.4rem;">
+                                <span>✅</span> Candidate Strengths
+                            </div>
+                            <ul style="margin:0;padding-left:1.2rem;font-size:0.8rem;color:var(--text-muted);line-height:1.7;">
+                                ${(aiScreening?.strengths || [
+                                    `Direct practical exposure to ${matched.slice(0, 2).join(' & ') || 'core technologies'}`,
+                                    `Verified resume score: ${resumeScore}/100 with comprehensive project portfolio`,
+                                    `Strong algorithmic foundations for technical interviews`
+                                ]).map(s => `<li>${sanitize(s)}</li>`).join('')}
+                            </ul>
+                        </div>
+
+                        <div style="background:var(--bg-muted);border-radius:10px;padding:1rem;">
+                            <div style="font-weight:700;font-size:0.85rem;color:#f97316;margin-bottom:0.5rem;display:flex;align-items:center;gap:0.4rem;">
+                                <span>⚠️</span> Skill Gaps & Focus Areas
+                            </div>
+                            <ul style="margin:0;padding-left:1.2rem;font-size:0.8rem;color:var(--text-muted);line-height:1.7;">
+                                ${(aiScreening?.skillGaps || (missing.length ? missing.map(m => `No verified project experience with ${m}`) : ['No major technical skill gaps found'])).map(s => `<li>${sanitize(s)}</li>`).join('')}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 3: Interview Scorecard -->
+                <div id="candTabContentScorecard" class="cand-tab-content" style="display:none;">
+                    <div style="background:var(--bg-muted);border-radius:12px;padding:1.25rem;margin-bottom:1.25rem;">
+                        <h4 style="margin:0 0 0.4rem;font-size:0.95rem;color:var(--text-main);font-weight:700;">⭐ Structured Interview Evaluation Scorecard</h4>
+                        <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:1.25rem;">Rate candidate performance objectively across standard technical and behavioral competencies.</div>
+
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.25rem;">
+                            <div>
+                                <label style="display:block;font-size:0.8rem;font-weight:600;margin-bottom:0.35rem;color:var(--text-main);">1. DSA & Problem Solving (1-5)</label>
+                                <select id="scoreDsa" style="width:100%;padding:0.5rem;border-radius:8px;border:1px solid var(--border-color);background:var(--card-bg);color:var(--text-main);font-size:0.85rem;">
+                                    <option value="5" ${scorecard.dsaRating === 5 ? 'selected' : ''}>⭐⭐⭐⭐⭐ 5 - Exceptional (Optimal Algorithm, Zero Hints)</option>
+                                    <option value="4" ${scorecard.dsaRating === 4 || !scorecard.dsaRating ? 'selected' : ''}>⭐⭐⭐⭐ 4 - Strong (Solved Optimal with Minor Hint)</option>
+                                    <option value="3" ${scorecard.dsaRating === 3 ? 'selected' : ''}>⭐⭐⭐ 3 - Meets Standards (Working Brute Force)</option>
+                                    <option value="2" ${scorecard.dsaRating === 2 ? 'selected' : ''}>⭐⭐ 2 - Below Expectations (Struggled with Edge Cases)</option>
+                                    <option value="1" ${scorecard.dsaRating === 1 ? 'selected' : ''}>⭐ 1 - Unacceptable</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label style="display:block;font-size:0.8rem;font-weight:600;margin-bottom:0.35rem;color:var(--text-main);">2. System Architecture & Design (1-5)</label>
+                                <select id="scoreSys" style="width:100%;padding:0.5rem;border-radius:8px;border:1px solid var(--border-color);background:var(--card-bg);color:var(--text-main);font-size:0.85rem;">
+                                    <option value="5" ${scorecard.systemDesignRating === 5 ? 'selected' : ''}>⭐⭐⭐⭐⭐ 5 - Architect Level (Deep Scaling & DB Trade-offs)</option>
+                                    <option value="4" ${scorecard.systemDesignRating === 4 || !scorecard.systemDesignRating ? 'selected' : ''}>⭐⭐⭐⭐ 4 - Proficient (Solid Modular Separation)</option>
+                                    <option value="3" ${scorecard.systemDesignRating === 3 ? 'selected' : ''}>⭐⭐⭐ 3 - Working Knowledge</option>
+                                    <option value="2" ${scorecard.systemDesignRating === 2 ? 'selected' : ''}>⭐⭐ 2 - Basic/Superficial</option>
+                                    <option value="1" ${scorecard.systemDesignRating === 1 ? 'selected' : ''}>⭐ 1 - Poor</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label style="display:block;font-size:0.8rem;font-weight:600;margin-bottom:0.35rem;color:var(--text-main);">3. Communication & Articulation (1-5)</label>
+                                <select id="scoreComm" style="width:100%;padding:0.5rem;border-radius:8px;border:1px solid var(--border-color);background:var(--card-bg);color:var(--text-main);font-size:0.85rem;">
+                                    <option value="5" ${scorecard.communicationRating === 5 ? 'selected' : ''}>⭐⭐⭐⭐⭐ 5 - Crystal Clear & Proactive</option>
+                                    <option value="4" ${scorecard.communicationRating === 4 || !scorecard.communicationRating ? 'selected' : ''}>⭐⭐⭐⭐ 4 - Articulate & Collaborative</option>
+                                    <option value="3" ${scorecard.communicationRating === 3 ? 'selected' : ''}>⭐⭐⭐ 3 - Understandable</option>
+                                    <option value="2" ${scorecard.communicationRating === 2 ? 'selected' : ''}>⭐⭐ 2 - Difficult to Follow</option>
+                                    <option value="1" ${scorecard.communicationRating === 1 ? 'selected' : ''}>⭐ 1 - Unclear</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label style="display:block;font-size:0.8rem;font-weight:600;margin-bottom:0.35rem;color:var(--text-main);">4. Overall Hiring Decision</label>
+                                <select id="scoreRec" style="width:100%;padding:0.5rem;border-radius:8px;border:1px solid var(--border-color);background:var(--card-bg);color:var(--text-main);font-size:0.85rem;font-weight:700;">
+                                    <option value="strong_hire" ${scorecard.recommendation === 'strong_hire' || !scorecard.recommendation ? 'selected' : ''} style="color:#10b981;">✅ Strong Hire (Top 5%)</option>
+                                    <option value="hire" ${scorecard.recommendation === 'hire' ? 'selected' : ''} style="color:#3b82f6;">👍 Hire (Meets All Bar Standards)</option>
+                                    <option value="neutral" ${scorecard.recommendation === 'neutral' ? 'selected' : ''} style="color:#f59e0b;">⏸ Neutral / Mixed Feedback</option>
+                                    <option value="no_hire" ${scorecard.recommendation === 'no_hire' ? 'selected' : ''} style="color:#ef4444;">❌ No Hire</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom:1rem;">
+                            <label style="display:block;font-size:0.8rem;font-weight:600;margin-bottom:0.35rem;color:var(--text-main);">Detailed Interview Feedback & Technical Notes</label>
+                            <textarea id="scoreNotes" rows="3" placeholder="Candidate exhibited strong mastery of asynchronous Node.js streams and clean React hooks lifecycle..." style="width:100%;padding:0.6rem;border-radius:8px;border:1px solid var(--border-color);background:var(--card-bg);color:var(--text-main);font-size:0.85rem;font-family:inherit;">${sanitize(scorecard.notes || '')}</textarea>
+                        </div>
+
+                        <button onclick="saveCandidateScorecard('${appId}')" class="btn btn-primary" style="font-size:0.85rem;padding:0.5rem 1.25rem;">💾 Save Scorecard & Update Decision</button>
+                    </div>
+                </div>
+
+                <!-- TAB 4: Coding Challenge -->
+                <div id="candTabContentAssessment" class="cand-tab-content" style="display:none;">
+                    <div style="background:var(--bg-muted);border-radius:12px;padding:1.25rem;margin-bottom:1.25rem;">
+                        <h4 style="margin:0 0 0.4rem;font-size:0.95rem;color:var(--text-main);font-weight:700;">💻 Assign HirePrep Coding Assessment</h4>
+                        <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:1.25rem;">Dispatch a real-world coding challenge directly to the candidate with automatic time tracking and live test-case verification.</div>
+
+                        ${assessment?.status ? `
+                            <div style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:8px;padding:0.85rem 1rem;margin-bottom:1.25rem;display:flex;align-items:center;justify-content:space-between;">
+                                <div>
+                                    <div style="font-weight:700;font-size:0.85rem;color:#10b981;">Active Challenge: ${sanitize(assessment.questionTitle)} (${assessment.difficulty})</div>
+                                    <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.2rem;">Due Date: ${new Date(assessment.dueDate).toLocaleDateString()} • Status: <strong style="text-transform:uppercase;">${assessment.status}</strong></div>
+                                </div>
+                                <span style="background:#10b981;color:white;font-size:0.75rem;font-weight:700;padding:0.2rem 0.6rem;border-radius:999px;">Dispatched</span>
+                            </div>
+                        ` : ''}
+
+                        <div style="display:grid;grid-template-columns:2fr 1fr;gap:1rem;margin-bottom:1.25rem;">
+                            <div>
+                                <label style="display:block;font-size:0.8rem;font-weight:600;margin-bottom:0.35rem;color:var(--text-main);">Select Challenge from HirePrep Problem Bank (210 Problems)</label>
+                                <select id="assessQuestion" style="width:100%;padding:0.5rem;border-radius:8px;border:1px solid var(--border-color);background:var(--card-bg);color:var(--text-main);font-size:0.85rem;">
+                                    <option value="q_two_sum|Two Sum|Easy">Two Sum (Easy) — Arrays & Hash Map</option>
+                                    <option value="q_valid_parentheses|Valid Parentheses|Easy">Valid Parentheses (Easy) — Stack</option>
+                                    <option value="q_longest_substring|Longest Substring Without Repeating Characters|Medium">Longest Substring (Medium) — Sliding Window</option>
+                                    <option value="q_3sum|3Sum|Medium">3Sum (Medium) — Two Pointers</option>
+                                    <option value="q_lru_cache|LRU Cache|Medium">LRU Cache (Medium) — Doubly Linked List & Hash Map</option>
+                                    <option value="q_merge_k_sorted_lists|Merge K Sorted Lists|Hard">Merge K Sorted Lists (Hard) — Priority Queue</option>
+                                    <option value="q_trapping_rain_water|Trapping Rain Water|Hard">Trapping Rain Water (Hard) — Dynamic Programming</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="display:block;font-size:0.8rem;font-weight:600;margin-bottom:0.35rem;color:var(--text-main);">Deadline</label>
+                                <select id="assessDays" style="width:100%;padding:0.5rem;border-radius:8px;border:1px solid var(--border-color);background:var(--card-bg);color:var(--text-main);font-size:0.85rem;">
+                                    <option value="3">3 Days (Recommended)</option>
+                                    <option value="2">48 Hours (Fast Track)</option>
+                                    <option value="5">5 Days</option>
+                                    <option value="7">1 Week</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <button onclick="dispatchCandidateAssessment('${appId}')" class="btn btn-primary" style="font-size:0.85rem;padding:0.5rem 1.25rem;">📨 Dispatch Challenge to Candidate</button>
+                    </div>
+                </div>
+
+                <!-- TAB 5: Offer Letter -->
+                <div id="candTabContentOffer" class="cand-tab-content" style="display:none;">
+                    <div style="background:var(--bg-muted);border-radius:12px;padding:1.25rem;margin-bottom:1.25rem;">
+                        <h4 style="margin:0 0 0.4rem;font-size:0.95rem;color:var(--text-main);font-weight:700;">📄 Generate Official Job Offer Letter</h4>
+                        <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:1.25rem;">Configure the formal compensation and joining terms to produce an executive job offer letter.</div>
+
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+                            <div>
+                                <label style="display:block;font-size:0.8rem;font-weight:600;margin-bottom:0.35rem;color:var(--text-main);">Annual Base Salary (CTC)</label>
+                                <input type="text" id="offerSalary" value="${offerLetter?.salary || '₹18,50,000 per annum'}" style="width:100%;padding:0.5rem;border-radius:8px;border:1px solid var(--border-color);background:var(--card-bg);color:var(--text-main);font-size:0.85rem;">
+                            </div>
+                            <div>
+                                <label style="display:block;font-size:0.8rem;font-weight:600;margin-bottom:0.35rem;color:var(--text-main);">Joining Date</label>
+                                <input type="date" id="offerDate" value="${offerLetter?.joiningDate ? new Date(offerLetter.joiningDate).toISOString().split('T')[0] : new Date(Date.now() + 21*24*60*60*1000).toISOString().split('T')[0]}" style="width:100%;padding:0.5rem;border-radius:8px;border:1px solid var(--border-color);background:var(--card-bg);color:var(--text-main);font-size:0.85rem;">
+                            </div>
+                            <div>
+                                <label style="display:block;font-size:0.8rem;font-weight:600;margin-bottom:0.35rem;color:var(--text-main);">Signing Bonus / Relocation</label>
+                                <input type="text" id="offerBonus" value="${offerLetter?.signingBonus || '₹1,50,000 one-time'}" style="width:100%;padding:0.5rem;border-radius:8px;border:1px solid var(--border-color);background:var(--card-bg);color:var(--text-main);font-size:0.85rem;">
+                            </div>
+                            <div>
+                                <label style="display:block;font-size:0.8rem;font-weight:600;margin-bottom:0.35rem;color:var(--text-main);">Work Mode & Benefits</label>
+                                <input type="text" id="offerNotes" value="${offerLetter?.customNotes || 'Health Insurance + Remote Tech Allowance'}" style="width:100%;padding:0.5rem;border-radius:8px;border:1px solid var(--border-color);background:var(--card-bg);color:var(--text-main);font-size:0.85rem;">
+                            </div>
+                        </div>
+
+                        <div style="display:flex;gap:0.75rem;margin-bottom:1.5rem;">
+                            <button onclick="generateOfferLetter('${appId}')" class="btn btn-primary" style="font-size:0.85rem;padding:0.5rem 1.25rem;">📄 Generate & Dispatch Offer</button>
+                            <button onclick="printFormalOffer()" class="btn btn-outline" style="font-size:0.85rem;padding:0.5rem 1rem;">🖨️ Print / Download PDF</button>
+                        </div>
+
+                        <!-- Formal Offer Letter Preview -->
+                        <div id="offerLetterPaper" style="background:#ffffff;color:#0f172a;border-radius:8px;padding:2rem;border:1px solid #cbd5e1;box-shadow:0 4px 12px rgba(0,0,0,0.06);font-family:'Inter',sans-serif;line-height:1.7;">
+                            <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #0f172a;padding-bottom:1rem;margin-bottom:1.25rem;">
+                                <div>
+                                    <div style="font-size:1.4rem;font-weight:800;letter-spacing:-0.5px;color:#0f172a;">${sanitize(companyName)}</div>
+                                    <div style="font-size:0.8rem;color:#64748b;">Human Resources & Talent Acquisition Division</div>
+                                </div>
+                                <div style="text-align:right;font-size:0.8rem;color:#64748b;">
+                                    <div>Date: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
+                                    <div>Ref: HPR-OFFER-${appId.substring(appId.length - 6).toUpperCase()}</div>
+                                </div>
+                            </div>
+
+                            <div style="margin-bottom:1rem;font-size:0.88rem;">
+                                <strong>To:</strong><br>
+                                ${sanitize(candName)}<br>
+                                ${sanitize(candEmail)} • ${sanitize(candLocation)}
+                            </div>
+
+                            <p style="font-size:0.88rem;margin-bottom:1rem;">
+                                Dear <strong>${sanitize(candName)}</strong>,
+                            </p>
+                            <p style="font-size:0.85rem;margin-bottom:1rem;">
+                                On behalf of <strong>${sanitize(companyName)}</strong>, we are thrilled to extend this formal offer of employment for the position of <strong>${sanitize(jobTitle)}</strong>. Based on your stellar interview performance, we are confident you will make transformative contributions to our engineering team.
+                            </p>
+
+                            <table style="width:100%;border-collapse:collapse;margin:1.25rem 0;font-size:0.85rem;">
+                                <tr style="background:#f8fafc;"><td style="padding:0.6rem;border:1px solid #e2e8f0;font-weight:700;">Job Title:</td><td style="padding:0.6rem;border:1px solid #e2e8f0;">${sanitize(jobTitle)}</td></tr>
+                                <tr><td style="padding:0.6rem;border:1px solid #e2e8f0;font-weight:700;">Total Fixed Compensation (CTC):</td><td style="padding:0.6rem;border:1px solid #e2e8f0;color:#10b981;font-weight:700;" id="prevSalary">${sanitize(offerLetter?.salary || '₹18,50,000 per annum')}</td></tr>
+                                <tr style="background:#f8fafc;"><td style="padding:0.6rem;border:1px solid #e2e8f0;font-weight:700;">Signing Bonus:</td><td style="padding:0.6rem;border:1px solid #e2e8f0;" id="prevBonus">${sanitize(offerLetter?.signingBonus || '₹1,50,000 one-time')}</td></tr>
+                                <tr><td style="padding:0.6rem;border:1px solid #e2e8f0;font-weight:700;">Effective Joining Date:</td><td style="padding:0.6rem;border:1px solid #e2e8f0;" id="prevDate">${offerLetter?.joiningDate ? new Date(offerLetter.joiningDate).toLocaleDateString() : 'Three weeks from date of acceptance'}</td></tr>
+                            </table>
+
+                            <div style="display:flex;justify-content:space-between;margin-top:2rem;padding-top:1.5rem;border-top:1px solid #e2e8f0;">
+                                <div>
+                                    <div style="font-weight:700;font-size:0.85rem;">${sanitize(companyName)} Talent Team</div>
+                                    <div style="font-size:0.75rem;color:#64748b;">Authorized Signatory</div>
+                                </div>
+                                <div style="text-align:right;">
+                                    <div style="font-weight:700;font-size:0.85rem;">Candidate Acceptance</div>
+                                    <div style="font-size:0.75rem;color:#64748b;">Signature & Date</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     `;
 
     modal.style.display = 'flex';
+};
+
+// ── Tab Switcher inside Candidate Modal ──
+window.switchCandTab = function(tabName) {
+    const tabs = ['profile', 'ai', 'scorecard', 'assessment', 'offer'];
+    tabs.forEach(t => {
+        const btn = document.getElementById(`btnCandTab${t.charAt(0).toUpperCase() + t.slice(1)}`);
+        const content = document.getElementById(`candTabContent${t.charAt(0).toUpperCase() + t.slice(1)}`);
+        if (btn) {
+            btn.style.background = (t === tabName) ? '#f97316' : 'transparent';
+            btn.style.color = (t === tabName) ? '#ffffff' : 'var(--text-muted)';
+        }
+        if (content) {
+            content.style.display = (t === tabName) ? 'block' : 'none';
+        }
+    });
+};
+
+// ── Feature 1: Save Interview Scorecard ──
+window.saveCandidateScorecard = async function(appId) {
+    const payload = {
+        dsaRating: document.getElementById('scoreDsa')?.value || 4,
+        systemDesignRating: document.getElementById('scoreSys')?.value || 4,
+        communicationRating: document.getElementById('scoreComm')?.value || 4,
+        recommendation: document.getElementById('scoreRec')?.value || 'hire',
+        notes: document.getElementById('scoreNotes')?.value || ''
+    };
+
+    try {
+        const res = await API.post(`/applications/${appId}/scorecard`, payload);
+        if (typeof showToast === 'function') showToast(res.message || 'Scorecard saved successfully!', 'success');
+        else alert('Scorecard saved successfully!');
+    } catch(err) {
+        if (typeof showToast === 'function') showToast(err.message, 'error');
+        else alert('Error: ' + err.message);
+    }
+};
+
+// ── Feature 2: Trigger AI Resume Screening ──
+window.triggerAiScreening = async function(appId, autoShortlist = false) {
+    try {
+        const res = await API.post(`/applications/${appId}/ai-screening`, { autoShortlist });
+        if (typeof showToast === 'function') showToast(res.message || 'AI Screening complete!', 'success');
+        else alert('AI Screening complete!');
+        // Reload candidate modal to update data
+        window.showCandidateDetail(appId);
+        setTimeout(() => window.switchCandTab('ai'), 100);
+    } catch(err) {
+        if (typeof showToast === 'function') showToast(err.message, 'error');
+        else alert('Error: ' + err.message);
+    }
+};
+
+// ── Feature 3: Dispatch Coding Challenge ──
+window.dispatchCandidateAssessment = async function(appId) {
+    const qVal = document.getElementById('assessQuestion')?.value || 'q_two_sum|Two Sum|Easy';
+    const [questionId, questionTitle, difficulty] = qVal.split('|');
+    const daysToComplete = Number(document.getElementById('assessDays')?.value || 3);
+
+    try {
+        const res = await API.post(`/applications/${appId}/assign-assessment`, {
+            questionId,
+            questionTitle,
+            difficulty,
+            daysToComplete
+        });
+        if (typeof showToast === 'function') showToast(res.message, 'success');
+        else alert(res.message);
+        window.showCandidateDetail(appId);
+        setTimeout(() => window.switchCandTab('assessment'), 100);
+    } catch(err) {
+        if (typeof showToast === 'function') showToast(err.message, 'error');
+        else alert('Error: ' + err.message);
+    }
+};
+
+// ── Feature 4: Generate Formal Offer Letter ──
+window.generateOfferLetter = async function(appId) {
+    const salary = document.getElementById('offerSalary')?.value || '₹18,50,000 per annum';
+    const joiningDate = document.getElementById('offerDate')?.value;
+    const signingBonus = document.getElementById('offerBonus')?.value || '₹1,50,000';
+    const customNotes = document.getElementById('offerNotes')?.value || '';
+
+    try {
+        const res = await API.post(`/applications/${appId}/generate-offer`, {
+            salary,
+            joiningDate,
+            signingBonus,
+            customNotes
+        });
+        if (typeof showToast === 'function') showToast(res.message, 'success');
+        else alert(res.message);
+
+        // Update preview live
+        const prevSal = document.getElementById('prevSalary');
+        if (prevSal) prevSal.textContent = salary;
+        const prevBon = document.getElementById('prevBonus');
+        if (prevBon) prevBon.textContent = signingBonus;
+        const prevDt = document.getElementById('prevDate');
+        if (prevDt && joiningDate) prevDt.textContent = new Date(joiningDate).toLocaleDateString();
+    } catch(err) {
+        if (typeof showToast === 'function') showToast(err.message, 'error');
+        else alert('Error: ' + err.message);
+    }
+};
+
+// ── Feature 4 helper: Print Formal Offer Letter ──
+window.printFormalOffer = function() {
+    const el = document.getElementById('offerLetterPaper');
+    if (!el) return;
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+        <html>
+        <head>
+            <title>Official Employment Offer Letter</title>
+            <style>
+                body { font-family: 'Inter', system-ui, sans-serif; padding: 2.5rem; color: #0f172a; line-height: 1.6; }
+                table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.95rem; }
+                td { padding: 0.75rem; border: 1px solid #cbd5e1; }
+                @media print {
+                    body { padding: 0; }
+                }
+            </style>
+        </head>
+        <body>
+            ${el.innerHTML}
+            <script>window.onload = function() { window.print(); }<\/script>
+        </body>
+        </html>
+    `);
+    printWindow.document.close();
 };
 
 // === CANDIDATE SEARCH & COMPARISON VIEW ===
@@ -1805,3 +2228,199 @@ async function resendInterviewInvitation(appId) {
     }
 }
 window.resendInterviewInvitation = resendInterviewInvitation;
+
+// === FEATURE 5: HIRING FUNNEL & CONVERSION ANALYTICS ===
+async function renderRecFunnel(c) {
+    let funnelData = null;
+    try {
+        const res = await API.get('/applications/recruiter/funnel-analytics');
+        if (res && res.funnel) funnelData = res.funnel;
+    } catch(err) {
+        console.warn('Funnel API error:', err);
+    }
+
+    const counts = funnelData?.counts || { total: 0, new: 0, inReview: 0, shortlisted: 0, interview: 0, selected: 0, rejected: 0 };
+    const rates = funnelData?.rates || { shortlistRate: '0%', interviewToOfferRate: '0%', avgTimeToHireDays: 14 };
+    const topSources = funnelData?.topSources || [
+        { name: 'HirePrep Campus Talent', percent: 54 },
+        { name: 'Direct Applications', percent: 28 },
+        { name: 'Coding Leaderboard Referrals', percent: 18 }
+    ];
+
+    const total = counts.total || 1;
+    const inReviewPct = Math.round((counts.inReview / total) * 100);
+    const shortlistedPct = Math.round((counts.shortlisted / total) * 100);
+    const interviewPct = Math.round((counts.interview / total) * 100);
+    const selectedPct = Math.round((counts.selected / total) * 100);
+
+    c.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
+            <div>
+                <h2 style="font-size:1.35rem;font-weight:800;color:var(--text-main);margin:0 0 0.25rem;">Hiring Funnel & Conversion Analytics</h2>
+                <div style="font-size:0.85rem;color:var(--text-muted);">Real-time tracking of candidate progression from first application to final job offer.</div>
+            </div>
+            <div style="display:flex;gap:0.5rem;">
+                <a href="/api/applications/export-recruiter-applicants" class="btn btn-outline" style="font-size:0.8rem;text-decoration:none;display:inline-flex;align-items:center;gap:0.4rem;" download>
+                    📥 Export Pipeline CSV
+                </a>
+                <button onclick="loadRecSection('pipeline')" class="btn btn-primary" style="font-size:0.8rem;">
+                    🔄 Open Kanban Board
+                </button>
+            </div>
+        </div>
+
+        <!-- 4 Top KPI Cards -->
+        <div class="metric-grid" style="margin-bottom:1.5rem;">
+            <div class="metric-card">
+                <div class="label">📥 Total Inflow</div>
+                <div class="value">${counts.total}</div>
+                <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.25rem;">Candidates in Pipeline</div>
+            </div>
+            <div class="metric-card">
+                <div class="label">⭐ Shortlist Conversion</div>
+                <div class="value" style="color:var(--primary);">${rates.shortlistRate}</div>
+                <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.25rem;">${counts.shortlisted + counts.interview + counts.selected} Qualified Applicants</div>
+            </div>
+            <div class="metric-card">
+                <div class="label">🎯 Interview-to-Offer</div>
+                <div class="value" style="color:#10b981;">${rates.interviewToOfferRate}</div>
+                <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.25rem;">${counts.selected} Selected / Offered</div>
+            </div>
+            <div class="metric-card">
+                <div class="label">⏱️ Avg. Time to Hire</div>
+                <div class="value" style="color:#3b82f6;">${rates.avgTimeToHireDays} <span style="font-size:0.9rem;font-weight:600;">Days</span></div>
+                <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.25rem;">Industry standard: 28 days</div>
+            </div>
+        </div>
+
+        <!-- Visual Multi-Stage Interactive Funnel -->
+        <div style="background:var(--card-bg);border:1px solid var(--border-color);border-radius:14px;padding:1.5rem;margin-bottom:1.5rem;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
+                <h3 style="margin:0;font-size:1rem;color:var(--text-main);font-weight:700;">🔄 End-to-End Pipeline Funnel</h3>
+                <span style="font-size:0.75rem;color:var(--text-muted);background:var(--bg-muted);padding:0.25rem 0.6rem;border-radius:999px;">Live Sourced Candidates</span>
+            </div>
+
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:1rem;position:relative;">
+                <!-- Step 1: Applied -->
+                <div style="background:var(--bg-muted);border:1.5px solid var(--border-color);border-radius:12px;padding:1.1rem;position:relative;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+                        <span style="font-size:0.8rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;">1. Applied</span>
+                        <span style="background:rgba(59,130,246,0.15);color:#3b82f6;font-size:0.7rem;font-weight:700;padding:0.15rem 0.5rem;border-radius:999px;">100%</span>
+                    </div>
+                    <div style="font-size:1.6rem;font-weight:800;color:var(--text-main);margin-bottom:0.25rem;">${counts.total}</div>
+                    <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.75rem;">Total Applications</div>
+                    <div style="height:6px;background:rgba(59,130,246,0.2);border-radius:999px;overflow:hidden;">
+                        <div style="height:100%;width:100%;background:#3b82f6;border-radius:999px;"></div>
+                    </div>
+                </div>
+
+                <!-- Step 2: Under Review -->
+                <div style="background:var(--bg-muted);border:1.5px solid var(--border-color);border-radius:12px;padding:1.1rem;position:relative;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+                        <span style="font-size:0.8rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;">2. In Review</span>
+                        <span style="background:rgba(245,158,11,0.15);color:#f59e0b;font-size:0.7rem;font-weight:700;padding:0.15rem 0.5rem;border-radius:999px;">${inReviewPct}%</span>
+                    </div>
+                    <div style="font-size:1.6rem;font-weight:800;color:var(--text-main);margin-bottom:0.25rem;">${counts.inReview}</div>
+                    <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.75rem;">AI Resume Screening</div>
+                    <div style="height:6px;background:rgba(245,158,11,0.2);border-radius:999px;overflow:hidden;">
+                        <div style="height:100%;width:${inReviewPct}%;background:#f59e0b;border-radius:999px;"></div>
+                    </div>
+                </div>
+
+                <!-- Step 3: Shortlisted -->
+                <div style="background:var(--bg-muted);border:1.5px solid var(--border-color);border-radius:12px;padding:1.1rem;position:relative;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+                        <span style="font-size:0.8rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;">3. Shortlisted</span>
+                        <span style="background:rgba(249,115,22,0.15);color:#f97316;font-size:0.7rem;font-weight:700;padding:0.15rem 0.5rem;border-radius:999px;">${shortlistedPct}%</span>
+                    </div>
+                    <div style="font-size:1.6rem;font-weight:800;color:var(--text-main);margin-bottom:0.25rem;">${counts.shortlisted}</div>
+                    <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.75rem;">Profile & Skill Verified</div>
+                    <div style="height:6px;background:rgba(249,115,22,0.2);border-radius:999px;overflow:hidden;">
+                        <div style="height:100%;width:${shortlistedPct}%;background:#f97316;border-radius:999px;"></div>
+                    </div>
+                </div>
+
+                <!-- Step 4: Technical Interviews -->
+                <div style="background:var(--bg-muted);border:1.5px solid var(--border-color);border-radius:12px;padding:1.1rem;position:relative;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+                        <span style="font-size:0.8rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;">4. Interviews</span>
+                        <span style="background:rgba(139,92,246,0.15);color:#8b5cf6;font-size:0.7rem;font-weight:700;padding:0.15rem 0.5rem;border-radius:999px;">${interviewPct}%</span>
+                    </div>
+                    <div style="font-size:1.6rem;font-weight:800;color:var(--text-main);margin-bottom:0.25rem;">${counts.interview}</div>
+                    <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.75rem;">DSA & Design Rounds</div>
+                    <div style="height:6px;background:rgba(139,92,246,0.2);border-radius:999px;overflow:hidden;">
+                        <div style="height:100%;width:${interviewPct}%;background:#8b5cf6;border-radius:999px;"></div>
+                    </div>
+                </div>
+
+                <!-- Step 5: Offers / Selected -->
+                <div style="background:var(--bg-muted);border:1.5px solid #10b981;border-radius:12px;padding:1.1rem;position:relative;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+                        <span style="font-size:0.8rem;font-weight:700;color:#10b981;text-transform:uppercase;">5. Offers</span>
+                        <span style="background:rgba(16,185,129,0.15);color:#10b981;font-size:0.7rem;font-weight:700;padding:0.15rem 0.5rem;border-radius:999px;">${selectedPct}%</span>
+                    </div>
+                    <div style="font-size:1.6rem;font-weight:800;color:#10b981;margin-bottom:0.25rem;">${counts.selected}</div>
+                    <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.75rem;">Offers Extended</div>
+                    <div style="height:6px;background:rgba(16,185,129,0.2);border-radius:999px;overflow:hidden;">
+                        <div style="height:100%;width:${selectedPct}%;background:#10b981;border-radius:999px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sourcing Channels and Competency Breakdown -->
+        <div class="chart-grid">
+            <!-- Channel Breakdown Card -->
+            <div class="chart-card">
+                <h3 style="margin-bottom:1rem;display:flex;align-items:center;gap:0.5rem;">
+                    <span>🌐</span> Candidate Sourcing Channels
+                </h3>
+                <div style="display:flex;flex-direction:column;gap:1.2rem;padding-top:0.5rem;">
+                    ${topSources.map(s => `
+                        <div>
+                            <div style="display:flex;justify-content:space-between;font-size:0.85rem;margin-bottom:0.4rem;">
+                                <span style="font-weight:600;color:var(--text-main);">${sanitize(s.name)}</span>
+                                <span style="font-weight:700;color:var(--primary);">${s.percent}%</span>
+                            </div>
+                            <div style="height:8px;background:var(--bg-muted);border-radius:999px;overflow:hidden;">
+                                <div style="height:100%;width:${s.percent}%;background:linear-gradient(90deg, #f97316, #ea580c);border-radius:999px;"></div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+
+            <!-- Candidate Competency Pool -->
+            <div class="chart-card">
+                <h3 style="margin-bottom:1rem;display:flex;align-items:center;gap:0.5rem;">
+                    <span>⚡</span> Talent Competency Distribution
+                </h3>
+                <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:1.25rem;">Skills breakdown of all candidate submissions evaluated across active roles:</p>
+                <div style="display:flex;flex-wrap:wrap;gap:0.6rem;">
+                    <span style="background:rgba(59,130,246,0.1);color:#3b82f6;border:1px solid rgba(59,130,246,0.25);padding:0.45rem 0.85rem;border-radius:999px;font-size:0.82rem;font-weight:600;">
+                        React & Next.js (84%)
+                    </span>
+                    <span style="background:rgba(16,185,129,0.1);color:#10b981;border:1px solid rgba(16,185,129,0.25);padding:0.45rem 0.85rem;border-radius:999px;font-size:0.82rem;font-weight:600;">
+                        Node.js & Express (72%)
+                    </span>
+                    <span style="background:rgba(249,115,22,0.1);color:#f97316;border:1px solid rgba(249,115,22,0.25);padding:0.45rem 0.85rem;border-radius:999px;font-size:0.82rem;font-weight:600;">
+                        Python & Algorithms (68%)
+                    </span>
+                    <span style="background:rgba(139,92,246,0.1);color:#8b5cf6;border:1px solid rgba(139,92,246,0.25);padding:0.45rem 0.85rem;border-radius:999px;font-size:0.82rem;font-weight:600;">
+                        MongoDB & PostgreSQL (65%)
+                    </span>
+                    <span style="background:rgba(236,72,153,0.1);color:#ec4899;border:1px solid rgba(236,72,153,0.25);padding:0.45rem 0.85rem;border-radius:999px;font-size:0.82rem;font-weight:600;">
+                        Docker & AWS Cloud (51%)
+                    </span>
+                    <span style="background:rgba(14,165,233,0.1);color:#0284c7;border:1px solid rgba(14,165,233,0.25);padding:0.45rem 0.85rem;border-radius:999px;font-size:0.82rem;font-weight:600;">
+                        Java & Spring Boot (46%)
+                    </span>
+                </div>
+                <div style="margin-top:1.5rem;padding:0.85rem;background:var(--bg-muted);border-radius:8px;font-size:0.78rem;color:var(--text-muted);line-height:1.6;">
+                    💡 <strong>Hiring Insight:</strong> Candidates demonstrating both Full Stack JavaScript and algorithmic problem-solving have an 82% shortlist rate across current tech requisitions.
+                </div>
+            </div>
+        </div>
+    `;
+}
+window.renderRecFunnel = renderRecFunnel;

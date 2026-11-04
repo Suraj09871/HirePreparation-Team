@@ -77,6 +77,14 @@ erDiagram
         ObjectId _id
         ObjectId studentId
         ObjectId jobId
+        Number skillMatch
+        Number hiringProbability
+        String status
+        Object scorecard
+        Object aiScreening
+        Object assignedAssessment
+        Object offerLetter
+        Date appliedAt
     }
     RESUME {
         ObjectId _id
@@ -144,7 +152,14 @@ The backend acts as a pure REST API primarily serving JSON.
 ### Applications (`/api/applications`)
 - Application pipeline and lifecycle management.
 - Matching features: `GET /preview/:jobId` (preview score), `GET /job/:jobId/recommended` (auto-recommend), `POST /compare` (candidate comparison).
-- Status updates: `PUT /:id/status`, `PUT /:id/interview`.
+- Status updates: `PUT /:id/status`, `PUT /:id/interview`, `POST /:id/schedule-interview`, `POST /:id/resend-invitation`.
+- **Recruiter Evaluation & Intelligence:**
+  - `POST /:id/scorecard` (structured 1-5 star interview evaluation, recommendations, notes).
+  - `POST /:id/ai-screening` (automated AI resume gap breakdown, strengths, auto-shortlist).
+  - `POST /:id/assign-assessment` (dispatch coding challenges from 210-problem bank with deadline).
+  - `POST /:id/generate-offer` (official job offer letter generator with compensation terms and PDF preview).
+  - `GET /recruiter/funnel-analytics` (5-stage hiring funnel conversion, inflow, and talent distribution metrics).
+  - `GET /export-recruiter-applicants` (export candidate pipeline to CSV).
 
 ### Admin (`/api/admin`)
 - Platform observability: `/stats`, `/analytics`, `/site-health`, `/db-status`.

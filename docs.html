@@ -268,6 +268,17 @@
                 </div>
 
                 <div class="tech-card">
+                    <h3 style="font-size: 1rem; color: var(--text-main); margin-bottom: 1rem;">Recruiter Automation Suite</h3>
+                    <div>
+                        <span class="tech-badge"><span>&lt;/&gt;</span> AI Resume Screener & Gaps</span>
+                        <span class="tech-badge"><span>&lt;/&gt;</span> Structured 1-5 Star Scorecards</span>
+                        <span class="tech-badge"><span>&lt;/&gt;</span> Coding Challenge Dispatcher</span>
+                        <span class="tech-badge"><span>&lt;/&gt;</span> Offer Letter PDF Engine</span>
+                        <span class="tech-badge"><span>&lt;/&gt;</span> 5-Stage Funnel Analytics</span>
+                    </div>
+                </div>
+
+                <div class="tech-card">
                     <h3 style="font-size: 1rem; color: var(--text-main); margin-bottom: 1rem;">Auth & Security</h3>
                     <div>
                         <span class="tech-badge"><span>&lt;/&gt;</span> JWT (JSON Web Tokens)</span>
@@ -282,8 +293,10 @@
                     <h3 style="font-size: 1rem; color: var(--text-main); margin-bottom: 1rem;">Learning & Practice Engine</h3>
                     <div>
                         <span class="tech-badge"><span>&lt;/&gt;</span> 210 Coding Problems</span>
+                        <span class="tech-badge"><span>&lt;/&gt;</span> Multi-Language Solutions (Py/Java/C++)</span>
                         <span class="tech-badge"><span>&lt;/&gt;</span> 210 CS Technical MCQs</span>
                         <span class="tech-badge"><span>&lt;/&gt;</span> 210 Aptitude Questions</span>
+                        <span class="tech-badge"><span>&lt;/&gt;</span> Fast Runtime Sandbox</span>
                         <span class="tech-badge"><span>&lt;/&gt;</span> Dynamic Retry & Recalibration</span>
                     </div>
                 </div>
@@ -588,20 +601,27 @@
                         <div class="uml-section-title">Attributes</div>
                         <ul class="uml-list">
                             <li><span style="color:#0ea5e9;">+</span> _id: ObjectId</li>
-                            <li><span style="color:#0ea5e9;">+</span> jobId: ObjectId (FK)</li>
-                            <li><span style="color:#0ea5e9;">+</span> applicantId: ObjectId (FK)</li>
+                            <li><span style="color:#0ea5e9;">+</span> jobId: ObjectId (FK Job)</li>
+                            <li><span style="color:#0ea5e9;">+</span> studentId: ObjectId (FK User)</li>
                             <li><span style="color:#0ea5e9;">+</span> matchScore: Number (0-100%)</li>
-                            <li><span style="color:#0ea5e9;">+</span> matchBadge: 'High'|'Medium'|'Low'</li>
-                            <li><span style="color:#0ea5e9;">+</span> status: 'applied'|'interview'|'selected'</li>
+                            <li><span style="color:#0ea5e9;">+</span> status: 'new'|'in-review'|'shortlisted'|'interview'|'selected'|'rejected'</li>
+                            <li><span style="color:#0ea5e9;">+</span> scorecard: Object (ratings, notes, decision)</li>
+                            <li><span style="color:#0ea5e9;">+</span> aiScreening: Object (fitScore, strengths, gaps)</li>
+                            <li><span style="color:#0ea5e9;">+</span> assignedAssessment: Object (challenge, dueDate, status)</li>
+                            <li><span style="color:#0ea5e9;">+</span> offerLetter: Object (salary, bonus, joinDate)</li>
                             <li><span style="color:#0ea5e9;">+</span> appliedAt: Date</li>
                         </ul>
                         <div class="uml-section-title">Operations</div>
                         <ul class="uml-list">
                             <li><span style="color:#10b981;">+</span> updateStatus(newStatus): Void</li>
-                            <li><span style="color:#10b981;">+</span> scheduleInterview(meetLink): Void</li>
+                            <li><span style="color:#10b981;">+</span> saveScorecard(ratings, notes, rec): Object</li>
+                            <li><span style="color:#10b981;">+</span> runAiScreening(autoShortlist): Object</li>
+                            <li><span style="color:#10b981;">+</span> assignCodingAssessment(questionId, days): Object</li>
+                            <li><span style="color:#10b981;">+</span> generateOfferLetter(salary, joinDate, bonus): Object</li>
+                            <li><span style="color:#10b981;">+</span> getFunnelAnalytics(): Object</li>
                         </ul>
                         <div class="uml-rel-box">
-                            <strong>Associations:</strong> Ref Job (FK) · Ref User (FK)
+                            <strong>Associations:</strong> Ref Job (FK) · Ref User (FK) · Ref StudentProfile
                         </div>
                     </div>
 
@@ -838,7 +858,7 @@
                     </div>
                     <div style="border: 1px solid var(--border-color); border-radius: 8px; padding: 1.5rem;">
                         <h3 style="font-weight: 600; margin-bottom: 0.5rem;">Applications</h3>
-                        <p style="font-size: 0.875rem; color: var(--text-muted);">_id, jobId, applicantId, status, matchScore, appliedAt</p>
+                        <p style="font-size: 0.875rem; color: var(--text-muted);">_id, jobId, studentId, status, matchScore, matchedSkills, missingSkills, appliedAt, <strong>scorecard</strong> (dsaRating, sysDesign, comm, rec, notes), <strong>aiScreening</strong> (fitScore, strengths, gaps), <strong>assignedAssessment</strong> (challenge, dueDate, status), <strong>offerLetter</strong> (salary, bonus, joinDate, status)</p>
                     </div>
                 </div>
             </div>
@@ -848,7 +868,7 @@
         <div id="tab-functions" class="tab-content" style="display: none;">
             <div style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; padding: 2.5rem;">
                 <h2 style="font-size: 1.5rem; display: flex; align-items: center; gap: 0.5rem; margin-bottom: 2rem;">
-                    <span style="color: var(--primary);">⚡</span> Edge Functions & API Services
+                    <span style="color: var(--primary);">⚡</span> Edge Functions & API Services (88+ REST Endpoints)
                 </h2>
                 <div style="display: flex; flex-direction: column; gap: 1rem;">
                     <div style="border: 1px solid var(--border-color); border-radius: 8px; padding: 1.5rem;">
@@ -857,6 +877,41 @@
                             /api/match
                         </h3>
                         <p style="font-size: 0.875rem; color: var(--text-muted);">Calculates the skill match score between a student profile and a job listing in real-time.</p>
+                    </div>
+                    <div style="border: 1px solid var(--border-color); border-radius: 8px; padding: 1.5rem;">
+                        <h3 style="font-weight: 600; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                            <span style="background: #e0e7ff; color: #4338ca; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.75rem;">POST</span> 
+                            /api/applications/:id/scorecard
+                        </h3>
+                        <p style="font-size: 0.875rem; color: var(--text-muted);">Saves structured 1-5 star ratings across DSA, System Design, Communication, and records hiring decisions with interviewer feedback.</p>
+                    </div>
+                    <div style="border: 1px solid var(--border-color); border-radius: 8px; padding: 1.5rem;">
+                        <h3 style="font-weight: 600; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                            <span style="background: #e0e7ff; color: #4338ca; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.75rem;">POST</span> 
+                            /api/applications/:id/ai-screening
+                        </h3>
+                        <p style="font-size: 0.875rem; color: var(--text-muted);">Executes automated AI resume screening against job requisitions, computes fit score %, flags skill gaps, and optionally auto-shortlists.</p>
+                    </div>
+                    <div style="border: 1px solid var(--border-color); border-radius: 8px; padding: 1.5rem;">
+                        <h3 style="font-weight: 600; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                            <span style="background: #e0e7ff; color: #4338ca; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.75rem;">POST</span> 
+                            /api/applications/:id/assign-assessment
+                        </h3>
+                        <p style="font-size: 0.875rem; color: var(--text-muted);">Dispatches coding challenges directly from HirePrep's 210-problem library to candidate with automated notifications and deadline tracking.</p>
+                    </div>
+                    <div style="border: 1px solid var(--border-color); border-radius: 8px; padding: 1.5rem;">
+                        <h3 style="font-weight: 600; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                            <span style="background: #e0e7ff; color: #4338ca; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.75rem;">POST</span> 
+                            /api/applications/:id/generate-offer
+                        </h3>
+                        <p style="font-size: 0.875rem; color: var(--text-muted);">Generates official employment offer letter with salary, bonus, and joining terms, plus a printable PDF view and candidate celebration alert.</p>
+                    </div>
+                    <div style="border: 1px solid var(--border-color); border-radius: 8px; padding: 1.5rem;">
+                        <h3 style="font-weight: 600; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                            <span style="background: #dcfce3; color: #15803d; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.75rem;">GET</span> 
+                            /api/applications/recruiter/funnel-analytics
+                        </h3>
+                        <p style="font-size: 0.875rem; color: var(--text-muted);">Aggregates multi-stage pipeline conversion rates, time-to-hire metrics, candidate sourcing channels, and talent competency pool distribution.</p>
                     </div>
                     <div style="border: 1px solid var(--border-color); border-radius: 8px; padding: 1.5rem;">
                         <h3 style="font-weight: 600; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">

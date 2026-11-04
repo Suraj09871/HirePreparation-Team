@@ -54,6 +54,39 @@ const applicationSchema = new mongoose.Schema({
         type: String,
         default: 'Technical Interview'
     },
+    scorecard: {
+        dsaRating: { type: Number, default: 0, min: 0, max: 5 },
+        systemDesignRating: { type: Number, default: 0, min: 0, max: 5 },
+        communicationRating: { type: Number, default: 0, min: 0, max: 5 },
+        cultureFitRating: { type: Number, default: 0, min: 0, max: 5 },
+        recommendation: { type: String, enum: ['strong_hire', 'hire', 'neutral', 'no_hire', 'strong_no_hire', ''], default: '' },
+        notes: { type: String, default: '' },
+        evaluatedAt: { type: Date }
+    },
+    aiScreening: {
+        strengths: [{ type: String }],
+        skillGaps: [{ type: String }],
+        recommendationScore: { type: Number, default: 0 },
+        summary: { type: String, default: '' },
+        evaluatedAt: { type: Date }
+    },
+    assignedAssessment: {
+        questionId: { type: String, default: '' },
+        questionTitle: { type: String, default: '' },
+        difficulty: { type: String, default: 'Medium' },
+        assignedAt: { type: Date },
+        dueDate: { type: Date },
+        status: { type: String, enum: ['pending', 'completed', 'expired', ''], default: '' },
+        score: { type: Number, default: 0 }
+    },
+    offerLetter: {
+        salary: { type: String, default: '' },
+        joiningDate: { type: Date },
+        signingBonus: { type: String, default: '' },
+        customNotes: { type: String, default: '' },
+        generatedAt: { type: Date },
+        status: { type: String, enum: ['draft', 'sent', 'accepted', 'declined', ''], default: '' }
+    },
     appliedAt: {
         type: Date,
         default: Date.now

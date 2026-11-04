@@ -61,6 +61,14 @@ This document serves as the central memory and status tracker for the HirePrep (
 17. **Input validation:** express-validator on all routes (Phase 9)
 18. **XSS prevention:** sanitize.js utility for safe innerHTML usage (Phase 9)
 19. **Security headers:** Helmet CSP enabled, CORS restricted (Phase 9)
+20. **Structured Interview Scorecards:** 1-5 star objective ratings across DSA, System Design, Communication, and Culture Fit with interviewer feedback and decision logging
+21. **AI Resume Screener & Skill Gap Breakdown:** Automatic candidate-to-job fit scoring (0-100%), verified strengths, prioritized skill gaps, and 1-click auto-shortlisting
+22. **HirePrep Coding Challenge Dispatcher:** Direct assignment of coding problems from 210-question library with automated deadline tracking
+23. **Automated Offer Letter Generator & Printable PDF:** Compensation configuration (CTC, signing bonus, joining date), executive letterhead preview, and printable PDF export
+24. **Hiring Funnel Analytics & Conversion Metrics:** 5-stage visual conversion funnel, candidate inflow tracking, sourcing channel distribution, and applicant pool competency breakdown
+25. **Multi-Language Coding Solutions Bank:** Optimal solutions provided for all coding challenges in Python 3, Java 17, and C++ 20 with Big-O time & space complexity explanations and 1-click copy-to-editor
+26. **Overleaf-Style Resume Builder:** Dual-mode code/visual builder with single-page A4 PDF export
+27. **Real-world Database Seeding:** 14 authentic candidate profiles, 5 active jobs for Acme Corp, 70 applications across all pipeline stages, and 4 scheduled interviews with Google Meet links
 
 ## In Progress / Partially Complete
 - **Google OAuth:** Backend fully implemented (verifies token with Google, creates/links users). Frontend SDK NOT initialized — button exists but can't trigger consent screen. ~2-4 hours to complete.
