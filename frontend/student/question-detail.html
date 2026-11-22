@@ -1977,6 +1977,43 @@
         submissions.unshift(sub);
         try {
             localStorage.setItem('hs_submissions', JSON.stringify(submissions.slice(0, 50)));
+
+            if (status === 'Accepted') {
+                // 1. Mark in hireprep_solved_coding map
+                const solvedKey = 'hireprep_solved_coding';
+                const solvedMap = JSON.parse(localStorage.getItem(solvedKey) || '{}');
+                solvedMap[sub.questionId] = 'correct';
+                localStorage.setItem(solvedKey, JSON.stringify(solvedMap));
+
+                // 2. Add to solved history
+                const hist = JSON.parse(localStorage.getItem('hireprep_solved_history') || '[]');
+                hist.unshift({
+                    id: sub.questionId,
+                    title: sub.questionTitle,
+                    difficulty: activeQuestion?.difficulty || 'Medium',
+                    topic: activeQuestion?.topic || 'Algorithms',
+                    company: activeQuestion?.company || '',
+                    tags: activeQuestion?.tags || [],
+                    solvedAt: new Date().toISOString()
+                });
+                localStorage.setItem('hireprep_solved_history', JSON.stringify(hist.slice(0, 50)));
+
+                // 3. Update coding streak & daily target
+                let streak = JSON.parse(localStorage.getItem('hireprep_coding_streak') || 'null');
+                const todayStr = new Date().toDateString();
+                if (!streak || typeof streak !== 'object') {
+                    streak = { streakCount: 5, dailyGoal: 3, solvedToday: 0, lastActiveDate: todayStr };
+                }
+                if (streak.lastActiveDate !== todayStr) {
+                    streak.solvedToday = 0;
+                    streak.lastActiveDate = todayStr;
+                }
+                streak.solvedToday = (streak.solvedToday || 0) + 1;
+                if (streak.solvedToday === streak.dailyGoal) {
+                    streak.streakCount = (streak.streakCount || 0) + 1;
+                }
+                localStorage.setItem('hireprep_coding_streak', JSON.stringify(streak));
+            }
         } catch(e) {}
 
         window.lastPassedCount = passed;

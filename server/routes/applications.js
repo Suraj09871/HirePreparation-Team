@@ -887,6 +887,39 @@ router.post('/:id/generate-offer', auth, roleCheck('recruiter', 'admin'), async 
     }
 });
 
+// POST /api/applications/:id/offer-response - Student responds to formal offer
+router.post('/:id/offer-response', auth, roleCheck('student'), async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status } = req.body;
+        if (!['accepted', 'declined'].includes(status)) {
+            return res.status(400).json({ success: false, message: 'Invalid offer status. Must be accepted or declined.' });
+        }
+        const application = await Application.findOne({ _id: id, studentId: req.userId }).populate('jobId');
+        if (!application) {
+            return res.status(404).json({ success: false, message: 'Application not found.' });
+        }
+        if (!application.offerLetter) {
+            application.offerLetter = {};
+        }
+        application.offerLetter.status = status;
+        if (status === 'accepted') {
+            application.status = 'selected';
+        }
+        await application.save();
+
+        await logActivity(req.userId, 'offer_response', `Student marked job offer as ${status} for ${application.jobId?.title || 'position'}`);
+        res.json({
+            success: true,
+            message: `Offer successfully marked as ${status}!`,
+            offerLetter: application.offerLetter,
+            status: application.status
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
 // ── Feature 5: Hiring Funnel Analytics & Conversion Metrics ──
 // GET /api/applications/recruiter/funnel-analytics
 router.get('/recruiter/funnel-analytics', auth, roleCheck('recruiter', 'admin'), async (req, res) => {
